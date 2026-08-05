@@ -13,11 +13,11 @@
     <description>Spring Cloud Alibaba 微服务父项目</description>
 
     <modules>
-        <module>spring-cloud-common</module>
+        <module>service-common</module>
     </modules>
 
     <properties>
-        <java.version>21</java.version>  <!-- Spring Boot 3.x 需要 Java 17 -->
+        <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,6 +27,8 @@
         <spring-boot.version>4.1.0</spring-boot.version>
         <spring-cloud.version>2025.1.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+        <!-- 其他依赖 -->
+        <hutool.version>5.8.46</hutool.version>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +59,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- 糊涂工具类 -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
