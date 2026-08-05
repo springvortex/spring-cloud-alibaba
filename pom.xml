@@ -16,6 +16,7 @@
         <module>service-common</module>
         <module>service-provider</module>
         <module>service-consumer</module>
+        <module>service-gateway</module>
     </modules>
 
     <properties>
