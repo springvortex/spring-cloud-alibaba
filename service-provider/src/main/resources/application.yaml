@@ -1,0 +1,14 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: service-provider
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.100.128:8848
+        username: nacos
+        password: nacos
+        # 关键配置：关闭快速失败，连接没就绪不会直接抛异常退出，后台循环重试注册
+        fail-fast: false
