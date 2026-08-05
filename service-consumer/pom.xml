@@ -10,10 +10,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>service-provider</artifactId>
+    <artifactId>service-consumer</artifactId>
 
-    <name>Service Provider</name>
-    <description>服务提供者</description>
+    <name>Service Consumer</name>
+    <description>服务消费者</description>
 
     <dependencies>
         <!--nacos-discovery-->

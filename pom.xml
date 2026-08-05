@@ -15,6 +15,7 @@
     <modules>
         <module>service-common</module>
         <module>service-provider</module>
+        <module>service-consumer</module>
     </modules>
 
     <properties>

@@ -1,6 +1,9 @@
+server:
+  port: 9002
+
 spring:
   application:
-    name: service-provider
+    name: service-consumer
   profiles:
     active: dev
   cloud:
@@ -16,5 +19,4 @@ spring:
         password: nacos
   config:
     import:
-      - nacos:dev?group=service-provider&namespace=public&refreshEnabled=true
-      - nacos:pub?group=service-provider&namespace=public&refreshEnabled=true
+      - nacos:dev?group=service-consumer&namespace=public&refreshEnabled=true
