@@ -7,6 +7,13 @@
     <groupId>com.zjc</groupId>
     <artifactId>spring-cloud-alibaba</artifactId>
     <version>1.0.0</version>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.0</version>
+    </parent>
+
     <packaging>pom</packaging>
 
     <name>Spring Cloud Alibaba Parent</name>
@@ -38,15 +45,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Boot 依赖管理（BOM） -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
             <!-- Spring Cloud 依赖管理（BOM） -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
