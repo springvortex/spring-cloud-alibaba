@@ -60,7 +60,6 @@ public class Order implements Serializable {
      * 订单状态：0待支付 1已支付 2已发货 3已完成 4已取消
      */
     @TableField("order_status")
-    private Byte orderStatus;
 
     /**
      * 支付时间，未支付为NULL
@@ -72,7 +71,7 @@ public class Order implements Serializable {
      * 逻辑删除
      */
     @TableField("is_deleted")
-    private Byte isDeleted;
+    private Integer isDeleted;
 
     /**
      * 下单时间

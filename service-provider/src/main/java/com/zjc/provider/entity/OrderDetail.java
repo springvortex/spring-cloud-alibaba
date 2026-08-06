@@ -78,7 +78,7 @@ public class OrderDetail implements Serializable {
      * 逻辑删除
      */
     @TableField("is_deleted")
-    private Byte isDeleted;
+    private Integer isDeleted;
 
     @TableField("create_time")
     private LocalDateTime createTime;

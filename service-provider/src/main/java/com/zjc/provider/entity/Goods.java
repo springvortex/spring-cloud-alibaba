@@ -54,13 +54,13 @@ public class Goods implements Serializable {
      * 状态 1上架 0下架
      */
     @TableField("status")
-    private Byte status;
+    private Integer status;
 
     /**
      * 逻辑删除
      */
     @TableField("is_deleted")
-    private Byte isDeleted;
+    private Integer isDeleted;
 
     @TableField("create_time")
     private LocalDateTime createTime;

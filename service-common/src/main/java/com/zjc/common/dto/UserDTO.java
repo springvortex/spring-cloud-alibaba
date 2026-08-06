@@ -6,11 +6,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * 用户公共DTO，Feign跨服务调用传输对象
- * 放在 common-model 模块，所有微服务可依赖
- * 必须实现 Serializable，支持序列化
- */
 @Data
 public class UserDTO implements Serializable {
 
@@ -18,12 +13,12 @@ public class UserDTO implements Serializable {
     private static final long serialVersionUID = -3152972968568455762L;
 
     /**
-     * 用户id
+     * 用户ID
      */
     private Long userId;
 
     /**
-     * 账号
+     * 登录账号
      */
     private String username;
 
@@ -43,12 +38,12 @@ public class UserDTO implements Serializable {
     private String email;
 
     /**
-     * 用户状态 0禁用 1正常
+     * 状态 1正常 0禁用
      */
     private Integer status;
 
     /**
-     * 性别 0未知 1男 2女
+     * 性别 1男 2女
      */
     private Integer gender;
 

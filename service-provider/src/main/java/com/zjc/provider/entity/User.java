@@ -59,19 +59,19 @@ public class User implements Serializable {
      * 状态 1正常 0禁用
      */
     @TableField("status")
-    private Byte status;
+    private Integer status;
 
     /**
      * 性别 1男 2女
      */
     @TableField("gender")
-    private Byte gender;
+    private Integer gender;
 
     /**
      * 逻辑删除 0未删 1已删
      */
     @TableField("is_deleted")
-    private Byte isDeleted;
+    private Integer isDeleted;
 
     /**
      * 创建时间
