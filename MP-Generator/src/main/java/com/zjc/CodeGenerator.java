@@ -47,6 +47,7 @@ public class CodeGenerator {
                 // 全局配置：作者、注释日期格式、输出目录
                 .globalConfig(builder -> builder.author("jiancai.zhong")
                         .commentDate("yyyy-MM-dd")
+                        .enableSpringdoc()
                         .outputDir(outputDir)
                         .disableOpenDir())
                 // 包配置：父包及各层子包名
