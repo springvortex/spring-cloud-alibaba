@@ -64,11 +64,9 @@ public class CodeGenerator {
                         .enableLombok(new ClassAnnotationAttributes("@Data", "lombok.Data"))
                         .enableTableFieldAnnotation()
                         .enableSerialAnnotation()
-                        // Mapper：文件名以 Mapper 结尾，生成 BaseResultMap 和 BaseColumnList
                         .mapperBuilder()
                         .convertMapperFileName((entityName -> entityName + "Mapper"))
                         .enableBaseResultMap()
-                        .enableBaseColumnList()
                         // Service：接口名以 Service 结尾
                         .serviceBuilder()
                         .convertServiceFileName((entityName -> entityName + "Service"))
@@ -78,6 +76,7 @@ public class CodeGenerator {
                 // 使用 Freemarker 模板引擎
                 .templateEngine(new FreemarkerTemplateEngine())
                 .execute();
+        System.out.println("代码生成完毕！");
     }
 
     /**
