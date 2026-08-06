@@ -1,6 +1,9 @@
 package com.zjc.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serial;
@@ -28,12 +31,16 @@ public class OrderDTO implements Serializable {
     private String orderNo;
 
     @Schema(description = "下单用户ID")
+    @NotNull(message = "下单用户ID不能为空")
     private Long userId;
 
     @Schema(description = "订单总金额")
+    @NotNull(message = "订单总金额不能为空")
+    @DecimalMin(value = "0", message = "订单总金额不能为负数")
     private BigDecimal totalAmount;
 
     @Schema(description = "实付金额")
+    @DecimalMin(value = "0", message = "实付金额不能为负数")
     private BigDecimal payAmount;
 
     @Schema(description = "订单状态 0待支付 1已支付 2已发货 3已完成 4已取消")

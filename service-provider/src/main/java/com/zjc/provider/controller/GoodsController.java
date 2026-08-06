@@ -6,6 +6,7 @@ import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -67,7 +68,7 @@ public class GoodsController {
 
     @Operation(summary = "新增商品")
     @PostMapping("/goods")
-    public ApiResponse<GoodsDTO> add(@RequestBody GoodsDTO dto) {
+    public ApiResponse<GoodsDTO> add(@Valid @RequestBody GoodsDTO dto) {
         Goods goods = new Goods();
         BeanUtils.copyProperties(dto, goods);
         goodsService.save(goods);
@@ -76,7 +77,7 @@ public class GoodsController {
 
     @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
-    public ApiResponse<Void> update(@RequestBody GoodsDTO dto) {
+    public ApiResponse<Void> update(@Valid @RequestBody GoodsDTO dto) {
         Goods goods = new Goods();
         BeanUtils.copyProperties(dto, goods);
         goodsService.updateById(goods);

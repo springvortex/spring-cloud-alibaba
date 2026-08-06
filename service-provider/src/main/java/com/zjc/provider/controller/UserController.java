@@ -6,6 +6,7 @@ import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.entity.User;
 import com.zjc.provider.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -67,7 +68,7 @@ public class UserController {
 
     @Operation(summary = "新增用户")
     @PostMapping("/user")
-    public ApiResponse<UserDTO> add(@RequestBody UserDTO dto) {
+    public ApiResponse<UserDTO> add(@Valid @RequestBody UserDTO dto) {
         User user = new User();
         BeanUtils.copyProperties(dto, user);
         userService.save(user);
@@ -76,7 +77,7 @@ public class UserController {
 
     @Operation(summary = "根据ID修改用户")
     @PutMapping("/user")
-    public ApiResponse<Void> update(@RequestBody UserDTO dto) {
+    public ApiResponse<Void> update(@Valid @RequestBody UserDTO dto) {
         User user = new User();
         BeanUtils.copyProperties(dto, user);
         userService.updateById(user);

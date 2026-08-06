@@ -10,6 +10,7 @@ import com.zjc.provider.entity.OrderDetail;
 import com.zjc.provider.service.OrderDetailService;
 import com.zjc.provider.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -83,7 +84,7 @@ public class OrderController {
 
     @Operation(summary = "新增订单（仅主表）")
     @PostMapping("/order")
-    public ApiResponse<OrderDTO> add(@RequestBody OrderDTO dto) {
+    public ApiResponse<OrderDTO> add(@Valid @RequestBody OrderDTO dto) {
         Order order = new Order();
         BeanUtils.copyProperties(dto, order);
         orderService.save(order);
@@ -92,7 +93,7 @@ public class OrderController {
 
     @Operation(summary = "根据ID修改订单")
     @PutMapping("/order")
-    public ApiResponse<Void> update(@RequestBody OrderDTO dto) {
+    public ApiResponse<Void> update(@Valid @RequestBody OrderDTO dto) {
         Order order = new Order();
         BeanUtils.copyProperties(dto, order);
         orderService.updateById(order);
