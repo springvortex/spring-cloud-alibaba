@@ -6,6 +6,8 @@ spring:
     name: service-provider
   profiles:
     active: dev
+    include:
+      - db
   cloud:
     nacos:
       config:

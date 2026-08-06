@@ -1,0 +1,22 @@
+spring:
+  # 数据源配置
+  datasource:
+    driver‑class‑name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.100.128:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf‑8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: spring_cloud_alibaba
+    password: fEmTS3Cfz3DTpMMS
+
+# mybatis‑plus配置
+mybatis‑plus:
+  # mapper xml 文件位置（自定义复杂SQL的xml）
+  mapper-locations: classpath:/mapper/**.xml
+  type-aliases-package: com.zjc.provider
+  type-aliases-super-type: com.zjc.provider.entity
+  configuration:
+    # 打印执行SQL，开发环境打开，生产关闭
+    log‑impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map‑underscore‑to‑camel‑case: true # 下划线转驼峰，默认true
+  global‑config:
+    db‑config:
+      id‑type: auto  # 主键策略 AUTO自增 / assign_id雪花
+      logic‑delete‑field: is_deleted # 逻辑删除字段，不需要就删掉
