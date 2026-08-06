@@ -11,9 +11,10 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 用户表
- * </p>
+ * 用户表实体，映射 t_user。
+ *
+ * <p>仅 provider 模块内部使用，对外传输请用
+ * {@link com.zjc.common.dto.UserDTO}，避免暴露逻辑删除等内部字段。
  *
  * @author jiancai.zhong
  * @since 2026-08-06
@@ -26,7 +27,7 @@ public class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 用户主键
+     * 用户主键，数据库自增
      */
     @TableId(value = "user_id", type = IdType.AUTO)
     private Long userId;

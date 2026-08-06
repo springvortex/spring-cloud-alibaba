@@ -83,6 +83,12 @@
                 <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis.plus.version}</version>
             </dependency>
+            <!-- MyBatis-Plus 分页插件依赖（JSqlParser） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis.plus.version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
