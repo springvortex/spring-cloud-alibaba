@@ -1,0 +1,6 @@
+# 生产环境配置：关闭接口文档，避免暴露 API 结构
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

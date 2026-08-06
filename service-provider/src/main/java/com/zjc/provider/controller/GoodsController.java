@@ -5,6 +5,9 @@ import com.zjc.common.dto.GoodsDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,66 +33,39 @@ import java.util.List;
  *
  * @author jiancai.zhong
  */
+@Tag(name = "商品管理", description = "商品的增删改查")
 @RestController
 public class GoodsController {
 
     @Resource
     private GoodsService goodsService;
 
-    /**
-     * 根据ID查询单个商品。
-     *
-     * @param id 商品主键
-     * @return 商品信息；记录不存在时 data 为 null
-     */
+    @Operation(summary = "根据ID查询单个商品")
     @GetMapping("/goods/{id}")
-    public ApiResponse<GoodsDTO> getGoods(@PathVariable("id") Long id) {
+    public ApiResponse<GoodsDTO> getGoods(
+            @Parameter(description = "商品主键") @PathVariable("id") Long id) {
         return ApiResponse.success(toDTO(goodsService.getById(id)));
     }
 
-    /**
-     * 查询全部有效商品。
-     *
-     * <p>逻辑删除的记录会被 MyBatis-Plus 自动过滤（依赖 logic-delete 配置），
-     * 返回结果仅包含 is_deleted = 0 的商品。
-     *
-     * @return 商品列表，已按 DTO 过滤内部字段；无数据时返回空列表
-     */
+    @Operation(summary = "查询全部有效商品")
     @GetMapping("/goods/list")
     public ApiResponse<List<GoodsDTO>> list() {
         List<GoodsDTO> list = goodsService.list().stream().map(this::toDTO).toList();
         return ApiResponse.success(list);
     }
 
-    /**
-     * 分页查询有效商品。
-     *
-     * <p>依赖分页拦截器自动改写 SQL，返回带总数与分页信息的 {@link Page}。
-     * 逻辑删除记录同样会被自动过滤。
-     *
-     * @param current 当前页码，从 1 开始，默认 1
-     * @param size    每页条数，默认 10
-     * @return 分页结果，records 已转为 DTO
-     */
+    @Operation(summary = "分页查询有效商品")
     @GetMapping("/goods/page")
     public ApiResponse<Page<GoodsDTO>> page(
-            @RequestParam(value = "current", defaultValue = "1") long current,
-            @RequestParam(value = "size", defaultValue = "10") long size) {
+            @Parameter(description = "当前页码，从1开始") @RequestParam(value = "current", defaultValue = "1") long current,
+            @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<Goods> page = goodsService.page(new Page<>(current, size));
         Page<GoodsDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(page.getRecords().stream().map(this::toDTO).toList());
         return ApiResponse.success(result);
     }
 
-    /**
-     * 新增商品。
-     *
-     * <p>DTO 转实体后入库，数据库自增主键会回填到实体，
-     * 因此返回的 DTO 含生成后的 goodsId，调用方无需再查一次。
-     *
-     * @param dto 商品信息，无需传 goodsId、createTime 等系统生成字段
-     * @return 含生成主键的完整商品信息
-     */
+    @Operation(summary = "新增商品")
     @PostMapping("/goods")
     public ApiResponse<GoodsDTO> add(@RequestBody GoodsDTO dto) {
         Goods goods = new Goods();
@@ -98,15 +74,7 @@ public class GoodsController {
         return ApiResponse.success(toDTO(goods));
     }
 
-    /**
-     * 根据ID修改商品。
-     *
-     * <p>基于 MyBatis-Plus 的 updateById，按 goodsId 定位记录。
-     * 默认只更新 DTO 中非 null 的字段，传 null 的字段保持原值不变。
-     *
-     * @param dto 待更新信息，必须携带 goodsId
-     * @return 无业务数据
-     */
+    @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
     public ApiResponse<Void> update(@RequestBody GoodsDTO dto) {
         Goods goods = new Goods();
@@ -115,28 +83,16 @@ public class GoodsController {
         return ApiResponse.success();
     }
 
-    /**
-     * 根据ID删除商品。
-     *
-     * <p>执行逻辑删除：将 is_deleted 置为 1，而非物理删除记录。
-     *
-     * @param id 商品主键
-     * @return 无业务数据
-     */
+    @Operation(summary = "根据ID删除商品（逻辑删除）")
     @DeleteMapping("/goods/{id}")
-    public ApiResponse<Void> delete(@PathVariable("id") Long id) {
+    public ApiResponse<Void> delete(
+            @Parameter(description = "商品主键") @PathVariable("id") Long id) {
         goodsService.removeById(id);
         return ApiResponse.success();
     }
 
     /**
-     * 实体转对外 DTO。
-     *
-     * <p>同名属性自动拷贝；isDeleted、updateTime 等内部字段因 DTO 不含，
-     * 自然被忽略，从而实现内部字段不对外暴露。
-     *
-     * @param goods 商品实体，允许为 null
-     * @return 对外 DTO；入参为 null 时返回 null
+     * Entity 转 DTO，过滤内部字段
      */
     private GoodsDTO toDTO(Goods goods) {
         if (goods == null) {
