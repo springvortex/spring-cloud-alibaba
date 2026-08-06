@@ -9,7 +9,9 @@
     <version>1.0.0</version>
 
     <name>MyBatis-Plus Generator</name>
-    <description>MyBatis-Plus 代码生成器：读取 generator.properties 配置，连接数据库自动生成 Entity/Mapper/Service 等代码</description>
+    <description>MyBatis-Plus 代码生成器：读取 generator.properties 配置，连接数据库自动生成 Entity/Mapper/Service
+        等代码
+    </description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

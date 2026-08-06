@@ -12,9 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 订单明细表
- * </p>
+ * 订单明细表实体，映射 t_order_detail。
+ *
+ * <p>记录订单中每个商品的成交快照（名称、单价、数量、小计）。
+ * 通过 order_id 关联订单主表。
  *
  * @author jiancai.zhong
  * @since 2026-08-06
@@ -27,37 +28,37 @@ public class OrderDetail implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 明细主键
+     * 明细主键，数据库自增
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
-     * 关联订单主表order_id
+     * 关联订单主表 order_id
      */
     @TableField("order_id")
     private Long orderId;
 
     /**
-     * 订单号冗余，方便查询
+     * 订单编号（冗余，方便查询）
      */
     @TableField("order_no")
     private String orderNo;
 
     /**
-     * 商品ID，关联t_goods
+     * 商品ID，关联 t_goods
      */
     @TableField("goods_id")
     private Long goodsId;
 
     /**
-     * 下单快照：商品名称
+     * 商品名称（下单快照）
      */
     @TableField("goods_name")
     private String goodsName;
 
     /**
-     * 下单快照：当时成交单价
+     * 成交单价（下单快照）
      */
     @TableField("goods_price")
     private BigDecimal goodsPrice;
@@ -69,20 +70,26 @@ public class OrderDetail implements Serializable {
     private Integer goodsNum;
 
     /**
-     * 该商品小计金额
+     * 小计金额
      */
     @TableField("sub_total")
     private BigDecimal subTotal;
 
     /**
-     * 逻辑删除
+     * 逻辑删除 0未删 1已删
      */
     @TableField("is_deleted")
     private Integer isDeleted;
 
+    /**
+     * 创建时间
+     */
     @TableField("create_time")
     private LocalDateTime createTime;
 
+    /**
+     * 更新时间
+     */
     @TableField("update_time")
     private LocalDateTime updateTime;
 }

@@ -12,9 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 商品表
- * </p>
+ * 商品表实体，映射 t_goods。
+ *
+ * <p>仅 provider 模块内部使用，对外传输请用
+ * {@link com.zjc.common.dto.GoodsDTO}，避免暴露逻辑删除等内部字段。
  *
  * @author jiancai.zhong
  * @since 2026-08-06
@@ -27,7 +28,7 @@ public class Goods implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 商品主键
+     * 商品主键，数据库自增
      */
     @TableId(value = "goods_id", type = IdType.AUTO)
     private Long goodsId;
@@ -57,14 +58,20 @@ public class Goods implements Serializable {
     private Integer status;
 
     /**
-     * 逻辑删除
+     * 逻辑删除 0未删 1已删
      */
     @TableField("is_deleted")
     private Integer isDeleted;
 
+    /**
+     * 创建时间
+     */
     @TableField("create_time")
     private LocalDateTime createTime;
 
+    /**
+     * 更新时间
+     */
     @TableField("update_time")
     private LocalDateTime updateTime;
 }

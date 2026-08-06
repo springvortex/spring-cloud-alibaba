@@ -12,9 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 订单主表
- * </p>
+ * 订单主表实体，映射 t_order。
+ *
+ * <p>仅 provider 模块内部使用，对外传输请用
+ * {@link com.zjc.common.dto.OrderDTO}，避免暴露逻辑删除等内部字段。
  *
  * @author jiancai.zhong
  * @since 2026-08-06
@@ -27,7 +28,7 @@ public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 订单主键
+     * 订单主键，数据库自增
      */
     @TableId(value = "order_id", type = IdType.AUTO)
     private Long orderId;
@@ -39,7 +40,7 @@ public class Order implements Serializable {
     private String orderNo;
 
     /**
-     * 下单用户id
+     * 下单用户ID
      */
     @TableField("user_id")
     private Long userId;
@@ -57,19 +58,19 @@ public class Order implements Serializable {
     private BigDecimal payAmount;
 
     /**
-     * 订单状态：0待支付 1已支付 2已发货 3已完成 4已取消
+     * 订单状态 0待支付 1已支付 2已发货 3已完成 4已取消
      */
     @TableField("order_status")
     private Integer orderStatus;
 
     /**
-     * 支付时间，未支付为NULL
+     * 支付时间，未支付时为 null
      */
     @TableField("pay_time")
     private LocalDateTime payTime;
 
     /**
-     * 逻辑删除
+     * 逻辑删除 0未删 1已删
      */
     @TableField("is_deleted")
     private Integer isDeleted;
