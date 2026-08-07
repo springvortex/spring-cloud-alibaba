@@ -16,7 +16,8 @@ import java.util.concurrent.Executors;
  * Nacos 配置变更监听配置。
  *
  * <p>监听 dataId=激活环境（如 dev）、group=服务名的配置，
- * 当 Nacos 上的配置发生变更时触发回调，可用于邮件通知、日志记录、缓存刷新等。
+ * 当 Nacos 上的配置发生变更时输出变更后的完整内容，
+ * 可用于邮件通知、日志记录、缓存刷新等。
  *
  * @author jiancai.zhong
  */
@@ -40,6 +41,8 @@ public class NacosConfigListenerConfig {
     ApplicationRunner nacosConfigListenerRunner(NacosConfigManager nacosConfigManager) {
         return args -> {
             ConfigService configService = nacosConfigManager.getConfigService();
+            log.info("Nacos 配置监听器注册成功，dataId={}, group={}", activeProfile, applicationName);
+
             configService.addListener(activeProfile, applicationName, new Listener() {
                 @Override
                 public Executor getExecutor() {
@@ -48,11 +51,10 @@ public class NacosConfigListenerConfig {
 
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    log.info("监听到 Nacos 配置变更，dataId={}, group={}", activeProfile, applicationName);
-                    log.info("变更内容：{}", configInfo);
+                    log.info("Nacos 配置变更通知 ==> dataId={}, group={}", activeProfile, applicationName);
+                    // todo: 如果启用了邮件通知则发送邮件通知，否则不打印日志，不做其他的处理
                 }
             });
-            log.info("Nacos 配置监听器注册成功，dataId={}, group={}", activeProfile, applicationName);
         };
     }
 }
