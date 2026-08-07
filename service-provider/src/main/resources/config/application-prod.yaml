@@ -13,7 +13,6 @@ spring:
   config:
     import:
       - nacos:prod?group=service-provider&namespace=public&refreshEnabled=true
-      - nacos:pub?group=service-provider&namespace=public&refreshEnabled=true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://192.168.100.128:3306/spring_cloud_alibaba_prod?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
