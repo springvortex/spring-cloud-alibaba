@@ -16,13 +16,29 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 - 聚合下游服务的 Swagger API 文档
 - 通过 Nacos 进行动态路由配置
 
+## 接口
+
+### 系统信息
+
+| 方法 | 路径           | 说明                         |
+|------|----------------|------------------------------|
+| GET  | `/system/info` | 查询项目构建元数据与运行环境 |
+
+## SpringDoc 分组
+
+| 分组           | 路径匹配        |
+|----------------|-----------------|
+| 01-系统信息    | `/system/**`    |
+
 ## 包结构
 
 ```
 com.zjc.gateway
-├── GatewayApplication        启动类
-└── config
-    └── OpenApiConfig         SpringDoc 文档元信息
+├── GatewayApplication              启动类
+├── config
+│   └── OpenApiConfig               SpringDoc 文档元信息
+└── controller
+    └── SystemInfoController        系统信息接口
 ```
 
 ## 路由配置
@@ -45,8 +61,14 @@ springdoc:
         url: /service-mail/v3/api-docs
 ```
 
+## 构建信息
+
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
+供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+
 ## 依赖
 
+- service-common（DTO、统一响应）
 - spring-cloud-starter-gateway-server-webflux
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）

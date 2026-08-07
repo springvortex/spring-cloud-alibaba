@@ -10,7 +10,7 @@
 | 服务名     | service-provider                      |
 | Swagger UI | http://localhost:9001/swagger-ui.html |
 
-## 业务模块
+## 接口
 
 ### 用户管理
 
@@ -51,20 +51,36 @@
 |------|---------|---------------------------------------------------|
 | GET  | `/port` | 返回当前实例端口，供 consumer 通过 Feign 验证链路 |
 
+### 系统信息
+
+| 方法 | 路径           | 说明                                               |
+|------|----------------|----------------------------------------------------|
+| GET  | `/system/info` | 查询项目构建元数据与运行环境信息                   |
+
+## SpringDoc 分组
+
+| 分组           | 路径匹配        |
+|----------------|-----------------|
+| 01-用户管理    | `/user/**`      |
+| 02-商品管理    | `/goods/**`     |
+| 03-订单管理    | `/order/**`     |
+| 04-连通性测试  | `/port`         |
+| 05-系统信息    | `/system/**`    |
+
 ## 包结构
 
 ```
 com.zjc.provider
-├── ProviderApplication        启动类
+├── ProviderApplication             启动类
 ├── config
-│   ├── AuditMetaObjectHandler 自动填充 createTime / updateTime
-│   ├── MybatisPlusConfig      分页插件
-│   ├── NacosConfigListenerConfig  Nacos 配置变更监听
-│   └── OpenApiConfig          SpringDoc 分组配置
-├── controller                 REST 接口
-├── entity                     数据库实体（User/Goods/Order/OrderDetail）
-├── mapper                     MyBatis-Plus Mapper
-└── service / impl             业务逻辑
+│   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime
+│   ├── MybatisPlusConfig           分页插件
+│   ├── NacosConfigListenerConfig   Nacos 配置变更监听
+│   └── OpenApiConfig               SpringDoc 分组配置
+├── controller                      REST 接口（User/Goods/Order/Test/SystemInfo）
+├── entity                          数据库实体（User/Goods/Order/OrderDetail）
+├── mapper                          MyBatis-Plus Mapper
+└── service / impl                  业务逻辑
 ```
 
 ## 配置说明
@@ -73,10 +89,15 @@ com.zjc.provider
 
 Nacos 配置位置：dataId=`dev`，group=`service-provider`
 
+## 构建信息
+
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
+供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+
 ## 依赖
 
 - service-common
-- spring-boot-starter-web
+- spring-boot-starter-web / actuator
 - mybatis-plus-spring-boot4-starter
 - mysql-connector-j
 - springdoc-openapi-starter-webmvc-ui

@@ -81,8 +81,8 @@ mvn clean install -pl service-provider -am -DskipTests
 
 ### Entity 与 DTO 分离
 
-Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。 对外传输统一使用 DTO（`com.zjc.common.dto`
-），放在 common 模块供所有服务依赖。
+Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。
+对外传输统一使用 DTO（`com.zjc.common.dto`），放在 common 模块供所有服务依赖。
 
 DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免数据库结构泄露到接口契约中。
 
@@ -107,8 +107,8 @@ generator.outputModule=service-provider
 
 ## 配置中心
 
-各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址）， 业务配置（数据源、MyBatis-Plus、SMTP
-等）存放在 Nacos。
+各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），
+业务配置（数据源、MyBatis-Plus、SMTP 等）存放在 Nacos。
 
 配置规则：
 
@@ -134,12 +134,21 @@ Nacos 地址：`127.0.0.1:8848`
 | service-mail     | `http://localhost:9004/swagger-ui.html` |
 | service-gateway  | `http://localhost:80/swagger-ui.html`   |
 
-网关支持聚合下游各服务的 API 文档，在 Nacos 的 `service-gateway` 配置中添加 `springdoc.swagger-ui.urls` 即可在网关
-Swagger UI 顶部下拉框切换查看。
+各模块 SpringDoc 分组按业务划分，Swagger UI 顶部下拉框可切换。
+网关支持聚合下游各服务的 API 文档，在 Nacos 的 `service-gateway` 配置中添加 `springdoc.swagger-ui.urls` 即可在网关 Swagger UI 顶部下拉框切换查看。
+
+## 系统信息
+
+所有业务模块（provider/consumer/gateway/admin/mail）均提供 `GET /system/info` 接口，
+返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring Boot 版本等）。
+
+构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成，
+未通过 Maven 构建时（如 IDE 直接运行）构建时间为当前时间，其余构建字段为 null。
 
 ## 单元测试
 
-项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL）， 通过 JaCoCo 自动生成覆盖率报告。
+项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL），
+通过 JaCoCo 自动生成覆盖率报告。
 
 ### 命名规范
 
@@ -149,14 +158,14 @@ Swagger UI 顶部下拉框切换查看。
 
 ### 测试覆盖范围
 
-| 模块             | 测试类                                                                                                                                                         | 用例数 | 覆盖率 |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------|
-| service-common   | `ApiResponseTest`                                                                                                                                              | 15     | 100%   |
-| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 33     | 95%    |
-| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest`                        | 8      | 89%    |
-| service-mail     | `MailSendServiceImplTest` `MailControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest`                                                            | 11     | -      |
-| service-gateway  | `GatewayApplicationTest`                                                                                                                                       | 1      | -      |
-| service-admin    | `AdminApplicationTest`                                                                                                                                         | 1      | -      |
+| 模块             | 测试类                                                                                                                                                         | 用例数 |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|
+| service-common   | `ApiResponseTest`                                                                                                                                              | 15     |
+| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `SystemInfoControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 36 |
+| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest` `SystemInfoControllerTest` | 11 |
+| service-mail     | `MailSendServiceImplTest` `MailControllerTest` `SystemInfoControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest`                                | 14     |
+| service-gateway  | `GatewayApplicationTest` `SystemInfoControllerTest`                                                                                                            | 4      |
+| service-admin    | `AdminApplicationTest` `SystemInfoControllerTest`                                                                                                              | 4      |
 
 ### 运行测试
 

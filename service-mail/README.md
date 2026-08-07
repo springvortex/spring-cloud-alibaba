@@ -12,11 +12,13 @@
 
 ## 接口
 
+### 邮件发送
+
 | 方法 | 路径         | 说明                                   |
 |------|--------------|----------------------------------------|
 | POST | `/mail/send` | 发送邮件，返回发送记录（含主键和状态） |
 
-### 请求参数（MailSendDTO）
+#### 请求参数（MailSendDTO）
 
 | 字段      | 类型    | 必填 | 说明                       |
 |-----------|---------|------|----------------------------|
@@ -29,7 +31,7 @@
 
 发件人和 SMTP 配置由邮件模块统一管理，调用方无需关心。
 
-### 其他模块调用方式
+#### 其他模块调用方式
 
 引入 service-common 依赖后，直接注入 `MailFeignApi`：
 
@@ -45,6 +47,19 @@ public void sendMail() {
     ApiResponse<MailLogDTO> resp = mailFeignApi.send(dto);
 }
 ```
+
+### 系统信息
+
+| 方法 | 路径           | 说明                         |
+|------|----------------|------------------------------|
+| GET  | `/system/info` | 查询项目构建元数据与运行环境 |
+
+## SpringDoc 分组
+
+| 分组           | 路径匹配        |
+|----------------|-----------------|
+| 01-邮件服务    | `/mail/**`      |
+| 02-系统信息    | `/system/**`    |
 
 ## 发送流程
 
@@ -77,22 +92,23 @@ public void sendMail() {
 
 ```
 com.zjc.mail
-├── MailApplication             启动类
+├── MailApplication                 启动类
 ├── config
-│   ├── AuditMetaObjectHandler  自动填充 createTime / updateTime
-│   ├── MybatisPlusConfig       分页插件
-│   └── OpenApiConfig           SpringDoc 分组配置
+│   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime
+│   ├── MybatisPlusConfig           分页插件
+│   └── OpenApiConfig               SpringDoc 分组配置
 ├── controller
-│   └── MailController          邮件发送 REST 接口
+│   ├── MailController              邮件发送 REST 接口
+│   └── SystemInfoController        系统信息接口
 ├── entity
-│   └── MailLog                 邮件记录实体（映射 t_mail_log）
+│   └── MailLog                     邮件记录实体（映射 t_mail_log）
 ├── mapper
-│   └── MailLogMapper           MyBatis-Plus Mapper
+│   └── MailLogMapper               MyBatis-Plus Mapper
 └── service / impl
-    ├── MailSendService         发送业务
-    ├── MailLogService          记录管理
+    ├── MailSendService             发送业务
+    ├── MailLogService              记录管理
     └── impl
-        ├── MailSendServiceImpl 发送实现（校验、入库、发送、状态更新）
+        ├── MailSendServiceImpl     发送实现（校验、入库、发送、状态更新）
         └── MailLogServiceImpl
 ```
 
@@ -119,10 +135,15 @@ spring:
             enable: true
 ```
 
+## 构建信息
+
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
+供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+
 ## 依赖
 
 - service-common
-- spring-boot-starter-web
+- spring-boot-starter-web / actuator
 - spring-boot-starter-mail
 - mybatis-plus-spring-boot4-starter
 - mysql-connector-j

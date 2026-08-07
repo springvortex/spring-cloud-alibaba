@@ -25,7 +25,8 @@ com.zjc.common
 │   ├── OrderDTO        订单（含明细列表）
 │   ├── OrderDetailDTO  订单明细
 │   ├── MailSendDTO     邮件发送请求
-│   └── MailLogDTO      邮件发送记录响应
+│   ├── MailLogDTO      邮件发送记录响应
+│   └── SystemInfoDTO   系统信息（构建元数据 + 运行环境）
 └── web
     └── ApiResponse     统一响应封装
 ```
@@ -63,6 +64,12 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 | `MailFeignApi` | service-mail     | `POST /mail/send` | 发送邮件                               |
 | `TestApi`      | service-provider | `GET /port`       | 获取 provider 实例端口，验证链路连通性 |
 
+## SystemInfoDTO
+
+所有业务模块的 `/system/info` 接口统一返回此 DTO，包含构建元数据（projectName、version、buildTime 等）
+和运行环境信息（javaVersion、osName、springBootVersion 等）。
+
 ## 依赖
 
-该模块不打包为可执行 Spring Boot 应用，仅作为 jar 供其他模块引入。 源码会通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。
+该模块不打包为可执行 Spring Boot 应用，仅作为 jar 供其他模块引入。
+源码会通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。

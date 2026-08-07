@@ -33,25 +33,40 @@
 |------|-----------|--------------------------------------------------|
 | GET  | `/config` | 返回 Nacos 动态配置 `demo.msg:pub.name` 拼接结果 |
 
+### 系统信息
+
+| 方法 | 路径           | 说明                         |
+|------|----------------|------------------------------|
+| GET  | `/system/info` | 查询项目构建元数据与运行环境 |
+
+## SpringDoc 分组
+
+| 分组           | 路径匹配        |
+|----------------|-----------------|
+| 01-用户消费    | `/consumer/**`  |
+| 02-Feign测试   | `/feign/**`     |
+| 03-配置测试    | `/config`       |
+| 04-系统信息    | `/system/**`    |
+
 ## 包结构
 
 ```
 com.zjc.consumer
-├── ConsumerApplication        启动类（开启 @EnableFeignClients）
+├── ConsumerApplication              启动类（开启 @EnableFeignClients）
 ├── config
-│   └── OpenApiConfig          SpringDoc 分组配置
-├── controller                 REST 接口
+│   └── OpenApiConfig                SpringDoc 分组配置
+├── controller                       REST 接口（UserConsumer/TessFeign/TestConfig/SystemInfo）
 ├── feign
-│   ├── UserFeignClient        用户 Feign 客户端
+│   ├── UserFeignClient              用户 Feign 客户端
 │   └── factory
-│       └── UserFeignFallbackFactory  降级工厂
-└── service / impl             FeignService 封装
+│       └── UserFeignFallbackFactory 降级工厂
+└── service / impl                   FeignService 封装
 ```
 
 ## Feign 降级机制
 
-`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback： 当 provider 不可用时，自动返回兜底数据，上层 Controller
-无需 try-catch。
+`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback：
+当 provider 不可用时，自动返回兜底数据，上层 Controller 无需 try-catch。
 
 ## 配置说明
 
@@ -69,6 +84,11 @@ spring:
             connect-timeout: 5000
             read-timeout: 10000
 ```
+
+## 构建信息
+
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
+供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 
