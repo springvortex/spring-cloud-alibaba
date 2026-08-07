@@ -38,7 +38,18 @@ public class OpenApiConfig {
     public GroupedOpenApi mailApi() {
         return GroupedOpenApi.builder()
                 .group("01-邮件服务")
-                .pathsToMatch("/mail/**")
+               .pathsToMatch("/mail/**")
+               .build();
+   }
+
+    /**
+     * 系统信息分组。
+     */
+    @Bean
+    public GroupedOpenApi systemApi() {
+        return GroupedOpenApi.builder()
+                .group("02-系统信息")
+                .pathsToMatch("/system/**")
                 .build();
     }
 

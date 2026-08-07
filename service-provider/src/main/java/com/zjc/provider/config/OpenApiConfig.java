@@ -72,13 +72,24 @@ public class OpenApiConfig {
     }
 
     /**
-     * 连通性测试分组。
-     */
+    * 连通性测试分组。
+    */
     @Bean
     public GroupedOpenApi testApi() {
         return GroupedOpenApi.builder()
                 .group("04-连通性测试")
                 .pathsToMatch("/port")
+                .build();
+    }
+
+    /**
+     * 系统信息分组。
+     */
+    @Bean
+    public GroupedOpenApi systemApi() {
+        return GroupedOpenApi.builder()
+                .group("05-系统信息")
+                .pathsToMatch("/system/**")
                 .build();
     }
 

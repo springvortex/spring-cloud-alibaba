@@ -43,6 +43,17 @@ public class OpenApiConfig {
     }
 
     /**
+     * 系统信息分组。
+     */
+    @Bean
+    public GroupedOpenApi systemApi() {
+        return GroupedOpenApi.builder()
+                .group("02-系统信息")
+                .pathsToMatch("/system/**")
+                .build();
+    }
+
+    /**
      * 文档元信息。
      */
     @Bean
