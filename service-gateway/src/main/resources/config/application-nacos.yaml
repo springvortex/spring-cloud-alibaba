@@ -12,4 +12,4 @@ spring:
         password: nacos
   config:
     import:
-      - nacos:prod?group=service-admin&namespace=public&refreshEnabled=true
+      - nacos:${spring.profiles.active}?group=${spring.application.name}&namespace=public&refreshEnabled=true

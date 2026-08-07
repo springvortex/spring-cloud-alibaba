@@ -6,3 +6,5 @@ spring:
     name: service-gateway
   profiles:
     active: dev
+    include:
+      - nacos

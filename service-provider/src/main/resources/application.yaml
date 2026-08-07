@@ -6,3 +6,5 @@ spring:
     name: service-provider
   profiles:
     active: dev
+    include:
+      - nacos

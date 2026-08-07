@@ -6,3 +6,5 @@ spring:
     name: service-admin
   profiles:
     active: dev
+    include:
+      - nacos

@@ -6,3 +6,5 @@ spring:
     name: service-consumer
   profiles:
     active: dev
+    include:
+      - nacos
