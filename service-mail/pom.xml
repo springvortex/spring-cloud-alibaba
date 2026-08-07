@@ -10,10 +10,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>service-admin</artifactId>
+    <artifactId>service-mail</artifactId>
 
-    <name>Service Admin</name>
-    <description>管理端</description>
+    <name>Service Mail</name>
+    <description>邮件服务，提供统一收发邮件能力，记录入库</description>
 
     <dependencies>
         <!--nacos-discovery-->
@@ -26,13 +26,13 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
-        <!-- 引入自己定义的api通用包 -->
+        <!-- 引入公共模块 -->
         <dependency>
             <groupId>com.zjc</groupId>
             <artifactId>service-common</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <!--SpringBoot通用依赖模块-->
+        <!--SpringBoot Web-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -41,23 +41,42 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- 邮件 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
         <!--lombok-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-       <!--test-->
+        <!--test-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        <!-- MySQL 驱动 -->
        <dependency>
-           <groupId>org.springframework.boot</groupId>
-           <artifactId>spring-boot-starter-test</artifactId>
-           <scope>test</scope>
+           <groupId>com.mysql</groupId>
+           <artifactId>mysql-connector-j</artifactId>
+           <scope>runtime</scope>
        </dependency>
-       <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
-       <dependency>
-           <groupId>org.springdoc</groupId>
-           <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-       </dependency>
-   </dependencies>
+        <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

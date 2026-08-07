@@ -62,11 +62,16 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
-        <!-- Caffeine: Spring Cloud LoadBalancer 推荐的负载均衡缓存实现 -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
-    </dependencies>
+       <!-- Caffeine: Spring Cloud LoadBalancer 推荐的负载均衡缓存实现 -->
+       <dependency>
+           <groupId>com.github.ben-manes.caffeine</groupId>
+           <artifactId>caffeine</artifactId>
+       </dependency>
+       <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
+       <dependency>
+           <groupId>org.springdoc</groupId>
+           <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+       </dependency>
+   </dependencies>
 
 </project>

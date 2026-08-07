@@ -1,6 +1,8 @@
 package com.zjc.provider.controller;
 
 import com.zjc.common.web.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
+@Tag(name = "服务连通性测试", description = "返回实例端口，供 consumer 通过 Feign 验证链路是否通畅")
 public class TestController {
 
     @Value("${server.port}")
@@ -26,6 +29,7 @@ public class TestController {
      *
      * @return 端口号字符串，封装在统一响应体中
      */
+    @Operation(summary = "获取当前实例监听端口")
     @GetMapping("/port")
     public ApiResponse<String> getServerPort() {
         log.info("port: {}", port);

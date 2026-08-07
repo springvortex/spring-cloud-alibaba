@@ -1,6 +1,8 @@
 package com.zjc.consumer.controller;
 
 import com.zjc.common.web.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RefreshScope
+@Tag(name = "Nacos配置测试", description = "验证 Nacos 配置中心的读取与热更新能力")
 public class TestConfigController {
 
     /**
@@ -38,6 +41,7 @@ public class TestConfigController {
      *
      * @return {@code msg:pub} 拼接字符串
      */
+    @Operation(summary = "获取 Nacos 动态配置值")
     @GetMapping("/config")
     public ApiResponse<String> getMsg() {
         return ApiResponse.success(msg + ":" + pub);
