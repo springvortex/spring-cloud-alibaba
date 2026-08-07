@@ -50,12 +50,18 @@
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
-        <!-- Jakarta Validation 校验注解 -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-        <!-- 测试依赖 -->
+       <!-- Jakarta Validation 校验注解 -->
+       <dependency>
+           <groupId>jakarta.validation</groupId>
+           <artifactId>jakarta.validation-api</artifactId>
+       </dependency>
+       <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
+       <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-configuration-processor</artifactId>
+           <scope>provided</scope>
+       </dependency>
+       <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

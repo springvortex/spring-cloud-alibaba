@@ -77,6 +77,12 @@
            <groupId>org.springdoc</groupId>
            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
        </dependency>
+       <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
+       <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-configuration-processor</artifactId>
+           <scope>provided</scope>
+       </dependency>
    </dependencies>
  
    <build>

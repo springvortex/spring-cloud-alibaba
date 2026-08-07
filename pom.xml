@@ -100,12 +100,18 @@
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>3.1.0</version>
             </dependency>
-<!-- Swagger 注解（供 common 模块 DTO 使用） -->
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations-jakarta</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
+           <!-- Swagger 注解（供 common 模块 DTO 使用） -->
+           <dependency>
+               <groupId>io.swagger.core.v3</groupId>
+               <artifactId>swagger-annotations-jakarta</artifactId>
+               <version>${swagger.version}</version>
+           </dependency>
+           <!-- Spring Boot 配置元数据处理器（@ConfigurationProperties 自动补全） -->
+           <dependency>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-configuration-processor</artifactId>
+               <version>${spring-boot.version}</version>
+           </dependency>
 
         </dependencies>
     </dependencyManagement>
