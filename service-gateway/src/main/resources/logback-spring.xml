@@ -28,7 +28,6 @@
 
     <!-- 时间滚动输出 level为 DEBUG 日志 -->
     <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/app_log_debug.log</file>
         <encoder>
             <Pattern>${FILE_LOG_PATTERN}</Pattern>
             <charset>UTF-8</charset>
@@ -48,7 +47,6 @@
 
     <!-- 时间滚动输出 level为 INFO 日志（仅INFO） -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/app_log_info.log</file>
         <encoder>
             <Pattern>${FILE_LOG_PATTERN}</Pattern>
             <charset>UTF-8</charset>
@@ -69,7 +67,6 @@
 
     <!-- 时间滚动输出 只打印 WARN 日志 -->
     <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/app_log_warn.log</file>
         <encoder>
             <Pattern>${FILE_LOG_PATTERN}</Pattern>
             <charset>UTF-8</charset>
@@ -89,7 +86,6 @@
 
     <!-- 时间滚动输出 只打印 ERROR 日志 -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/app_log_error.log</file>
         <encoder>
             <Pattern>${FILE_LOG_PATTERN}</Pattern>
             <charset>UTF-8</charset>
