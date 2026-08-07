@@ -4,15 +4,20 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * SpringDoc OpenAPI 文档配置（WebFlux）。
  *
  * <p>网关模块基于 Spring Cloud Gateway（WebFlux），使用
  * {@code springdoc-openapi-starter-webflux-ui} 提供 Swagger UI。
- * 若需聚合下游各服务的 API 文档，可在 Nacos 配置中添加：
+ *
+ * <p>若需聚合下游各服务的 API 文档，在 Nacos 的 {@code service-gateway} 配置中添加：
  * <pre>{@code
  * springdoc:
  *   swagger-ui:
@@ -36,12 +41,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    @Value("${server.port}")
+    private String port;
+
     /**
      * 文档元信息。
      */
     @Bean
     public OpenAPI openAPI() {
+        Server server = new Server()
+                .url("http://localhost:" + port)
+                .description("网关入口");
         return new OpenAPI()
+                .servers(List.of(server))
                 .info(new Info()
                         .title("Service Gateway API")
                         .description("网关接口文档：路由、聚合下游服务 API")

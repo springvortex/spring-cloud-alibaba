@@ -4,9 +4,13 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * SpringDoc OpenAPI 文档配置。
@@ -16,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
  *   <li>用户管理：{@code /user/**}</li>
  *   <li>商品管理：{@code /goods/**}</li>
  *   <li>订单管理：{@code /order/**}</li>
+ *   <li>连通性测试：{@code /port}</li>
  * </ul>
  *
  * <p>访问路径：
@@ -29,6 +34,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class OpenApiConfig {
+
+    @Value("${server.port}")
+    private String port;
 
     /**
      * 用户管理分组。
@@ -64,11 +72,26 @@ public class OpenApiConfig {
     }
 
     /**
+     * 连通性测试分组。
+     */
+    @Bean
+    public GroupedOpenApi testApi() {
+        return GroupedOpenApi.builder()
+                .group("04-连通性测试")
+                .pathsToMatch("/port")
+                .build();
+    }
+
+    /**
      * 文档元信息，所有分组共享。
      */
     @Bean
     public OpenAPI openAPI() {
+        Server server = new Server()
+                .url("http://localhost:" + port)
+                .description("本地开发环境");
         return new OpenAPI()
+                .servers(List.of(server))
                 .info(new Info()
                         .title("Service Provider API")
                         .description("服务提供者接口文档：用户、商品、订单管理")

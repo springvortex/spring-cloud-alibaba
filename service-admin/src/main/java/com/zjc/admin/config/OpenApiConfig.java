@@ -4,9 +4,13 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * SpringDoc OpenAPI 文档配置。
@@ -24,6 +28,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    @Value("${server.port}")
+    private String port;
+
     /**
      * 管理端全量分组，匹配 {@code /admin/**} 下所有接口。
      */
@@ -31,7 +38,7 @@ public class OpenApiConfig {
     public GroupedOpenApi adminApi() {
         return GroupedOpenApi.builder()
                 .group("01-管理端")
-                .pathsToMatch("/admin/**")
+                .pathsToMatch("/**")
                 .build();
     }
 
@@ -40,7 +47,11 @@ public class OpenApiConfig {
      */
     @Bean
     public OpenAPI openAPI() {
+        Server server = new Server()
+                .url("http://localhost:" + port)
+                .description("本地开发环境");
         return new OpenAPI()
+                .servers(List.of(server))
                 .info(new Info()
                         .title("Service Admin API")
                         .description("管理端接口文档")
