@@ -4,10 +4,10 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 
 ## 基本信息
 
-| 项 | 值 |
-|----|-----|
-| 端口 | 80 |
-| 服务名 | service-gateway |
+| 项         | 值                                  |
+|------------|-------------------------------------|
+| 端口       | 80                                  |
+| 服务名     | service-gateway                     |
 | Swagger UI | http://localhost:80/swagger-ui.html |
 
 ## 职责

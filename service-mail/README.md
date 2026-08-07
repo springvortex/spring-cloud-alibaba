@@ -4,28 +4,28 @@
 
 ## 基本信息
 
-| 项 | 值 |
-|----|-----|
-| 端口 | 9004 |
-| 服务名 | service-mail |
+| 项         | 值                                    |
+|------------|---------------------------------------|
+| 端口       | 9004                                  |
+| 服务名     | service-mail                          |
 | Swagger UI | http://localhost:9004/swagger-ui.html |
 
 ## 接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
+| 方法 | 路径         | 说明                                   |
+|------|--------------|----------------------------------------|
 | POST | `/mail/send` | 发送邮件，返回发送记录（含主键和状态） |
 
 ### 请求参数（MailSendDTO）
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| toEmails | String | 是 | 收件人，多个用英文逗号分隔 |
-| ccEmails | String | 否 | 抄送人，多个用英文逗号分隔 |
-| bccEmails | String | 否 | 密送人，多个用英文逗号分隔 |
-| subject | String | 是 | 邮件主题 |
-| content | String | 是 | 邮件正文 |
-| isHtml | Boolean | 否 | 是否 HTML 格式，默认 false |
+| 字段      | 类型    | 必填 | 说明                       |
+|-----------|---------|------|----------------------------|
+| toEmails  | String  | 是   | 收件人，多个用英文逗号分隔 |
+| ccEmails  | String  | 否   | 抄送人，多个用英文逗号分隔 |
+| bccEmails | String  | 否   | 密送人，多个用英文逗号分隔 |
+| subject   | String  | 是   | 邮件主题                   |
+| content   | String  | 是   | 邮件正文                   |
+| isHtml    | Boolean | 否   | 是否 HTML 格式，默认 false |
 
 发件人和 SMTP 配置由邮件模块统一管理，调用方无需关心。
 
@@ -57,21 +57,21 @@ public void sendMail() {
 
 `t_mail_log` 邮件发送记录表：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| mail_id | bigint | 主键，雪花算法生成 |
-| from_email | varchar | 发件人 |
-| to_emails | varchar | 收件人（逗号分隔） |
-| cc_emails | varchar | 抄送人 |
-| bcc_emails | varchar | 密送人 |
-| subject | varchar | 邮件主题 |
-| content | text | 邮件正文 |
-| is_html | tinyint | 是否 HTML（1是 0否） |
-| status | tinyint | 发送状态（0待发 1成功 2失败） |
-| error_msg | varchar | 失败原因 |
-| is_deleted | tinyint | 逻辑删除 |
-| create_time | datetime | 创建时间 |
-| update_time | datetime | 更新时间 |
+| 字段        | 类型     | 说明                          |
+|-------------|----------|-------------------------------|
+| mail_id     | bigint   | 主键，雪花算法生成            |
+| from_email  | varchar  | 发件人                        |
+| to_emails   | varchar  | 收件人（逗号分隔）            |
+| cc_emails   | varchar  | 抄送人                        |
+| bcc_emails  | varchar  | 密送人                        |
+| subject     | varchar  | 邮件主题                      |
+| content     | text     | 邮件正文                      |
+| is_html     | tinyint  | 是否 HTML（1是 0否）          |
+| status      | tinyint  | 发送状态（0待发 1成功 2失败） |
+| error_msg   | varchar  | 失败原因                      |
+| is_deleted  | tinyint  | 逻辑删除                      |
+| create_time | datetime | 创建时间                      |
+| update_time | datetime | 更新时间                      |
 
 ## 包结构
 

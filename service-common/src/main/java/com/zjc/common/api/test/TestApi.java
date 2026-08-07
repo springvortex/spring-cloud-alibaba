@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  *
  * @author jiancai.zhong
  */
-@FeignClient(value = "service-provider",contextId = "testFeignApi")
+@FeignClient(value = "service-provider", contextId = "testFeignApi")
 public interface TestApi {
 
     /**

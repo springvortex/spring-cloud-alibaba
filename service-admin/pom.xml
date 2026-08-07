@@ -47,17 +47,17 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-       <!--test-->
-       <dependency>
-           <groupId>org.springframework.boot</groupId>
-           <artifactId>spring-boot-starter-test</artifactId>
-           <scope>test</scope>
-       </dependency>
-       <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
-       <dependency>
-           <groupId>org.springdoc</groupId>
-           <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-       </dependency>
-   </dependencies>
+        <!--test-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -3,7 +3,6 @@ package com.zjc.mail.controller;
 import com.zjc.common.dto.MailLogDTO;
 import com.zjc.common.dto.MailSendDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.mail.service.MailLogService;
 import com.zjc.mail.service.MailSendService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

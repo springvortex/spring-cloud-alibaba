@@ -4,10 +4,10 @@
 
 ## 基本信息
 
-| 项 | 值 |
-|----|-----|
-| 端口 | 9003 |
-| 服务名 | service-admin |
+| 项         | 值                                    |
+|------------|---------------------------------------|
+| 端口       | 9003                                  |
+| 服务名     | service-admin                         |
 | Swagger UI | http://localhost:9003/swagger-ui.html |
 
 ## 包结构
@@ -21,8 +21,7 @@ com.zjc.admin
 
 ## 配置说明
 
-本地仅保留引导配置，业务配置在 Nacos。
-Nacos 配置位置：dataId=`dev`，group=`service-admin`
+本地仅保留引导配置，业务配置在 Nacos。 Nacos 配置位置：dataId=`dev`，group=`service-admin`
 
 ## 依赖
 

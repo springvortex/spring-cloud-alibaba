@@ -4,19 +4,19 @@
 
 ## 技术栈
 
-| 分类 | 选型 | 版本 |
-|------|------|------|
-| 语言 | Java | 21 |
-| 基础框架 | Spring Boot | 4.0.0 |
-| 微服务框架 | Spring Cloud | 2025.1.0 |
-| 注册/配置中心 | Spring Cloud Alibaba Nacos | 2025.1.0.0 |
-| ORM | MyBatis-Plus | 3.5.17 |
-| 数据库 | MySQL | - |
-| 网关 | Spring Cloud Gateway | - |
-| 接口文档 | SpringDoc OpenAPI（Swagger UI） | 3.1.0 |
-| 工具库 | Hutool | 5.8.46 |
-| 测试 | JUnit 5 + Mockito + AssertJ | - |
-| 覆盖率 | JaCoCo | 0.8.12 |
+| 分类          | 选型                            | 版本       |
+|---------------|---------------------------------|------------|
+| 语言          | Java                            | 21         |
+| 基础框架      | Spring Boot                     | 4.0.0      |
+| 微服务框架    | Spring Cloud                    | 2025.1.0   |
+| 注册/配置中心 | Spring Cloud Alibaba Nacos      | 2025.1.0.0 |
+| ORM           | MyBatis-Plus                    | 3.5.17     |
+| 数据库        | MySQL                           | -          |
+| 网关          | Spring Cloud Gateway            | -          |
+| 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
+| 工具库        | Hutool                          | 5.8.46     |
+| 测试          | JUnit 5 + Mockito + AssertJ     | -          |
+| 覆盖率        | JaCoCo                          | 0.8.12     |
 
 ## 模块说明
 
@@ -81,8 +81,8 @@ mvn clean install -pl service-provider -am -DskipTests
 
 ### Entity 与 DTO 分离
 
-Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。
-对外传输统一使用 DTO（`com.zjc.common.dto`），放在 common 模块供所有服务依赖。
+Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。 对外传输统一使用 DTO（`com.zjc.common.dto`
+），放在 common 模块供所有服务依赖。
 
 DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免数据库结构泄露到接口契约中。
 
@@ -107,10 +107,11 @@ generator.outputModule=service-provider
 
 ## 配置中心
 
-各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），
-业务配置（数据源、MyBatis-Plus、SMTP 等）存放在 Nacos。
+各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址）， 业务配置（数据源、MyBatis-Plus、SMTP
+等）存放在 Nacos。
 
 配置规则：
+
 - **dataId**：激活环境名（如 `dev`、`test`、`prod`）
 - **group**：服务名（如 `service-provider`、`service-mail`）
 - **namespace**：`public`
@@ -125,20 +126,20 @@ Nacos 地址：`127.0.0.1:8848`
 
 所有业务模块均集成了 SpringDoc OpenAPI，启动后访问各模块的 Swagger UI：
 
-| 模块 | 地址 |
-|------|------|
+| 模块             | 地址                                    |
+|------------------|-----------------------------------------|
 | service-provider | `http://localhost:9001/swagger-ui.html` |
 | service-consumer | `http://localhost:9002/swagger-ui.html` |
-| service-admin | `http://localhost:9003/swagger-ui.html` |
-| service-mail | `http://localhost:9004/swagger-ui.html` |
-| service-gateway | `http://localhost:80/swagger-ui.html` |
+| service-admin    | `http://localhost:9003/swagger-ui.html` |
+| service-mail     | `http://localhost:9004/swagger-ui.html` |
+| service-gateway  | `http://localhost:80/swagger-ui.html`   |
 
-网关支持聚合下游各服务的 API 文档，在 Nacos 的 `service-gateway` 配置中添加 `springdoc.swagger-ui.urls` 即可在网关 Swagger UI 顶部下拉框切换查看。
+网关支持聚合下游各服务的 API 文档，在 Nacos 的 `service-gateway` 配置中添加 `springdoc.swagger-ui.urls` 即可在网关
+Swagger UI 顶部下拉框切换查看。
 
 ## 单元测试
 
-项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL），
-通过 JaCoCo 自动生成覆盖率报告。
+项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL）， 通过 JaCoCo 自动生成覆盖率报告。
 
 ### 命名规范
 
@@ -148,14 +149,14 @@ Nacos 地址：`127.0.0.1:8848`
 
 ### 测试覆盖范围
 
-| 模块 | 测试类 | 用例数 | 覆盖率 |
-|------|--------|--------|--------|
-| service-common | `ApiResponseTest` | 15 | 100% |
-| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 33 | 95% |
-| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest` | 8 | 89% |
-| service-mail | `MailSendServiceImplTest` `MailControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest` | 11 | - |
-| service-gateway | `GatewayApplicationTest` | 1 | - |
-| service-admin | `AdminApplicationTest` | 1 | - |
+| 模块             | 测试类                                                                                                                                                         | 用例数 | 覆盖率 |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------|
+| service-common   | `ApiResponseTest`                                                                                                                                              | 15     | 100%   |
+| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 33     | 95%    |
+| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest`                        | 8      | 89%    |
+| service-mail     | `MailSendServiceImplTest` `MailControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest`                                                            | 11     | -      |
+| service-gateway  | `GatewayApplicationTest`                                                                                                                                       | 1      | -      |
+| service-admin    | `AdminApplicationTest`                                                                                                                                         | 1      | -      |
 
 ### 运行测试
 
@@ -173,13 +174,13 @@ mvn test -pl service-provider
 
 以用户接口为例（service-provider，端口 9001）：
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/user/{id}` | 查询单个用户 |
-| GET | `/user/list` | 查询全部用户 |
-| GET | `/user/page?current=1&size=10` | 分页查询 |
-| POST | `/user` | 新增用户 |
-| PUT | `/user` | 修改用户 |
-| DELETE | `/user/{id}` | 删除用户（逻辑删除） |
+| 方法   | 路径                           | 说明                 |
+|--------|--------------------------------|----------------------|
+| GET    | `/user/{id}`                   | 查询单个用户         |
+| GET    | `/user/list`                   | 查询全部用户         |
+| GET    | `/user/page?current=1&size=10` | 分页查询             |
+| POST   | `/user`                        | 新增用户             |
+| PUT    | `/user`                        | 修改用户             |
+| DELETE | `/user/{id}`                   | 删除用户（逻辑删除） |
 
 所有接口统一返回 `ApiResponse`，结构为 `success + code + message + data + timestamp`。

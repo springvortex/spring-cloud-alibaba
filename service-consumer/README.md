@@ -4,10 +4,10 @@
 
 ## 基本信息
 
-| 项 | 值 |
-|----|-----|
-| 端口 | 9002 |
-| 服务名 | service-consumer |
+| 项         | 值                                    |
+|------------|---------------------------------------|
+| 端口       | 9002                                  |
+| 服务名     | service-consumer                      |
 | Swagger UI | http://localhost:9002/swagger-ui.html |
 
 ## 接口
@@ -16,22 +16,22 @@
 
 通过 Feign 代理调用 provider 的用户接口，provider 不可用时自动降级。
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/consumer/user/{id}` | 远程查询用户（Feign + 降级演示） |
-| GET | `/consumer/user/list` | 远程查询用户列表 |
+| 方法 | 路径                  | 说明                             |
+|------|-----------------------|----------------------------------|
+| GET  | `/consumer/user/{id}` | 远程查询用户（Feign + 降级演示） |
+| GET  | `/consumer/user/list` | 远程查询用户列表                 |
 
 ### Feign 测试
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/feign/port` | 通过 Feign 远程获取 provider 端口 |
+| 方法 | 路径          | 说明                              |
+|------|---------------|-----------------------------------|
+| GET  | `/feign/port` | 通过 Feign 远程获取 provider 端口 |
 
 ### Nacos 配置测试
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/config` | 返回 Nacos 动态配置 `demo.msg:pub.name` 拼接结果 |
+| 方法 | 路径      | 说明                                             |
+|------|-----------|--------------------------------------------------|
+| GET  | `/config` | 返回 Nacos 动态配置 `demo.msg:pub.name` 拼接结果 |
 
 ## 包结构
 
@@ -50,8 +50,8 @@ com.zjc.consumer
 
 ## Feign 降级机制
 
-`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback：
-当 provider 不可用时，自动返回兜底数据，上层 Controller 无需 try-catch。
+`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback： 当 provider 不可用时，自动返回兜底数据，上层 Controller
+无需 try-catch。
 
 ## 配置说明
 
