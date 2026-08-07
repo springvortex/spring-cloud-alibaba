@@ -124,7 +124,7 @@ Nacos 地址：`127.0.0.1:8848`
 
 ## 接口文档
 
-所有业务模块均集成了 SpringDoc OpenAPI，启动后访问各模块的 Swagger UI：
+以下业务模块集成了 SpringDoc OpenAPI，启动后访问各模块的 Swagger UI：
 
 | 模块             | 地址                                    |
 |------------------|-----------------------------------------|
@@ -132,15 +132,16 @@ Nacos 地址：`127.0.0.1:8848`
 | service-consumer | `http://localhost:9002/swagger-ui.html` |
 | service-admin    | `http://localhost:9003/swagger-ui.html` |
 | service-mail     | `http://localhost:9004/swagger-ui.html` |
-| service-gateway  | `http://localhost:80/swagger-ui.html`   |
 
 各模块 SpringDoc 分组按业务划分，Swagger UI 顶部下拉框可切换。
-网关支持聚合下游各服务的 API 文档，在 Nacos 的 `service-gateway` 配置中添加 `springdoc.swagger-ui.urls` 即可在网关 Swagger UI 顶部下拉框切换查看。
+
+> **注意**：Gateway 作为纯路由网关，不集成接口文档，保持轻量。
 
 ## 系统信息
 
-所有业务模块（provider/consumer/gateway/admin/mail）均提供 `GET /system/info` 接口，
-返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring Boot 版本等）。
+以下业务模块提供 `GET /system/info` 接口，
+返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring Boot 版本等）：
+provider、consumer、admin、mail。
 
 构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成，
 未通过 Maven 构建时（如 IDE 直接运行）构建时间为当前时间，其余构建字段为 null。
@@ -164,8 +165,9 @@ Nacos 地址：`127.0.0.1:8848`
 | service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `SystemInfoControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 36 |
 | service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest` `SystemInfoControllerTest` | 11 |
 | service-mail     | `MailSendServiceImplTest` `MailControllerTest` `SystemInfoControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest`                                | 14     |
-| service-gateway  | `GatewayApplicationTest` `SystemInfoControllerTest`                                                                                                            | 4      |
 | service-admin    | `AdminApplicationTest` `SystemInfoControllerTest`                                                                                                              | 4      |
+
+> **注意**：Gateway 作为纯路由网关，不包含测试模块。
 
 ### 运行测试
 

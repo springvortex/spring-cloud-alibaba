@@ -4,77 +4,49 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 
 ## 基本信息
 
-| 项         | 值                                  |
-|------------|-------------------------------------|
-| 端口       | 80                                  |
-| 服务名     | service-gateway                     |
-| Swagger UI | http://localhost:80/swagger-ui.html |
+| 项     | 值              |
+|--------|-----------------|
+| 端口   | 80              |
+| 服务名 | service-gateway |
 
 ## 职责
 
 - 统一路由入口，将请求分发到下游各服务
-- 聚合下游服务的 Swagger API 文档
 - 通过 Nacos 进行动态路由配置
-
-## 接口
-
-### 系统信息
-
-| 方法 | 路径           | 说明                         |
-|------|----------------|------------------------------|
-| GET  | `/system/info` | 查询项目构建元数据与运行环境 |
-
-## SpringDoc 分组
-
-| 分组           | 路径匹配        |
-|----------------|-----------------|
-| 01-系统信息    | `/system/**`    |
+- 负载均衡（LoadBalancer + Caffeine 缓存）
 
 ## 包结构
 
 ```
 com.zjc.gateway
-├── GatewayApplication              启动类
-├── config
-│   └── OpenApiConfig               SpringDoc 文档元信息
-└── controller
-    └── SystemInfoController        系统信息接口
+└── GatewayApplication    启动类（@EnableDiscoveryClient）
 ```
 
 ## 路由配置
 
 路由规则在 Nacos 上配置，dataId=`dev`，group=`service-gateway`。
 
-## 聚合 API 文档
+## 配置说明
 
-如需在网关 Swagger UI 中聚合各下游服务的接口文档，在 Nacos 的 `service-gateway` 配置中添加：
+本地仅保留引导配置（端口、Nacos 地址），路由规则在 Nacos 中动态配置。
+Nacos 配置位置：dataId=`dev`，group=`service-gateway`
 
-```yaml
-springdoc:
-  swagger-ui:
-    urls:
-      - name: 服务提供者
-        url: /service-provider/v3/api-docs
-      - name: 服务消费者
-        url: /service-consumer/v3/api-docs
-      - name: 邮件服务
-        url: /service-mail/v3/api-docs
-```
+## 设计说明
 
-## 构建信息
+网关作为纯路由转发层，保持轻量，不集成以下功能：
 
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
-供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+- 不依赖 service-common（避免 WebMVC 与 WebFlux 冲突）
+- 不集成 SpringDoc / Swagger UI
+- 不包含测试模块
+- 不提供业务接口
 
 ## 依赖
 
-- service-common（DTO、统一响应）
 - spring-cloud-starter-gateway-server-webflux
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）
 - spring-cloud-starter-alibaba-nacos-discovery / config
-- springdoc-openapi-starter-webflux-ui
 
 ## 注意
 
-Gateway 基于 WebFlux，不能与 `spring-boot-starter-web`（WebMVC）共存。接口文档使用 WebFlux 版本的 SpringDoc。
+Gateway 基于 WebFlux，不能与 `spring-boot-starter-web`（WebMVC）共存。
