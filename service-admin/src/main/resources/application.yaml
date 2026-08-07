@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: service-consumer
+    name: service-admin
   profiles:
     active: dev
   cloud:
