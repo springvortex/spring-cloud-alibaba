@@ -10,6 +10,8 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+
 /**
  * 系统信息查询接口。
  *
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>构建元数据由 {@code spring-boot-maven-plugin} 的 {@code build-info} 目标
  * 在编译期生成到 {@code META-INF/build-info.properties}，
  * 未通过 Maven 构建时（如直接 IDE 运行）{@link BuildProperties} 为 null，
- * 此时仅返回运行环境信息。
+ * 此时构建时间为当前时间，其余构建字段为 null。
  *
  * @author jiancai.zhong
  */
@@ -27,17 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class SystemInfoController {
 
-    /**
-     * 构建属性，可能为 null（未通过 Maven build-info 构建时）。
-     */
     @Resource
     private BuildProperties buildProperties;
 
-    /**
-     * 查询系统信息，返回 pom 元数据 + 运行环境信息。
-     *
-     * @return 系统信息
-     */
     @Operation(summary = "查询系统信息")
     @GetMapping("/system/info")
     public ApiResponse<SystemInfoDTO> info() {
@@ -49,7 +43,10 @@ public class SystemInfoController {
             dto.setArtifact(buildProperties.getArtifact());
             dto.setGroup(buildProperties.getGroup());
             dto.setBuildTime(buildProperties.getTime() != null
-                    ? buildProperties.getTime().toString() : null);
+                    ? buildProperties.getTime().toString()
+                    : Instant.now().toString());
+        } else {
+            dto.setBuildTime(Instant.now().toString());
         }
         dto.setJavaVersion(System.getProperty("java.version"));
         dto.setJavaVendor(System.getProperty("java.vendor"));

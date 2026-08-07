@@ -78,7 +78,7 @@ class SystemInfoControllerTest {
         assertThat(resp.isSuccess()).isTrue();
         assertThat(resp.getData().getProjectName()).isNull();
         assertThat(resp.getData().getVersion()).isNull();
-        assertThat(resp.getData().getBuildTime()).isNull();
+        assertThat(resp.getData().getBuildTime()).isNotNull();
     }
 
     /**

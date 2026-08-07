@@ -5,15 +5,17 @@ import com.zjc.common.web.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.SpringBootVersion;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
 
 /**
  * 系统信息查询接口（WebFlux）。
  *
- * <p>展示 pom.xml 中的项目元数据（名称、描述、版本）以及运行环境信息。
+ * <p>展示 pom.xml 中的项目元数据以及运行环境信息。
  * Gateway 基于 WebFlux，{@code @RestController} 同样适用。
  *
  * @author jiancai.zhong
@@ -36,7 +38,10 @@ public class SystemInfoController {
             dto.setArtifact(buildProperties.getArtifact());
             dto.setGroup(buildProperties.getGroup());
             dto.setBuildTime(buildProperties.getTime() != null
-                    ? buildProperties.getTime().toString() : null);
+                    ? buildProperties.getTime().toString()
+                    : Instant.now().toString());
+        } else {
+            dto.setBuildTime(Instant.now().toString());
         }
         dto.setJavaVersion(System.getProperty("java.version"));
         dto.setJavaVendor(System.getProperty("java.vendor"));
