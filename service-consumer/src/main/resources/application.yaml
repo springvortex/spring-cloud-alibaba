@@ -6,6 +6,8 @@ spring:
     name: service-consumer
   profiles:
     active: dev
+    include:
+      - feign
   cloud:
     nacos:
       config:

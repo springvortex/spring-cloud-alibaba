@@ -1,0 +1,5 @@
+logging:
+  level:
+    # Feign 的请求日志只在 DEBUG 级别输出，必须把对应包开到 DEBUG
+    com.zjc.consumer.feign: debug
+    com.zjc.common.api: debug

@@ -5,7 +5,7 @@ import com.zjc.common.web.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@FeignClient(value = "service-provider")
+@FeignClient(value = "service-provider",contextId = "testFeignApi")
 public interface TestApi {
 
     @GetMapping("/port")
