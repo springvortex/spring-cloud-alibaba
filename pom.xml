@@ -43,6 +43,8 @@
         <bouncycastle.version>1.84</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.52</swagger.version>
+        <!-- JaCoCo 版本(支持 Java 21 字节码) -->
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -133,6 +135,29 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <!-- JaCoCo: 所有子模块自动继承，运行 mvn test 时生成覆盖率报告 -->
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
 </project>
