@@ -14,6 +14,8 @@
 | 数据库 | MySQL | - |
 | 网关 | Spring Cloud Gateway | - |
 | 工具库 | Hutool | 5.8.46 |
+| 测试 | JUnit 5 + Mockito + AssertJ | - |
+| 覆盖率 | JaCoCo | 0.8.12 |
 
 ## 模块说明
 
@@ -97,6 +99,39 @@ generator.outputModule=service-provider
 ```
 
 直接运行 `CodeGenerator#main` 即可生成，tinyint 字段统一生成 Integer 类型。
+
+## 单元测试
+
+项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL），
+通过 JaCoCo 自动生成覆盖率报告。
+
+### 命名规范
+
+- 测试类：`被测类名 + Test`，如 `UserControllerTest`
+- 测试方法：`test + 描述`，小驼峰命名，如 `testGetUserReturnsDto`
+- 每个测试方法均含 Javadoc 注释，说明验证目标
+
+### 测试覆盖范围
+
+| 模块 | 测试类 | 用例数 | 覆盖率 |
+|------|--------|--------|--------|
+| service-common | `ApiResponseTest` | 15 | 100% |
+| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 33 | 95% |
+| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest` | 8 | 89% |
+| service-gateway | `GatewayApplicationTest` | 1 | - |
+| service-admin | `AdminApplicationTest` | 1 | - |
+
+### 运行测试
+
+```bash
+# 运行全部测试并生成 JaCoCo 覆盖率报告
+mvn test
+
+# 单独运行某个模块的测试
+mvn test -pl service-provider
+```
+
+覆盖率报告生成在各模块 `target/site/jacoco/index.html`，浏览器打开即可查看。
 
 ## 配置中心
 
