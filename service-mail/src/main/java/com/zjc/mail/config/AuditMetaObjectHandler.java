@@ -5,6 +5,7 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * MyBatis-Plus 自动填充处理器。
@@ -21,14 +22,19 @@ import java.time.LocalDateTime;
 @Component
 public class AuditMetaObjectHandler implements MetaObjectHandler {
 
+    /**
+     * 业务时区，所有审计时间字段统一使用东八区
+     */
+    private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
+
     @Override
     public void insertFill(MetaObject metaObject) {
-        this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
-        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now(ZONE));
+        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now(ZONE));
     }
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now(ZONE));
     }
 }

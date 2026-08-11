@@ -10,6 +10,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.time.Instant;
 
 /**
@@ -39,9 +40,9 @@ public class SystemInfoController {
             dto.setGroup(buildProperties.getGroup());
             dto.setBuildTime(buildProperties.getTime() != null
                     ? buildProperties.getTime().toString()
-                    : Instant.now().toString());
+                    : Instant.now(Clock.systemUTC()).toString());
         } else {
-            dto.setBuildTime(Instant.now().toString());
+            dto.setBuildTime(Instant.now(Clock.systemUTC()).toString());
         }
         dto.setJavaVersion(System.getProperty("java.version"));
         dto.setJavaVendor(System.getProperty("java.vendor"));
