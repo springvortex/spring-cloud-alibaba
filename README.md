@@ -7,16 +7,16 @@
 | 分类          | 选型                            | 版本       |
 |---------------|---------------------------------|------------|
 | 语言          | Java                            | 21         |
-| 基础框架      | Spring Boot                     | 4.0.0      |
-| 微服务框架    | Spring Cloud                    | 2025.1.0   |
+| 基础框架      | Spring Boot                     | 4.1.0      |
+| 微服务框架    | Spring Cloud                    | 2025.1.2   |
 | 注册/配置中心 | Spring Cloud Alibaba Nacos      | 2025.1.0.0 |
 | ORM           | MyBatis-Plus                    | 3.5.17     |
 | 数据库        | MySQL                           | -          |
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
-| 工具库        | Hutool                          | 5.8.46     |
+| 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
-| 覆盖率        | JaCoCo                          | 0.8.12     |
+| 覆盖率        | JaCoCo                          | 0.8.15     |
 
 ## 模块说明
 
@@ -61,28 +61,231 @@ spring-cloud-alibaba
 3. `service-gateway`（可选，按需）
 4. `service-consumer` / `service-admin` / `service-mail`（按需）
 
-### 构建
+---
+
+## 打包
+
+项目采用 **Thin JAR + 外部 lib** 的打包方式：每个服务只打自身代码（约 260-300 KB），依赖 JAR 单独输出到 `lib/` 目录，实现 JAR 包与依赖分离。
+
+### 打包命令
 
 ```bash
-# 根目录构建全部模块
-mvn clean install -DskipTests
-
-# 单独构建某个模块（含依赖模块）
-mvn clean install -pl service-provider -am -DskipTests
+# 在项目根目录执行，构建全部模块
+mvn clean package -DskipTests
 ```
+
+打包后的输出结构：
+
+```
+build/
+├── service-admin/
+│   ├── service-admin-1.0.0.jar          # Thin JAR（自身代码 + Spring Boot Loader）
+│   └── lib/                             # 该服务所有 runtime 依赖（约 131 个 JAR）
+├── service-common/
+│   ├── service-common-1.0.0.jar         # 普通 JAR（公共库，不启动）
+│   └── lib/
+├── service-consumer/
+│   ├── service-consumer-1.0.0.jar
+│   └── lib/                             # 约 142 个 JAR
+├── service-gateway/
+│   ├── service-gateway-1.0.0.jar
+│   └── lib/                             # 约 112 个 JAR（WebFlux 栈，与其他服务隔离）
+├── service-mail/
+│   ├── service-mail-1.0.0.jar
+│   └── lib/                             # 约 159 个 JAR
+└── service-provider/
+    ├── service-provider-1.0.0.jar
+    └── lib/                             # 约 153 个 JAR
+```
+
+### 打包原理
+
+- **spring-boot-maven-plugin**：`repackage` 目标，`layout=ZIP`（PropertiesLauncher），`includes` 只含模块自身代码。thin JAR 通过 `-Dloader.path=lib` 从外部 lib 目录加载依赖
+- **maven-dependency-plugin**：`copy-dependencies` 目标，将所有 runtime 依赖复制到各服务的 `lib/` 目录
+- **每个服务独立 lib**：gateway 是 WebFlux 栈，其余服务是 Spring MVC 栈，依赖天然冲突，必须隔离
+
+> **注意**：`service-common` 是公共库模块，不执行 repackage（通过 `spring-boot.repackage.skip=true` 跳过），保持标准 JAR 供其他模块 Maven 依赖。部署时不需要拷贝 `build/service-common/`，它已经作为依赖打包在各服务的 `lib/` 中。
+
+### 配置位置
+
+所有打包配置都在父 `pom.xml` 的 `<plugins>` 中统一管理（非 pluginManagement），子模块自动继承，新建业务模块无需在 pom 中添加任何打包配置。
+
+---
+
+## 部署
+
+### 前提条件
+
+- JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
+- 服务器能访问 Nacos（注册中心 + 配置中心）和 MySQL
+- 应用配置（`application.yaml`）已打在 JAR 内，Nacos 上的业务配置启动时自动拉取
+
+### 需要拷贝的文件
+
+| 文件/目录          | 说明                                         |
+|--------------------|----------------------------------------------|
+| `service.bat`      | Windows 启动脚本                             |
+| `service.ps1`      | Windows 核心脚本（被 service.bat 调用）      |
+| `service.sh`       | macOS/Linux 启动脚本                         |
+| `build/`           | 全部服务目录（排除 `build/service-common/`） |
+
+部署后的目录结构：
+
+```
+deploy/
+├── service.bat              # Windows 脚本
+├── service.ps1
+├── service.sh               # macOS/Linux 脚本
+└── build/
+    ├── service-gateway/
+    │   ├── service-gateway-1.0.0.jar
+    │   └── lib/
+    ├── service-provider/
+    │   ├── service-provider-1.0.0.jar
+    │   └── lib/
+    ├── service-consumer/
+    │   ├── service-consumer-1.0.0.jar
+    │   └── lib/
+    ├── service-admin/
+    │   ├── service-admin-1.0.0.jar
+    │   └── lib/
+    └── service-mail/
+        ├── service-mail-1.0.0.jar
+        └── lib/
+```
+
+> 脚本和 `build/` 目录必须放在同一层级。脚本通过相对路径 `./build` 或 `.\build` 查找服务。
+
+### Windows 部署
+
+#### 1. 拷贝文件
+
+将 `service.bat`、`service.ps1` 和 `build/`（排除 `service-common`）拷贝到部署目录。
+
+#### 2. 确保 Java 可用
+
+```powershell
+java -version
+# 确认输出 Java 21
+```
+
+#### 3. 启动服务
+
+```bat
+rem 交互式菜单（双击 service.bat 也可以）
+service.bat
+
+rem 命令行直接操作
+service.bat start all                      rem 一键启动全部
+service.bat start service-provider          rem 启动单个服务
+service.bat stop service-provider           rem 停止单个服务
+service.bat restart service-gateway         rem 重启单个服务
+service.bat stop all                        rem 一键停止全部
+service.bat status                          rem 查看所有服务状态
+```
+
+> **注意**：PowerShell 中需要加 `.\` 前缀：`.\service.bat start all`。CMD 中直接 `service.bat start all` 即可。
+
+### macOS / Linux 部署
+
+#### 1. 拷贝文件
+
+将 `service.sh` 和 `build/`（排除 `service-common`）拷贝到部署目录。
+
+#### 2. 赋予脚本执行权限
+
+```bash
+chmod +x service.sh
+```
+
+#### 3. 确保 Java 可用
+
+```bash
+java -version
+# 确认输出 Java 21
+```
+
+#### 4. 启动服务
+
+```bash
+# 交互式菜单
+./service.sh
+
+# 命令行直接操作
+./service.sh start all                     # 一键启动全部
+./service.sh start service-provider         # 启动单个服务
+./service.sh stop service-provider          # 停止单个服务
+./service.sh restart service-gateway        # 重启单个服务
+./service.sh stop all                       # 一键停止全部
+./service.sh status                         # 查看所有服务状态
+```
+
+### 交互式菜单
+
+双击 `service.bat`（Windows）或执行 `./service.sh`（macOS/Linux）进入交互式菜单：
+
+```
+  ==================================================
+    Spring Cloud Alibaba - Service Manager
+  ==================================================
+
+  [1] service-admin          STOPPED
+  [2] service-consumer       STOPPED
+  [3] service-gateway        RUNNING  (PID: 31332)
+  [4] service-mail           STOPPED
+  [5] service-provider       RUNNING  (PID: 17552)
+
+  [a] Start all    [s] Stop all    [x] Restart all
+  [r] Refresh      [q] Quit
+```
+
+| 操作               | 输入                          |
+|--------------------|-------------------------------|
+| 启动全部服务       | `a`                           |
+| 停止全部服务       | `s`                           |
+| 重启全部服务       | `x`                           |
+| 启动/停止/重启单个 | 输入编号，进入子菜单操作      |
+| 刷新状态           | `r`                           |
+| 退出               | `q`                           |
+
+菜单自动扫描 `build/` 下的服务目录（排除 `service-common`），无需手动配置服务列表。
+
+### 进程与日志
+
+- **PID 文件**：`build/<service>/<service>.pid`，记录进程号，用于精确启停
+- **stdout 日志**：`build/<service>/<service>.out`
+- **stderr 日志**：`build/<service>/<service>.err`
+
+排查启动问题时，先看 `.err` 文件，再看 `.out` 文件末尾。
+
+### 部分部署
+
+生产环境如果只需要部分服务（如 gateway + provider），只需拷贝对应的 `build/<service>/` 目录，脚本自动扫描，菜单只显示已部署的服务。
+
+### Linux 端口注意事项
+
+Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），或在 Nacos 配置中心修改 `server.port`。
+
+### JVM 参数调整
+
+默认 JVM 参数 `-Xms256m -Xmx512m`，可在脚本顶部修改：
+
+- `service.ps1` 第 12 行：`$JVM_OPTS = "-Xms256m -Xmx512m"`
+- `service.sh` 第 11 行：`JVM_OPTS="-Xms256m -Xmx512m"`
+
+---
 
 ## 核心约定
 
 ### 分层职责
 
-- **Controller**：接收 HTTP 请求，调用 Service，负责 Entity→DTO 转换，对外只暴露 DTO
+- **Controller**：接收 HTTP 请求，调用 Service，负责 Entity->DTO 转换，对外只暴露 DTO
 - **Service**：继承 MyBatis-Plus 的 IService，承载业务逻辑，内部使用 Entity
 - **Mapper**：继承 BaseMapper，提供单表 CRUD
 
 ### Entity 与 DTO 分离
 
-Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。 对外传输统一使用 DTO（`com.zjc.common.dto`
-），放在 common 模块供所有服务依赖。
+Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。对外传输统一使用 DTO（`com.zjc.common.dto`），放在 common 模块供所有服务依赖。
 
 DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免数据库结构泄露到接口契约中。
 
@@ -107,8 +310,7 @@ generator.outputModule=service-provider
 
 ## 配置中心
 
-各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址）， 业务配置（数据源、MyBatis-Plus、SMTP
-等）存放在 Nacos。
+各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），业务配置（数据源、MyBatis-Plus、SMTP 等）存放在 Nacos。
 
 配置规则：
 
@@ -119,8 +321,7 @@ generator.outputModule=service-provider
 
 Nacos 地址：`127.0.0.1:8848`
 
-每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import 变量）两个引导文件，
-运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
+每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
 
 ## 接口文档
 
@@ -139,33 +340,19 @@ Nacos 地址：`127.0.0.1:8848`
 
 ## 系统信息
 
-以下业务模块提供 `GET /system/info` 接口， 返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring
-Boot 版本等）： provider、consumer、admin、mail。
+以下业务模块提供 `GET /system/info` 接口，返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring Boot 版本等）：provider、consumer、admin、mail。
 
-构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成， 未通过 Maven 构建时（如 IDE
-直接运行）构建时间为当前时间，其余构建字段为 null。
+构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成，未通过 Maven 构建时（如 IDE 直接运行）构建时间为当前时间，其余构建字段为 null。
 
 ## 单元测试
 
-项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL）， 通过 JaCoCo 自动生成覆盖率报告。
+项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL），通过 JaCoCo 自动生成覆盖率报告。
 
 ### 命名规范
 
 - 测试类：`被测类名 + Test`，如 `UserControllerTest`
 - 测试方法：`test + 描述`，小驼峰命名，如 `testGetUserReturnsDto`
 - 每个测试方法均含 Javadoc 注释，说明验证目标
-
-### 测试覆盖范围
-
-| 模块             | 测试类                                                                                                                                                                                    | 用例数 |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|
-| service-common   | `ApiResponseTest`                                                                                                                                                                         | 15     |
-| service-provider | `UserControllerTest` `GoodsControllerTest` `OrderControllerTest` `TestControllerTest` `SystemInfoControllerTest` `AuditMetaObjectHandlerTest` `MybatisPlusConfigTest` `OpenApiConfigTest` | 36     |
-| service-consumer | `UserFeignFallbackFactoryTest` `FeignServiceImplTest` `TessFeignControllerTest` `TestConfigControllerTest` `UserConsumerControllerTest` `SystemInfoControllerTest`                        | 11     |
-| service-mail     | `MailSendServiceImplTest` `MailControllerTest` `SystemInfoControllerTest` `MybatisPlusConfigTest` `AuditMetaObjectHandlerTest`                                                            | 14     |
-| service-admin    | `AdminApplicationTest` `SystemInfoControllerTest`                                                                                                                                         | 4      |
-
-> **注意**：Gateway 作为纯路由网关，不包含测试模块。
 
 ### 运行测试
 
