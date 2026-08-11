@@ -123,6 +123,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ApiResponse<Void> handleNoResourceFound(NoResourceFoundException e) {
+        // 浏览器自动请求 favicon.ico，属于正常行为，不记录日志
+        if ("favicon.ico".equals(e.getResourcePath())) {
+            return ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
+        }
         log.warn("请求路径不存在: {}", e.getResourcePath());
         return ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
