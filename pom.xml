@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.1.0</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -36,16 +36,16 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- 核心框架版本 -->
-        <spring-boot.version>4.0.0</spring-boot.version>
-        <spring-cloud.version>2025.1.0</spring-cloud.version>
-        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
-        <!-- 其他依赖 -->
-        <hutool.version>5.8.46</hutool.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
-        <mybatis.plus.version>3.5.17</mybatis.plus.version>
-        <swagger.version>2.2.52</swagger.version>
-        <!-- JaCoCo 版本(支持 Java 21 字节码) -->
-        <jacoco.version>0.8.12</jacoco.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
+        <spring-cloud.version>2025.1.2</spring-cloud.version>
+       <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+       <!-- 其他依赖 -->
+        <hutool.version>5.8.47</hutool.version>
+        <bouncycastle.version>1.85.2</bouncycastle.version>
+       <mybatis.plus.version>3.5.17</mybatis.plus.version>
+        <swagger.version>2.2.53</swagger.version>
+       <!-- JaCoCo 版本(支持 Java 21 字节码) -->
+        <jacoco.version>0.8.15</jacoco.version>
     </properties>
 
     <dependencyManagement>
