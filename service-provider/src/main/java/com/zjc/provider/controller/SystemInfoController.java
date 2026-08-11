@@ -16,7 +16,7 @@ import java.time.Instant;
  * 系统信息查询接口。
  *
  * <p>展示 pom.xml 中的项目元数据（名称、描述、版本）以及运行环境信息
- *（Java 版本、操作系统、Spring Boot 版本等）。
+ * （Java 版本、操作系统、Spring Boot 版本等）。
  *
  * <p>构建元数据由 {@code spring-boot-maven-plugin} 的 {@code build-info} 目标
  * 在编译期生成到 {@code META-INF/build-info.properties}，

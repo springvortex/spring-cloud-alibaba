@@ -72,8 +72,8 @@ public class OpenApiConfig {
     }
 
     /**
-    * 连通性测试分组。
-    */
+     * 连通性测试分组。
+     */
     @Bean
     public GroupedOpenApi testApi() {
         return GroupedOpenApi.builder()

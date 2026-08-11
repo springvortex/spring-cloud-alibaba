@@ -68,38 +68,38 @@
             <artifactId>caffeine</artifactId>
         </dependency>
         <!-- SpringDoc OpenAPI（Swagger UI）接口文档 -->
-       <dependency>
-           <groupId>org.springdoc</groupId>
-           <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-       </dependency>
-       <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
-       <dependency>
-           <groupId>org.springframework.boot</groupId>
-           <artifactId>spring-boot-configuration-processor</artifactId>
-           <scope>provided</scope>
-       </dependency>
-   </dependencies>
- 
-   <build>
-       <plugins>
-           <plugin>
-               <groupId>org.springframework.boot</groupId>
-               <artifactId>spring-boot-maven-plugin</artifactId>
-               <executions>
-                   <execution>
-                       <id>build-info</id>
-                       <goals>
-                           <goal>build-info</goal>
-                       </goals>
-                       <configuration>
-                           <additionalProperties>
-                               <description>${project.description}</description>
-                           </additionalProperties>
-                       </configuration>
-                   </execution>
-               </executions>
-           </plugin>
-       </plugins>
-   </build>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <additionalProperties>
+                                <description>${project.description}</description>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

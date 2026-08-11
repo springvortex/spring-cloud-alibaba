@@ -41,12 +41,12 @@
 
 ## SpringDoc 分组
 
-| 分组           | 路径匹配        |
-|----------------|-----------------|
-| 01-用户消费    | `/consumer/**`  |
-| 02-Feign测试   | `/feign/**`     |
-| 03-配置测试    | `/config`       |
-| 04-系统信息    | `/system/**`    |
+| 分组         | 路径匹配       |
+|--------------|----------------|
+| 01-用户消费  | `/consumer/**` |
+| 02-Feign测试 | `/feign/**`    |
+| 03-配置测试  | `/config`      |
+| 04-系统信息  | `/system/**`   |
 
 ## 包结构
 
@@ -65,8 +65,8 @@ com.zjc.consumer
 
 ## Feign 降级机制
 
-`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback：
-当 provider 不可用时，自动返回兜底数据，上层 Controller 无需 try-catch。
+`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback： 当 provider 不可用时，自动返回兜底数据，上层 Controller
+无需 try-catch。
 
 ## 配置说明
 
@@ -87,8 +87,8 @@ spring:
 
 ## 构建信息
 
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
-供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`， 供
+`/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 

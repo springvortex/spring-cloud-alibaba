@@ -71,5 +71,4 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 
 ## 依赖
 
-该模块不打包为可执行 Spring Boot 应用，仅作为 jar 供其他模块引入。
-源码会通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。
+该模块不打包为可执行 Spring Boot 应用，仅作为 jar 供其他模块引入。 源码会通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。

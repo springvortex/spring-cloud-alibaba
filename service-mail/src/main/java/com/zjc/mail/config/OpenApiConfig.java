@@ -38,9 +38,9 @@ public class OpenApiConfig {
     public GroupedOpenApi mailApi() {
         return GroupedOpenApi.builder()
                 .group("01-邮件服务")
-               .pathsToMatch("/mail/**")
-               .build();
-   }
+                .pathsToMatch("/mail/**")
+                .build();
+    }
 
     /**
      * 系统信息分组。

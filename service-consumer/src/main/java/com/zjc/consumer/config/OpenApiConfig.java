@@ -65,9 +65,9 @@ public class OpenApiConfig {
     public GroupedOpenApi configTestApi() {
         return GroupedOpenApi.builder()
                 .group("03-配置测试")
-               .pathsToMatch("/config")
-               .build();
-   }
+                .pathsToMatch("/config")
+                .build();
+    }
 
     /**
      * 系统信息分组。

@@ -56,10 +56,10 @@ public void sendMail() {
 
 ## SpringDoc 分组
 
-| 分组           | 路径匹配        |
-|----------------|-----------------|
-| 01-邮件服务    | `/mail/**`      |
-| 02-系统信息    | `/system/**`    |
+| 分组        | 路径匹配     |
+|-------------|--------------|
+| 01-邮件服务 | `/mail/**`   |
+| 02-系统信息 | `/system/**` |
 
 ## 发送流程
 
@@ -137,8 +137,8 @@ spring:
 
 ## 构建信息
 
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
-供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`， 供
+`/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 

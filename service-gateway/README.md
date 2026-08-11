@@ -28,8 +28,7 @@ com.zjc.gateway
 
 ## 配置说明
 
-本地仅保留引导配置（端口、Nacos 地址），路由规则在 Nacos 中动态配置。
-Nacos 配置位置：dataId=`dev`，group=`service-gateway`
+本地仅保留引导配置（端口、Nacos 地址），路由规则在 Nacos 中动态配置。 Nacos 配置位置：dataId=`dev`，group=`service-gateway`
 
 ## 设计说明
 

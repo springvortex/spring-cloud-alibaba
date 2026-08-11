@@ -38,13 +38,13 @@
         <!-- 核心框架版本 -->
         <spring-boot.version>4.1.0</spring-boot.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
-       <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
-       <!-- 其他依赖 -->
+        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+        <!-- 其他依赖 -->
         <hutool.version>5.8.47</hutool.version>
         <bouncycastle.version>1.85.2</bouncycastle.version>
-       <mybatis.plus.version>3.5.17</mybatis.plus.version>
+        <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.53</swagger.version>
-       <!-- JaCoCo 版本(支持 Java 21 字节码) -->
+        <!-- JaCoCo 版本(支持 Java 21 字节码) -->
         <jacoco.version>0.8.15</jacoco.version>
     </properties>
 
@@ -93,25 +93,25 @@
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>${mybatis.plus.version}</version>
             </dependency>
-            
+
             <!-- SpringDoc OpenAPI锛圫wagger UI锛?-->
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>3.1.0</version>
             </dependency>
-           <!-- Swagger 注解（供 common 模块 DTO 使用） -->
-           <dependency>
-               <groupId>io.swagger.core.v3</groupId>
-               <artifactId>swagger-annotations-jakarta</artifactId>
-               <version>${swagger.version}</version>
-           </dependency>
-           <!-- Spring Boot 配置元数据处理器（@ConfigurationProperties 自动补全） -->
-           <dependency>
-               <groupId>org.springframework.boot</groupId>
-               <artifactId>spring-boot-configuration-processor</artifactId>
-               <version>${spring-boot.version}</version>
-           </dependency>
+            <!-- Swagger 注解（供 common 模块 DTO 使用） -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <!-- Spring Boot 配置元数据处理器（@ConfigurationProperties 自动补全） -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

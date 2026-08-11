@@ -20,10 +20,10 @@
 
 ## SpringDoc 分组
 
-| 分组           | 路径匹配        |
-|----------------|-----------------|
-| 01-管理端      | `/**`           |
-| 02-系统信息    | `/system/**`    |
+| 分组        | 路径匹配     |
+|-------------|--------------|
+| 01-管理端   | `/**`        |
+| 02-系统信息 | `/system/**` |
 
 ## 包结构
 
@@ -38,13 +38,12 @@ com.zjc.admin
 
 ## 配置说明
 
-本地仅保留引导配置，业务配置在 Nacos。
-Nacos 配置位置：dataId=`dev`，group=`service-admin`
+本地仅保留引导配置，业务配置在 Nacos。 Nacos 配置位置：dataId=`dev`，group=`service-admin`
 
 ## 构建信息
 
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，
-供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`， 供
+`/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 
