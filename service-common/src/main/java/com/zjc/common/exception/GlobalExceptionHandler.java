@@ -1,7 +1,6 @@
-package com.zjc.provider.config;
+package com.zjc.common.exception;
 
 import com.zjc.common.constant.ApiResponseEnum;
-import com.zjc.common.exception.BusinessException;
 import com.zjc.common.web.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
