@@ -36,6 +36,7 @@
 引入 service-common 依赖后，直接注入 `MailFeignApi`：
 
 ```java
+
 @Resource
 private MailFeignApi mailFeignApi;
 
@@ -94,7 +95,7 @@ public void sendMail() {
 com.zjc.mail
 ├── MailApplication                 启动类
 ├── config
-│   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime
+│   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime（时区 Asia/Shanghai）
 │   ├── MybatisPlusConfig           分页插件
 │   └── OpenApiConfig               SpringDoc 分组配置
 ├── controller
@@ -111,6 +112,13 @@ com.zjc.mail
         ├── MailSendServiceImpl     发送实现（校验、入库、发送、状态更新）
         └── MailLogServiceImpl
 ```
+
+## 自动继承的公共能力
+
+引入 service-common 依赖后，本模块自动获得以下能力（无需配置）：
+
+- **全局异常处理**：`GlobalExceptionHandler` 统一拦截异常并用 `ApiResponse` 包装返回
+- **接口日志切面**：`WebLogAspect` 自动记录 Controller 入参、返回值与执行耗时
 
 ## 配置说明
 
@@ -137,7 +145,7 @@ spring:
 
 ## 构建信息
 
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`， 供
+pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，供
 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
