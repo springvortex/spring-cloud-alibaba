@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.zjc</groupId>
         <artifactId>spring-cloud-alibaba</artifactId>
@@ -15,62 +16,74 @@
     <name>Service Common</name>
     <description>通用模块，包含公共实体、工具类、统一返回结果等</description>
 
-    <!-- 公共库模块: 跳过 repackage，保持标准 JAR 供其他模块依赖 -->
+    <!-- 公共库模块：跳过 repackage，保持标准 JAR 供其他模块依赖 -->
     <properties>
         <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
     </properties>
 
     <dependencies>
-        <!-- Web 相关（提供 HTTP 相关注解和工具） -->
+        <!-- Spring Boot Web（提供 HTTP 相关注解和工具） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <!-- AOP 切面支持（Spring Boot 4 中由 spring-boot-starter-aspectj 提供） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
+
+        <!-- Spring Boot Actuator（健康检查与监控端点） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
+        <!-- OpenFeign 声明式调用（共享 Feign API 契约） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
-        <!--alibaba-sentinel-->
+
+        <!-- Alibaba Sentinel（熔断限流） -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
         </dependency>
-        <!-- 糊涂工具类 -->
+
+        <!-- 糊涂工具类（Hutool） -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
         </dependency>
+
         <!-- Lombok（简化代码） -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
         <!-- Swagger 注解（DTO 字段文档描述） -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
+
         <!-- Jakarta Validation 校验注解 -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
+
         <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -81,14 +94,13 @@
 
     <build>
         <plugins>
-            <!-- 通用模块不需要 Spring Boot 打包插件，使用默认的 maven-jar-plugin 即可 -->
+            <!-- 通用模块使用默认的 maven-jar-plugin，排除配置文件避免与其他模块冲突 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
                     <excludes>
-                        <!-- 排除配置文件（避免与其他模块冲突） -->
                         <exclude>**/application*.yml</exclude>
                         <exclude>**/application*.properties</exclude>
                     </excludes>
@@ -110,7 +122,7 @@
                 </executions>
             </plugin>
 
-            <!-- Copy this module JAR to build/ (no Spring Boot repackage for common) -->
+            <!-- 拷贝公共库 JAR 到 build/ 目录（不执行 repackage） -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>

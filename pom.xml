@@ -44,10 +44,10 @@
         <bouncycastle.version>1.85.2</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.53</swagger.version>
-        <!-- JaCoCo 版本(支持 Java 21 字节码) -->
+        <!-- JaCoCo 版本（支持 Java 21 字节码） -->
         <jacoco.version>0.8.15</jacoco.version>
 
-        <!-- Thin-JAR 打包: 每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
+        <!-- Thin-JAR 打包：每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
         <dist.dir>${maven.multiModuleProjectDirectory}/build/${project.artifactId}</dist.dir>
         <dist.libDir>${dist.dir}/lib</dist.libDir>
 
@@ -90,26 +90,28 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- 糊涂工具类 -->
+            <!-- 糊涂工具类（Hutool） -->
             <dependency>
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
 
-            <!-- Bouncy Castle: bump bcprov to fix CVE-2026-0636 -->
+            <!-- Bouncy Castle 加密库（修复 CVE-2026-0636） -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
-            <!-- mybatis plus -->
+
+            <!-- MyBatis-Plus Spring Boot 4 Starter -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis.plus.version}</version>
             </dependency>
-            <!-- MyBatis-Plus 分页插件依赖（JSqlParser） -->
+
+            <!-- MyBatis-Plus 分页插件（JSqlParser） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
@@ -122,12 +124,14 @@
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>3.1.0</version>
             </dependency>
-            <!-- Swagger 注解（供 common 模块 DTO 使用） -->
+
+            <!-- Swagger 注解（供 common 模块 DTO 字段文档描述使用） -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${swagger.version}</version>
             </dependency>
+
             <!-- Spring Boot 配置元数据处理器（@ConfigurationProperties 自动补全） -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -153,6 +157,8 @@
                         </filesets>
                     </configuration>
                 </plugin>
+
+                <!-- 编译插件 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -162,6 +168,7 @@
                         <target>${java.version}</target>
                     </configuration>
                 </plugin>
+
                 <!-- 公共库模块拷贝 JAR 到 build/（仅 service-common 声明使用） -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -189,7 +196,7 @@
 
         <!-- 所有子模块自动继承以下插件 -->
         <plugins>
-            <!-- JaCoCo: 运行 mvn test 时生成覆盖率报告 -->
+            <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -211,7 +218,7 @@
                 </executions>
             </plugin>
 
-            <!-- Spring Boot repackage: ZIP layout, thin JAR (仅含自身代码), 输出到 build/ -->
+            <!-- Spring Boot 打包：ZIP layout，thin JAR（仅含自身代码），输出到 build/ -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -255,7 +262,7 @@
                 </executions>
             </plugin>
 
-            <!-- 拷贝所有 runtime 依赖到共享 build/lib/ -->
+            <!-- 拷贝所有 runtime 依赖到 build/<artifactId>/lib/ -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
