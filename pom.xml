@@ -46,6 +46,13 @@
         <swagger.version>2.2.53</swagger.version>
         <!-- JaCoCo 版本(支持 Java 21 字节码) -->
         <jacoco.version>0.8.15</jacoco.version>
+
+        <!-- Thin-JAR 打包: 业务 JAR 输出到 build/，依赖输出到 build/lib/ -->
+        <dist.dir>${maven.multiModuleProjectDirectory}/build</dist.dir>
+        <dist.libDir>${dist.dir}/lib</dist.libDir>
+
+        <!-- 公共库模块跳过 repackage（service-common 需覆写为 true） -->
+        <spring-boot.repackage.skip>false</spring-boot.repackage.skip>
     </properties>
 
     <dependencyManagement>
@@ -94,7 +101,7 @@
                 <version>${mybatis.plus.version}</version>
             </dependency>
 
-            <!-- SpringDoc OpenAPI锛圫wagger UI锛?-->
+            <!-- SpringDoc OpenAPI（Swagger UI） -->
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -120,19 +127,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>${spring-boot.version}</version>
-                    <configuration>
-                        <excludes>
-                            <exclude>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
@@ -141,10 +135,34 @@
                         <target>${java.version}</target>
                     </configuration>
                 </plugin>
+                <!-- 公共库模块拷贝 JAR 到 build/（仅 service-common 声明使用） -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <executions>
+                        <execution>
+                            <id>copy-jar</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                          todir="${dist.dir}"
+                                          failonerror="false"/>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
-        <!-- JaCoCo: 所有子模块自动继承，运行 mvn test 时生成覆盖率报告 -->
+
+        <!-- 所有子模块自动继承以下插件 -->
         <plugins>
+            <!-- JaCoCo: 运行 mvn test 时生成覆盖率报告 -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -162,6 +180,69 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Spring Boot repackage: ZIP layout, thin JAR (仅含自身代码), 输出到 build/ -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <includes>
+                        <include>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                        </include>
+                    </includes>
+                    <layout>ZIP</layout>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${dist.dir}</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <additionalProperties>
+                                <description>${project.description}</description>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 拷贝所有 runtime 依赖到共享 build/lib/ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${dist.libDir}</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
