@@ -47,13 +47,28 @@
         <!-- JaCoCo 版本(支持 Java 21 字节码) -->
         <jacoco.version>0.8.15</jacoco.version>
 
-        <!-- Thin-JAR 打包: 业务 JAR 输出到 build/，依赖输出到 build/lib/ -->
-        <dist.dir>${maven.multiModuleProjectDirectory}/build</dist.dir>
+        <!-- Thin-JAR 打包: 每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
+        <dist.dir>${maven.multiModuleProjectDirectory}/build/${project.artifactId}</dist.dir>
         <dist.libDir>${dist.dir}/lib</dist.libDir>
 
         <!-- 公共库模块跳过 repackage（service-common 需覆写为 true） -->
         <spring-boot.repackage.skip>false</spring-boot.repackage.skip>
     </properties>
+
+    <!-- 没有 src/main/java 的模块（如父 pom）自动跳过 build-info -->
+    <profiles>
+        <profile>
+            <id>aggregator-skip</id>
+            <activation>
+                <file>
+                    <missing>src/main/java</missing>
+                </file>
+            </activation>
+            <properties>
+                <spring-boot.build-info.skip>true</spring-boot.build-info.skip>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -126,6 +141,18 @@
     <build>
         <pluginManagement>
             <plugins>
+                <!-- mvn clean 时额外删除 build/ 目录 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${maven.multiModuleProjectDirectory}/build</directory>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
