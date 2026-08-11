@@ -33,6 +33,8 @@ public class OpenApiConfig {
 
     /**
      * 邮件服务分组。
+     *
+     * @return 邮件服务 API 分组配置
      */
     @Bean
     public GroupedOpenApi mailApi() {
@@ -44,6 +46,8 @@ public class OpenApiConfig {
 
     /**
      * 系统信息分组。
+     *
+     * @return 系统信息 API 分组配置
      */
     @Bean
     public GroupedOpenApi systemApi() {
@@ -55,6 +59,8 @@ public class OpenApiConfig {
 
     /**
      * 文档元信息。
+     *
+     * @return OpenAPI 文档元信息
      */
     @Bean
     public OpenAPI openAPI() {

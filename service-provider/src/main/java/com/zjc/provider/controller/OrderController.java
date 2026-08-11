@@ -109,7 +109,10 @@ public class OrderController {
     }
 
     /**
-     * 订单主表 Entity 转 DTO
+     * 订单主表 Entity 转 DTO。
+     *
+     * @param order 订单实体
+     * @return 订单 DTO，入参为 {@code null} 时返回 {@code null}
      */
     private OrderDTO toDTO(Order order) {
         if (order == null) {
@@ -121,7 +124,10 @@ public class OrderController {
     }
 
     /**
-     * 订单明细 Entity 转 DTO
+     * 订单明细 Entity 转 DTO。
+     *
+     * @param detail 订单明细实体
+     * @return 订单明细 DTO，入参为 {@code null} 时返回 {@code null}
      */
     private OrderDetailDTO toDTO(OrderDetail detail) {
         if (detail == null) {

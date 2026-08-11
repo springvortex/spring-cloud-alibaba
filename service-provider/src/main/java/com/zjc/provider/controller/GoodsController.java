@@ -93,7 +93,10 @@ public class GoodsController {
     }
 
     /**
-     * Entity 转 DTO，过滤内部字段
+     * Entity 转 DTO，过滤内部字段。
+     *
+     * @param goods 商品实体
+     * @return 商品 DTO，入参为 {@code null} 时返回 {@code null}
      */
     private GoodsDTO toDTO(Goods goods) {
         if (goods == null) {

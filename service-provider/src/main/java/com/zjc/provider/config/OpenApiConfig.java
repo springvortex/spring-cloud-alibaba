@@ -40,6 +40,8 @@ public class OpenApiConfig {
 
     /**
      * 用户管理分组。
+     *
+     * @return 用户管理 API 分组配置
      */
     @Bean
     public GroupedOpenApi userApi() {
@@ -51,6 +53,8 @@ public class OpenApiConfig {
 
     /**
      * 商品管理分组。
+     *
+     * @return 商品管理 API 分组配置
      */
     @Bean
     public GroupedOpenApi goodsApi() {
@@ -62,6 +66,8 @@ public class OpenApiConfig {
 
     /**
      * 订单管理分组。
+     *
+     * @return 订单管理 API 分组配置
      */
     @Bean
     public GroupedOpenApi orderApi() {
@@ -73,6 +79,8 @@ public class OpenApiConfig {
 
     /**
      * 连通性测试分组。
+     *
+     * @return 连通性测试 API 分组配置
      */
     @Bean
     public GroupedOpenApi testApi() {
@@ -84,6 +92,8 @@ public class OpenApiConfig {
 
     /**
      * 系统信息分组。
+     *
+     * @return 系统信息 API 分组配置
      */
     @Bean
     public GroupedOpenApi systemApi() {
@@ -95,6 +105,8 @@ public class OpenApiConfig {
 
     /**
      * 文档元信息，所有分组共享。
+     *
+     * @return OpenAPI 文档元信息
      */
     @Bean
     public OpenAPI openAPI() {

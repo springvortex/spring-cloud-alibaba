@@ -93,7 +93,10 @@ public class UserController {
     }
 
     /**
-     * Entity 转 DTO，过滤内部字段
+     * Entity 转 DTO，过滤内部字段。
+     *
+     * @param user 用户实体
+     * @return 用户 DTO，入参为 {@code null} 时返回 {@code null}
      */
     private UserDTO toDTO(User user) {
         if (user == null) {

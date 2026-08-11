@@ -135,6 +135,10 @@ public class MailSendServiceImpl implements MailSendService {
 
     /**
      * 为 SimpleMailMessage 设置抄送和密送（仅当非空时设置）。
+     *
+     * @param message 邮件消息
+     * @param cc      已校验的抄送人数组，可为 {@code null}
+     * @param bcc     已校验的密送人数组，可为 {@code null}
      */
     private void setCcAndBcc(SimpleMailMessage message, String[] cc, String[] bcc) {
         if (cc != null && cc.length > 0) {
@@ -147,6 +151,11 @@ public class MailSendServiceImpl implements MailSendService {
 
     /**
      * 为 MimeMessageHelper 设置抄送和密送（仅当非空时设置）。
+     *
+     * @param helper MIME 消息助手
+     * @param cc     已校验的抄送人数组，可为 {@code null}
+     * @param bcc    已校验的密送人数组，可为 {@code null}
+     * @throws MessagingException 设置抄送/密送时发生错误
      */
     private void setCcAndBcc(MimeMessageHelper helper, String[] cc, String[] bcc) throws MessagingException {
         if (cc != null && cc.length > 0) {
@@ -186,6 +195,9 @@ public class MailSendServiceImpl implements MailSendService {
 
     /**
      * 将 MailSendDTO 构建为 MailLog 实体。
+     *
+     * @param dto 邮件发送请求
+     * @return 待持久化的邮件记录实体
      */
     private MailLog buildMailLog(MailSendDTO dto) {
         MailLog mailLog = new MailLog();
@@ -201,6 +213,9 @@ public class MailSendServiceImpl implements MailSendService {
 
     /**
      * Entity 转 DTO。
+     *
+     * @param mailLog 邮件记录实体
+     * @return 邮件记录 DTO
      */
     private MailLogDTO toDTO(MailLog mailLog) {
         MailLogDTO dto = new MailLogDTO();

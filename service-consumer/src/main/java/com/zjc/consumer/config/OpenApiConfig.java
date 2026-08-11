@@ -38,6 +38,8 @@ public class OpenApiConfig {
 
     /**
      * 用户消费分组。
+     *
+     * @return 用户消费 API 分组配置
      */
     @Bean
     public GroupedOpenApi userConsumerApi() {
@@ -49,6 +51,8 @@ public class OpenApiConfig {
 
     /**
      * Feign 调用测试分组。
+     *
+     * @return Feign 调用测试 API 分组配置
      */
     @Bean
     public GroupedOpenApi feignTestApi() {
@@ -60,6 +64,8 @@ public class OpenApiConfig {
 
     /**
      * Nacos 配置测试分组。
+     *
+     * @return Nacos 配置测试 API 分组配置
      */
     @Bean
     public GroupedOpenApi configTestApi() {
@@ -71,6 +77,8 @@ public class OpenApiConfig {
 
     /**
      * 系统信息分组。
+     *
+     * @return 系统信息 API 分组配置
      */
     @Bean
     public GroupedOpenApi systemApi() {
@@ -82,6 +90,8 @@ public class OpenApiConfig {
 
     /**
      * 文档元信息，所有分组共享。
+     *
+     * @return OpenAPI 文档元信息
      */
     @Bean
     public OpenAPI openAPI() {
