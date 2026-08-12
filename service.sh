@@ -3,6 +3,10 @@
 #  Spring Cloud Alibaba - Service Manager (macOS / Linux)
 #  Auto-discovers services under build/, excludes service-common.
 #  Interactive menu + CLI: start/stop/restart/status [all|<name>]
+#
+#  Jasypt 密钥传入方式（优先级从高到低）：
+#    1. 命令行第三个参数：  ./service.sh start all jasypt.encryptor.password=xxxxx
+#    2. 环境变量：           export JASYPT_ENCRYPTOR_PASSWORD=xxxxx
 # ============================================================
 
 # Auto-detect: use build/ subdirectory if it exists, otherwise use script's own directory
@@ -20,6 +24,24 @@ GRAY='\033[0;90m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 NC='\033[0m'
+
+# ---------- jasypt password resolution ----------
+
+JASYPT_PROP=""
+
+resolve_jasypt() {
+    # 命令行参数传入（key=value 格式）
+    for arg in "${EXTRA_ARGS[@]}"; do
+        if [[ "$arg" == jasypt.encryptor.password=* ]]; then
+            JASYPT_PROP="-D${arg}"
+            return
+        fi
+    done
+    # 环境变量传入
+    if [ -n "$JASYPT_ENCRYPTOR_PASSWORD" ]; then
+        JASYPT_PROP="-Djasypt.encryptor.password=$JASYPT_ENCRYPTOR_PASSWORD"
+    fi
+}
 
 # ---------- scan services ----------
 
@@ -62,7 +84,7 @@ do_start() {
     fi
     echo -ne "  Starting $name ..."
     pushd "$dir" > /dev/null
-    nohup java $JVM_OPTS -Dloader.path=$LOADER -jar "$jar" \
+    nohup java $JVM_OPTS $JASYPT_PROP -Dloader.path=$LOADER -jar "$jar" \
         > "$name.out" 2> "$name.err" &
     local pid=$!
     echo "$pid" > "$name.pid"
@@ -115,6 +137,12 @@ show_dashboard() {
         fi
         ((i++))
     done
+    echo ""
+    if [ -n "$JASYPT_PROP" ]; then
+        echo -e "  Jasypt: ${GREEN}ENABLED${NC}"
+    else
+        echo -e "  Jasypt: ${GRAY}DISABLED (no password)${NC}"
+    fi
     echo ""
     echo -e "  ${GRAY}[a] Start all    [s] Stop all    [x] Restart all${NC}"
     echo -e "  ${GRAY}[r] Refresh      [q] Quit${NC}"
@@ -209,15 +237,22 @@ run_cli() {
             echo ""
             ;;
         *)
-            echo "  Usage: $0 <start|stop|restart|status> [all|<name>]"
+            echo "  Usage: $0 <start|stop|restart|status> [all|<name>] [key=value ...]"
             ;;
     esac
 }
 
 # ---------- entry ----------
 
+EXTRA_ARGS=()
 if [ $# -gt 0 ]; then
+    # Collect extra args (key=value) starting from index 2
+    if [ $# -gt 2 ]; then
+        EXTRA_ARGS=("${@:3}")
+    fi
+    resolve_jasypt
     run_cli "$1" "$2"
 else
+    resolve_jasypt
     run_menu
 fi

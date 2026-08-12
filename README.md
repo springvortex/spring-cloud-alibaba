@@ -14,6 +14,7 @@
 | 数据库        | MySQL                           | -          |
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
+| 配置加密      | Jasypt                          | 3.0.5      |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -65,8 +66,7 @@ spring-cloud-alibaba
 
 ## 打包
 
-项目采用 **Thin JAR + 外部 lib** 的打包方式：每个服务只打自身代码（约 260-300 KB），依赖 JAR 单独输出到 `lib/` 目录，实现 JAR
-包与依赖分离。
+项目采用 **Thin JAR + 外部 lib** 的打包方式：每个服务只打自身代码（约 260-300 KB），依赖 JAR 单独输出到 `lib/` 目录，实现 JAR 包与依赖分离。
 
 ### 打包命令
 
@@ -101,18 +101,15 @@ build/
 
 ### 打包原理
 
-- **spring-boot-maven-plugin**：`repackage` 目标，`layout=ZIP`（PropertiesLauncher），`includes` 只含模块自身代码。thin JAR 通过
-  `-Dloader.path=lib` 从外部 lib 目录加载依赖
+- **spring-boot-maven-plugin**：`repackage` 目标，`layout=ZIP`（PropertiesLauncher），`includes` 只含模块自身代码。thin JAR 通过 `-Dloader.path=lib` 从外部 lib 目录加载依赖
 - **maven-dependency-plugin**：`copy-dependencies` 目标，将所有 runtime 依赖复制到各服务的 `lib/` 目录
 - **每个服务独立 lib**：gateway 是 WebFlux 栈，其余服务是 Spring MVC 栈，依赖天然冲突，必须隔离
 
-> **注意**：`service-common` 是公共库模块，不执行 repackage（通过 `spring-boot.repackage.skip=true` 跳过），保持标准 JAR
-> 供其他模块 Maven 依赖。部署时不需要拷贝 `build/service-common/`，它已经作为依赖打包在各服务的 `lib/` 中。
+> **注意**：`service-common` 是公共库模块，不执行 repackage（通过 `spring-boot.repackage.skip=true` 跳过），保持标准 JAR 供其他模块 Maven 依赖。部署时不需要拷贝 `build/service-common/`，它已经作为依赖打包在各服务的 `lib/` 中。
 
 ### 配置位置
 
-所有打包配置都在父 `pom.xml` 的 `<plugins>` 中统一管理（非 pluginManagement），子模块自动继承，新建业务模块无需在 pom
-中添加任何打包配置。
+所有打包配置都在父 `pom.xml` 的 `<plugins>` 中统一管理（非 pluginManagement），子模块自动继承，新建业务模块无需在 pom 中添加任何打包配置。
 
 ---
 
@@ -239,6 +236,8 @@ java -version
   [4] service-mail           STOPPED
   [5] service-provider       RUNNING  (PID: 17552)
 
+  Jasypt: ENABLED
+
   [a] Start all    [s] Stop all    [x] Restart all
   [r] Refresh      [q] Quit
 ```
@@ -252,7 +251,7 @@ java -version
 | 刷新状态           | `r`                      |
 | 退出               | `q`                      |
 
-菜单自动扫描 `build/` 下的服务目录（排除 `service-common`），无需手动配置服务列表。
+菜单自动扫描 `build/` 下的服务目录（排除 `service-common`），无需手动配置服务列表。菜单还会显示 Jasypt 密钥是否已加载（ENABLED / DISABLED）。
 
 ### 进程与日志
 
@@ -268,15 +267,86 @@ java -version
 
 ### Linux 端口注意事项
 
-Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），或在 Nacos 配置中心修改
-`server.port`。
+Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），或在 Nacos 配置中心修改 `server.port`。
 
 ### JVM 参数调整
 
 默认 JVM 参数 `-Xms256m -Xmx512m`，可在脚本顶部修改：
 
-- `service.ps1` 第 12 行：`$JVM_OPTS = "-Xms256m -Xmx512m"`
-- `service.sh` 第 11 行：`JVM_OPTS="-Xms256m -Xmx512m"`
+- `service.ps1`：`$JVM_OPTS = "-Xms256m -Xmx512m"`
+- `service.sh`：`JVM_OPTS="-Xms256m -Xmx512m"`
+
+---
+
+## 配置加密（Jasypt）
+
+项目集成 Jasypt 对敏感配置（数据库密码、SMTP 密码等）进行加密，密文以 `ENC(xxx)` 格式存储在 Nacos 配置中。**密钥不写入任何配置文件**，通过命令行参数或环境变量注入。
+
+### 加密明文
+
+在 IDEA 中运行 `service-common` 模块的 `com.zjc.common.JasyptTest`，在 Run Configuration -> VM Options 中填入密钥：
+
+```
+-Djasypt.encryptor.password=your-secret-key
+```
+
+运行后输入明文，得到加密结果：
+
+```
+======================================
+  Jasypt 加密工具
+  算法: PBEWithMD5AndDES
+======================================
+请输入要加密的明文: my-db-password
+
+明文: my-db-password
+密文: ENC(g48ZFqzM2yvuAMjOMw7z77DB7jTw9JjTkcJcuvo+Zkc=)
+
+验证解密: my-db-password
+匹配: true
+
+将上面的 ENC(xxx) 复制到 Nacos 配置文件中即可。
+```
+
+### 在 Nacos 中使用加密
+
+将密文粘贴到 Nacos 配置中替换明文，例如：
+
+```yaml
+spring:
+  datasource:
+    password: ENC(g48ZFqzM2yvuAMjOMw7z77DB7jTw9JjTkcJcuvo+Zkc=)
+```
+
+Jasypt 会在应用启动时自动检测 `ENC()` 包裹的值并解密。
+
+### 启动时传入密钥
+
+密钥不写入任何配置文件，通过以下方式注入（优先级从高到低）：
+
+**方式一：命令行参数（推荐）**
+
+```bash
+# macOS / Linux
+./service.sh start all jasypt.encryptor.password=your-secret-key
+
+# Windows
+.\service.bat start all jasypt.encryptor.password=your-secret-key
+```
+
+**方式二：环境变量**
+
+```bash
+# macOS / Linux
+export JASYPT_ENCRYPTOR_PASSWORD=your-secret-key
+./service.sh start all
+
+# Windows PowerShell
+$env:JASYPT_ENCRYPTOR_PASSWORD = "your-secret-key"
+.\service.bat start all
+```
+
+菜单界面会显示 Jasypt 是否已启用（`ENABLED` / `DISABLED`），不显示密钥本身。
 
 ---
 
@@ -290,8 +360,7 @@ Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80
 
 ### Entity 与 DTO 分离
 
-Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。对外传输统一使用 DTO（`com.zjc.common.dto`），放在
-common 模块供所有服务依赖。
+Entity（如 `com.zjc.provider.entity`）映射数据库表，仅模块内部使用，不对外暴露。对外传输统一使用 DTO（`com.zjc.common.dto`），放在 common 模块供所有服务依赖。
 
 DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免数据库结构泄露到接口契约中。
 
@@ -316,8 +385,7 @@ generator.outputModule=service-provider
 
 ## 配置中心
 
-各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），业务配置（数据源、MyBatis-Plus、SMTP
-等）存放在 Nacos。
+各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），业务配置（数据源、MyBatis-Plus、SMTP 等）存放在 Nacos。
 
 配置规则：
 
@@ -328,8 +396,7 @@ generator.outputModule=service-provider
 
 Nacos 地址：`127.0.0.1:8848`
 
-每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import
-变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
+每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
 
 ## 接口文档
 
@@ -348,11 +415,9 @@ Nacos 地址：`127.0.0.1:8848`
 
 ## 系统信息
 
-以下业务模块提供 `GET /system/info` 接口，返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring
-Boot 版本等）：provider、consumer、admin、mail。
+以下业务模块提供 `GET /system/info` 接口，返回 pom 元数据（项目名称、描述、版本、构建时间）和运行环境信息（Java 版本、操作系统、Spring Boot 版本等）：provider、consumer、admin、mail。
 
-构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成，未通过 Maven 构建时（如 IDE
-直接运行）构建时间为当前时间，其余构建字段为 null。
+构建元数据由 `spring-boot-maven-plugin` 的 `build-info` 目标在编译期生成，未通过 Maven 构建时（如 IDE 直接运行）构建时间为当前时间，其余构建字段为 null。
 
 ## 单元测试
 

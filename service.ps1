@@ -3,6 +3,10 @@
     Spring Cloud Alibaba - Service Manager (Windows)
     Auto-discovers services under build/, excludes service-common.
     Interactive menu + CLI: start/stop/restart/status [all|<name>]
+
+    Jasypt 密钥传入方式（优先级从高到低）：
+      1. 命令行第三个参数：  service.bat start all jasypt.encryptor.password=xxxxx
+      2. 环境变量：           $env:JASYPT_ENCRYPTOR_PASSWORD = "xxxxx"
 #>
 
 # Auto-detect: use build/ subdirectory if it exists, otherwise use script's own directory
@@ -11,6 +15,27 @@ $BuildDir   = if (Test-Path $_candidate) { $_candidate } else { $PSScriptRoot }
 $JVM_OPTS   = "-Xms256m -Xmx512m"
 $LOADER     = "lib"
 $EXCLUDE    = @("service-common")
+
+# ---------- jasypt password resolution ----------
+
+$JasyptProp = ""
+
+function Resolve-Jasypt {
+    # CLI 参数传入（第三个参数起，格式 key=value）
+    if ($script:JasyptArgs) {
+        foreach ($a in $script:JasyptArgs) {
+            if ($a -match "^jasypt\.encryptor\.password=") {
+                $script:JasyptProp = "-D" + $a
+                return
+            }
+        }
+    }
+    # 环境变量传入
+    $envPwd = $env:JASYPT_ENCRYPTOR_PASSWORD
+    if ($envPwd) {
+        $script:JasyptProp = "-Djasypt.encryptor.password=$envPwd"
+    }
+}
 
 # ---------- scan services ----------
 
@@ -52,8 +77,9 @@ function Start-One {
     $logFile = Join-Path $Svc.Dir "$($Svc.Name).out"
     $errFile = Join-Path $Svc.Dir "$($Svc.Name).err"
     Write-Host -NoNewline "  Starting $($Svc.Name) ..."
+    $argsStr = "$JVM_OPTS $JasyptProp -Dloader.path=$LOADER -jar $($Svc.Jar)"
     $proc = Start-Process -FilePath "java" `
-        -ArgumentList "$JVM_OPTS -Dloader.path=$LOADER -jar $($Svc.Jar)" `
+        -ArgumentList $argsStr `
         -WorkingDirectory $Svc.Dir `
         -WindowStyle Hidden `
         -RedirectStandardOutput $logFile `
@@ -105,6 +131,12 @@ function Show-Dashboard {
         $color = if ($st.State -eq "RUNNING") { "Green" } else { "DarkGray" }
         Write-Host ("  [{0}] {1,-22} " -f ($i + 1), $svc.Name) -NoNewline
         Write-Host $tag -ForegroundColor $color
+    }
+    Write-Host ""
+    if ($JasyptProp) {
+        Write-Host "  Jasypt: ENABLED" -ForegroundColor Green
+    } else {
+        Write-Host "  Jasypt: DISABLED (no password)" -ForegroundColor DarkGray
     }
     Write-Host ""
     Write-Host "  [a] Start all    [s] Stop all    [x] Restart all" -ForegroundColor DarkCyan
@@ -190,7 +222,7 @@ function Run-CLI {
             Write-Host ""
         }
         default {
-            Write-Host "  Usage: service <start|stop|restart|status> [all|<name>]"
+            Write-Host "  Usage: service <start|stop|restart|status> [all|<name>] [key=value ...]"
         }
     }
 }
@@ -198,7 +230,13 @@ function Run-CLI {
 # ---------- entry ----------
 
 if ($args.Count -gt 0) {
+    # Collect extra args (key=value format) starting from index 2
+    if ($args.Count -gt 2) {
+        $script:JasyptArgs = $args[2..($args.Count - 1)]
+    }
+    Resolve-Jasypt
     Run-CLI -Cmd $args[0].ToLower() -Target $(if ($args.Count -gt 1) { $args[1] })
 } else {
+    Resolve-Jasypt
     Run-Menu
 }
