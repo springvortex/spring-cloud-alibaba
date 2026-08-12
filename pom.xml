@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -244,6 +244,10 @@
                     <outputName>application.cdx</outputName>
                     <outputDirectory>${project.build.outputDirectory}/META-INF/sbom</outputDirectory>
                     <skip>${cyclonedx.skip}</skip>
+                    <!-- 禁用 makeAggregateBom（默认会额外执行并重复 attach artifact） -->
+                    <skipAggregate>true</skipAggregate>
+                    <!-- 使用 1.5 规范（1.6 的 meta:enum/deprecated 关键字会触发 JSON Schema 校验 WARNING） -->
+                    <schemaVersion>1.5</schemaVersion>
                 </configuration>
             </plugin>
 
@@ -267,6 +271,16 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Surefire：消除 JDK 21+ 动态 Agent 加载警告（Mockito/ByteBuddy） -->
+            <!-- @{argLine} 晚绑定保留 JaCoCo 注入的 agent 路径 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
+                </configuration>
             </plugin>
 
             <!-- Spring Boot 打包：ZIP layout，thin JAR（仅含自身代码），输出到 build/ -->
