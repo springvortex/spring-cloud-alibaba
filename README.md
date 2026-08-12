@@ -1,4 +1,4 @@
-# Spring Cloud Alibaba
+﻿# Spring Cloud Alibaba
 
 基于 Spring Cloud Alibaba 的微服务学习与实践项目。
 
@@ -347,6 +347,34 @@ $env:JASYPT_ENCRYPTOR_PASSWORD = "your-secret-key"
 ```
 
 菜单界面会显示 Jasypt 是否已启用（`ENABLED` / `DISABLED`），不显示密钥本身。
+
+### 加密算法配置
+
+各服务的 `application.yaml` 中已显式声明 Jasypt 加密参数：
+
+```yaml
+jasypt:
+  encryptor:
+    algorithm: PBEWithMD5AndDES
+    key-obtention-iterations: 1000
+    pool-size: 1
+    provider-name: SunJCE
+    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+    iv-generator-classname: org.jasypt.iv.NoIvGenerator
+    string-output-type: base64
+```
+
+> **注意**：jasypt-spring-boot-starter 3.0.5 的默认值与上述参数完全一致，但在 Spring Boot 4.x 下，默认值解析存在兼容性问题，可能导致解密失败。显式声明这些参数可确保在 Spring Boot 4.x 环境下稳定运行。
+
+### 本地开发（IDEA）
+
+在 IDEA 中运行时，需在 **Run Configuration -> VM Options** 中填入：
+
+```
+-Djasypt.encryptor.password=your-secret-key
+```
+
+> **常见问题**：如果通过 Windows 高级系统设置添加了 `JASYPT_ENCRYPTOR_PASSWORD` 环境变量，必须**彻底退出 IDEA 再重新打开**，否则 IDEA 不会继承新增的环境变量，导致解密失败。直接在 VM Options 中传 `-D` 参数是最可靠的方式。
 
 ---
 

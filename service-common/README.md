@@ -1,4 +1,4 @@
-# Service Common
+﻿# Service Common
 
 公共模块，所有微服务的基础依赖。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力。
 
@@ -158,6 +158,12 @@ export JASYPT_ENCRYPTOR_PASSWORD=your-secret-key
 ```
 
 > **安全注意**：密钥禁止写死在配置文件中，仅通过命令行参数或环境变量注入。
+
+### 加密算法配置
+
+各服务的 `application.yaml` 中已显式声明 Jasypt 加密参数（算法 `PBEWithMD5AndDES`、1000 轮迭代、base64 输出等），与 `JasyptTest` 工具完全一致。虽然在 jasypt-spring-boot-starter 3.0.5 中这些是默认值，但在 Spring Boot 4.x 下默认值解析存在兼容性问题，必须显式声明。
+
+> **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
 
 ## 共享 Feign API
 
