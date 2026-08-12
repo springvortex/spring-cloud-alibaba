@@ -27,7 +27,6 @@ com.zjc.common
 ├── dto                            跨服务传输对象
 │   ├── UserDTO / GoodsDTO / OrderDTO / OrderDetailDTO
 │   ├── MailSendDTO / MailLogDTO
-│   └── SystemInfoDTO
 ├── exception
 │   ├── BusinessException          业务异常（供 Service / Controller 抛出）
 │   └── GlobalExceptionHandler     全局异常处理器（@RestControllerAdvice）
@@ -44,9 +43,11 @@ com.zjc.common.exception.GlobalExceptionHandler
 com.zjc.common.aop.WebLogAspect
 ```
 
-任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理和接口日志切面，无需手动 `@Import` 或 `@ComponentScan`。
+任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理和接口日志切面，无需手动 `@Import` 或
+`@ComponentScan`。
 
-> **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux 版本。
+> **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux
+> 版本。
 
 ## 统一响应
 
@@ -57,7 +58,7 @@ com.zjc.common.aop.WebLogAspect
   "success": true,
   "code": 0,
   "message": "操作成功",
-  "data": { },
+  "data": {},
   "timestamp": 1723017600000
 }
 ```
@@ -78,17 +79,17 @@ com.zjc.common.aop.WebLogAspect
 
 处理的异常类型：
 
-| 异常类型                            | 错误码 | 说明                                   |
-|-------------------------------------|--------|----------------------------------------|
-| `BusinessException`                 | 透传   | 业务异常，透传自身的 code 和 message   |
-| `MethodArgumentNotValidException`   | 100    | @RequestBody 校验失败                  |
-| `BindException`                     | 100    | 表单参数校验失败                       |
-| `ConstraintViolationException`      | 100    | @RequestParam / @PathVariable 校验失败 |
-| `MissingServletRequestParameterException` | 100 | 缺少必填参数                     |
-| `HttpMessageNotReadableException`   | 101    | 请求体无法解析（透传 e.getMessage()）  |
-| `NoResourceFoundException`          | 102    | 请求路径不存在（favicon.ico 不记日志） |
-| `HttpRequestMethodNotSupportedException` | -1 | 请求方法不支持                       |
-| `Exception`（兜底）                 | 500    | 未预期异常（透传 e.getMessage()）      |
+| 异常类型                                  | 错误码 | 说明                                   |
+|-------------------------------------------|--------|----------------------------------------|
+| `BusinessException`                       | 透传   | 业务异常，透传自身的 code 和 message   |
+| `MethodArgumentNotValidException`         | 100    | @RequestBody 校验失败                  |
+| `BindException`                           | 100    | 表单参数校验失败                       |
+| `ConstraintViolationException`            | 100    | @RequestParam / @PathVariable 校验失败 |
+| `MissingServletRequestParameterException` | 100    | 缺少必填参数                           |
+| `HttpMessageNotReadableException`         | 101    | 请求体无法解析（透传 e.getMessage()）  |
+| `NoResourceFoundException`                | 102    | 请求路径不存在（favicon.ico 不记日志） |
+| `HttpRequestMethodNotSupportedException`  | -1     | 请求方法不支持                         |
+| `Exception`（兜底）                       | 500    | 未预期异常（透传 e.getMessage()）      |
 
 兜底异常和 JSON 解析异常在 `e.getMessage()` 非空时透传具体原因（如 `/ by zero`），为空时回退到默认提示，避免前端拿到 null。
 
@@ -101,10 +102,14 @@ com.zjc.common.aop.WebLogAspect
 throw new BusinessException(ApiResponseEnum.USER_NOT_FOUND);
 
 // 自定义提示信息，错误码默认 -1
-throw new BusinessException("用户不存在");
+throw new
+
+BusinessException("用户不存在");
 
 // 自定义错误码 + 提示信息
-throw new BusinessException(10001, "用户不存在");
+throw new
+
+BusinessException(10001,"用户不存在");
 ```
 
 自定义错误码只需实现 `ErrorCode` 接口：
@@ -134,7 +139,8 @@ common 模块集成 `jasypt-spring-boot-starter`，所有引入 common 的模块
 
 ### 加密明文
 
-运行 `com.zjc.common.JasyptTest`，在 VM Options 中填入密钥 `-Djasypt.encryptor.password=your-secret-key`，输入明文即可得到 `ENC(xxx)` 密文。
+运行 `com.zjc.common.JasyptTest`，在 VM Options 中填入密钥 `-Djasypt.encryptor.password=your-secret-key`，输入明文即可得到
+`ENC(xxx)` 密文。
 
 ### 使用方式
 
@@ -161,9 +167,12 @@ export JASYPT_ENCRYPTOR_PASSWORD=your-secret-key
 
 ### 加密算法配置
 
-Jasypt 加密参数集中存放在 Nacos 配置中心的公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），各服务通过 `config.import` 引入。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。虽然在 jasypt-spring-boot-starter 3.0.5 中这些是默认值，但在 Spring Boot 4.x 下默认值解析存在兼容性问题，因此显式声明并集中管理。
+Jasypt 加密参数集中存放在 Nacos 配置中心的公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），各服务通过
+`config.import` 引入。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。虽然在 jasypt-spring-boot-starter 3.0.5
+中这些是默认值，但在 Spring Boot 4.x 下默认值解析存在兼容性问题，因此显式声明并集中管理。
 
-> **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
+> **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
+> 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
 
 ## 共享 Feign API
 
@@ -176,4 +185,5 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 
 ## 依赖说明
 
-该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。源码通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。
+该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。源码通过
+`maven-source-plugin` 一并打包，方便其他模块引用时查看源码。

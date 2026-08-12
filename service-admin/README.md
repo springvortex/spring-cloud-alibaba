@@ -15,15 +15,16 @@ Spring Boot Admin 监控面板服务，通过 Nacos 服务发现自动监控所�
 
 本模块作为 SBA Server，通过 `@EnableAdminServer` + Nacos Discovery 自动发现并监控以下服务（含自身）：
 
-| 服务              | 端口  | 说明                        |
-|-------------------|-------|-----------------------------|
-| service-admin     | 9003  | SBA Server（监控自身）      |
-| service-provider  | 9001  | 业务提供者                  |
-| service-consumer  | 9002  | 业务消费者                  |
-| service-gateway   | 80    | API 网关（WebFlux）         |
-| service-mail      | 9004  | 邮件服务                    |
+| 服务             | 端口 | 说明                   |
+|------------------|------|------------------------|
+| service-admin    | 9003 | SBA Server（监控自身） |
+| service-provider | 9001 | 业务提供者             |
+| service-consumer | 9002 | 业务消费者             |
+| service-gateway  | 80   | API 网关（WebFlux）    |
+| service-mail     | 9004 | 邮件服务               |
 
-被监控服务无需引入 SBA Client 依赖，只需暴露 Actuator 端点（各服务 `application.yaml` 已配置 `management.endpoints.web.exposure.include: '*'`）。
+被监控服务无需引入 SBA Client 依赖，只需暴露 Actuator 端点（各服务 `application.yaml` 已配置
+`management.endpoints.web.exposure.include: '*'`）。
 
 ### SBA 面板功能
 
@@ -35,18 +36,11 @@ Spring Boot Admin 监控面板服务，通过 Nacos 服务发现自动监控所�
 
 ## 接口
 
-### 系统信息
-
-| 方法 | 路径           | 说明                         |
-|------|----------------|------------------------------|
-| GET  | `/system/info` | 查询项目构建元数据与运行环境 |
-
 ## SpringDoc 分组
 
-| 分组        | 路径匹配     |
-|-------------|--------------|
-| 01-管理端   | `/**`        |
-| 02-系统信息 | `/system/**` |
+| 分组      | 路径匹配 |
+|-----------|----------|
+| 01-管理端 | `/**`    |
 
 ## 包结构
 
@@ -56,7 +50,6 @@ com.zjc.admin
 ├── config
 │   └── OpenApiConfig               SpringDoc 文档配置
 └── controller
-    └── SystemInfoController        系统信息接口
 ```
 
 ## 自动继承的公共能力
@@ -71,10 +64,6 @@ com.zjc.admin
 本地 `application.yaml` 保留引导配置（端口、profile）和 Actuator 端点暴露配置，业务配置在 Nacos。
 
 Nacos 配置位置：dataId=`dev`，group=`service-admin`
-
-## 构建信息
-
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，供 `/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 

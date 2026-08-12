@@ -45,19 +45,6 @@ public class OpenApiConfig {
     }
 
     /**
-     * 系统信息分组。
-     *
-     * @return 系统信息 API 分组配置
-     */
-    @Bean
-    public GroupedOpenApi systemApi() {
-        return GroupedOpenApi.builder()
-                .group("02-系统信息")
-                .pathsToMatch("/system/**")
-                .build();
-    }
-
-    /**
      * 文档元信息。
      *
      * @return OpenAPI 文档元信息

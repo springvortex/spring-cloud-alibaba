@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
-* Admin 服务启动类。
-*
-* <p>后台管理模块入口，通过 {@code @EnableDiscoveryClient} 注册到 Nacos，
-* 供网关或其他微服务通过服务发现进行调用。
+ * Admin 服务启动类。
+ *
+ * <p>后台管理模块入口，通过 {@code @EnableDiscoveryClient} 注册到 Nacos，
+ * 供网关或其他微服务通过服务发现进行调用。
  *
  * @author jiancai.zhong
  */

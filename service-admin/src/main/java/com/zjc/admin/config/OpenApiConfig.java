@@ -32,7 +32,7 @@ public class OpenApiConfig {
     private String port;
 
     /**
-     * 管理端全量分组，匹配 {@code /admin/**} 下所有接口。
+     * 管理端全量分组，匹配所有接口。
      *
      * @return 管理端全量 API 分组配置
      */
@@ -41,19 +41,6 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("01-管理端")
                 .pathsToMatch("/**")
-                .build();
-    }
-
-    /**
-     * 系统信息分组。
-     *
-     * @return 系统信息 API 分组配置
-     */
-    @Bean
-    public GroupedOpenApi systemApi() {
-        return GroupedOpenApi.builder()
-                .group("02-系统信息")
-                .pathsToMatch("/system/**")
                 .build();
     }
 

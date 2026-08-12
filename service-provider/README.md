@@ -1,4 +1,4 @@
-# Service Provider
+﻿# Service Provider
 
 服务提供者，项目的业务核心模块。
 
@@ -51,21 +51,14 @@
 |------|---------|---------------------------------------------------|
 | GET  | `/port` | 返回当前实例端口，供 consumer 通过 Feign 验证链路 |
 
-### 系统信息
-
-| 方法 | 路径           | 说明                             |
-|------|----------------|----------------------------------|
-| GET  | `/system/info` | 查询项目构建元数据与运行环境信息 |
-
 ## SpringDoc 分组
 
-| 分组          | 路径匹配     |
-|---------------|--------------|
-| 01-用户管理   | `/user/**`   |
-| 02-商品管理   | `/goods/**`  |
-| 03-订单管理   | `/order/**`  |
-| 04-连通性测试 | `/port`      |
-| 05-系统信息   | `/system/**` |
+| 分组          | 路径匹配    |
+|---------------|-------------|
+| 01-用户管理   | `/user/**`  |
+| 02-商品管理   | `/goods/**` |
+| 03-订单管理   | `/order/**` |
+| 04-连通性测试 | `/port`     |
 
 ## 包结构
 
@@ -77,7 +70,7 @@ com.zjc.provider
 │   ├── MybatisPlusConfig           分页插件
 │   ├── NacosConfigListenerConfig   Nacos 配置变更监听
 │   └── OpenApiConfig               SpringDoc 分组配置
-├── controller                      REST 接口（User/Goods/Order/Test/SystemInfo）
+├── controller                      REST 接口（User/Goods/Order/Test）
 ├── entity                          数据库实体（User/Goods/Order/OrderDetail）
 ├── mapper                          MyBatis-Plus Mapper
 └── service / impl                  业务逻辑
@@ -95,11 +88,6 @@ com.zjc.provider
 本地仅保留引导配置（端口、profile、Nacos 地址），数据源、MyBatis-Plus 等业务配置在 Nacos。
 
 Nacos 配置位置：dataId=`dev`，group=`service-provider`
-
-## 构建信息
-
-pom.xml 配置了 `spring-boot-maven-plugin` 的 `build-info` 目标，编译期生成 `META-INF/build-info.properties`，供
-`/system/info` 接口读取项目名称、版本、构建时间等元数据。
 
 ## 依赖
 
