@@ -8,3 +8,17 @@ spring:
     active: dev
     include:
       - nacos
+  boot:
+    admin:
+      ui:
+        title: Spring Cloud Alibaba Admin
+
+# Actuator 端点暴露（供 SBA 采集监控数据）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always

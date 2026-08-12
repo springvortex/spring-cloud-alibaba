@@ -14,9 +14,15 @@
     <artifactId>service-admin</artifactId>
 
     <name>Service Admin</name>
-    <description>管理端</description>
+    <description>Spring Boot Admin 服务监控面板</description>
 
     <dependencies>
+        <!-- Spring Boot Admin 服务端（自带 web + actuator） -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-server</artifactId>
+        </dependency>
+
         <!-- Nacos 服务发现 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -34,18 +40,6 @@
             <groupId>com.zjc</groupId>
             <artifactId>service-common</artifactId>
             <version>1.0.0</version>
-        </dependency>
-
-        <!-- Spring Boot Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Actuator（健康检查与监控端点） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- Lombok（简化代码） -->

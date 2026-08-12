@@ -15,6 +15,7 @@
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
 | 配置加密      | Jasypt                          | 3.0.5      |
+| 服务监控      | Spring Boot Admin               | 4.1.2      |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -27,7 +28,7 @@ spring-cloud-alibaba
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
-├── service-admin       后台管理，端口 9003
+├── service-admin       服务监控面板（Spring Boot Admin），端口 9003
 ├── service-mail        邮件服务，端口 9004，统一收发邮件，记录入库
 └── MP-Generator        MyBatis-Plus 代码生成器，按数据库表生成 Entity/Mapper/Service
 ```
@@ -437,6 +438,60 @@ generator.outputModule=service-provider
 Nacos 地址：`127.0.0.1:8848`
 
 每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
+
+## 服务监控（SBA）
+
+项目使用 [Spring Boot Admin](https://docs.spring-boot-admin.com/) (SBA) 4.1.2 作为服务监控面板。`service-admin` 模块作为 SBA Server，通过 Nacos 服务发现自动监控所有注册的微服务。
+
+### 工作原理
+
+- **SBA Server**（service-admin）：启用 `@EnableAdminServer`，通过 Nacos Discovery 自动发现所有注册的实例
+- **被监控服务**：无需引入 SBA Client 依赖，只需暴露 Actuator 端点即可被 SBA 自动发现和采集
+
+各服务本地 `application.yaml` 中已配置 Actuator 端点暴露：
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+```
+
+> 此配置也可迁移到 Nacos 公共配置组（group: `spring-cloud-alibaba-public`）集中管理，与 Jasypt 配置同理。
+
+### 访问面板
+
+启动 `service-admin` 后，浏览器访问：
+
+```
+http://localhost:9003
+```
+
+SBA 面板提供以下功能：
+
+- **Wallboard**：所有服务健康状态一览
+- **Details**：单个服务的完整信息（JVM 内存/线程、日志级别、环境变量、缓存等）
+- **Loggers**：在线调整日志级别（无需重启）
+- **Health**：健康检查详情（数据库连接、磁盘空间、Nacos 连接等）
+- **Metrics**：JVM 指标、HTTP 请求统计等
+
+### 监控范围
+
+SBA 通过 Nacos 发现以下服务（含 SBA Server 自身）：
+
+| 服务              | 端口  | 说明                        |
+|-------------------|-------|-----------------------------|
+| service-admin     | 9003  | SBA Server（监控自身）      |
+| service-provider  | 9001  | 业务提供者                  |
+| service-consumer  | 9002  | 业务消费者                  |
+| service-gateway   | 80    | API 网关（WebFlux）         |
+| service-mail      | 9004  | 邮件服务                    |
+
+> **安全提醒**：当前 SBA 面板未配置安全认证，生产环境请集成 Spring Security 添加登录保护。
 
 ## 接口文档
 
