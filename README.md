@@ -350,7 +350,17 @@ $env:JASYPT_ENCRYPTOR_PASSWORD = "your-secret-key"
 
 ### 加密算法配置
 
-各服务的 `application.yaml` 中已显式声明 Jasypt 加密参数：
+Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一存放在 Nacos 配置中心的公共配置组中，各服务通过 `config.import` 引入：
+
+```yaml
+# 各服务的 config/application-nacos.yaml
+spring:
+  config:
+    import:
+      - nacos:jasypt?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
+```
+
+Nacos 中 `jasypt` 配置内容（group: `spring-cloud-alibaba-public`）：
 
 ```yaml
 jasypt:
@@ -364,7 +374,7 @@ jasypt:
     string-output-type: base64
 ```
 
-> **注意**：jasypt-spring-boot-starter 3.0.5 的默认值与上述参数完全一致，但在 Spring Boot 4.x 下，默认值解析存在兼容性问题，可能导致解密失败。显式声明这些参数可确保在 Spring Boot 4.x 环境下稳定运行。
+> **注意**：jasypt-spring-boot-starter 3.0.5 的默认值与上述参数完全一致，但在 Spring Boot 4.x 下，默认值解析存在兼容性问题，可能导致解密失败。因此显式声明这些参数并集中放在 Nacos 公共配置组中，所有服务共享同一份配置，便于维护和动态刷新。
 
 ### 本地开发（IDEA）
 
@@ -421,6 +431,8 @@ generator.outputModule=service-provider
 - **group**：服务名（如 `service-provider`、`service-mail`）
 - **namespace**：`public`
 - **热更新**：`refreshEnabled=true`
+
+公共配置组（group: `spring-cloud-alibaba-public`）存放所有服务共享的配置，如 Jasypt 加密算法参数（dataId: `jasypt`）。各服务通过 `config.import` 引入。
 
 Nacos 地址：`127.0.0.1:8848`
 
