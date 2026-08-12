@@ -29,35 +29,11 @@ Spring Boot Admin 监控面板服务，通过 Nacos 服务发现自动监控所�
 ### SBA 面板功能
 
 - **Wallboard**：所有服务健康状态一览
-- **Details**：单个服务的完整信息（JVM 内存/线程、日志级别、环境变量、缓存等）
+- **Details**：单个服务的完整信息（JVM 内存/线程、日志级别、环境变量、缓存、SBOM 依赖清单等）
 - **Loggers**：在线调整日志级别（无需重启）
 - **Health**：健康检查详情（数据库连接、磁盘空间、Nacos 连接等）
 - **Metrics**：JVM 指标、HTTP 请求统计等
-
-## 接口
-
-## SpringDoc 分组
-
-| 分组      | 路径匹配 |
-|-----------|----------|
-| 01-管理端 | `/**`    |
-
-## 包结构
-
-```
-com.zjc.admin
-├── AdminApplication                启动类（@EnableDiscoveryClient + @EnableAdminServer）
-├── config
-│   └── OpenApiConfig               SpringDoc 文档配置
-└── controller
-```
-
-## 自动继承的公共能力
-
-引入 service-common 依赖后，本模块自动获得以下能力（无需配置）：
-
-- **全局异常处理**：`GlobalExceptionHandler` 统一拦截异常并用 `ApiResponse` 包装返回
-- **接口日志切面**：`WebLogAspect` 自动记录 Controller 入参、返回值与执行耗时
+- **SBOM**：软件物料清单（CycloneDX 格式，展示组件依赖关系与版本）
 
 ## 安全认证（Spring Security）
 
@@ -94,6 +70,29 @@ $env:SBA_PASSWORD = "your-password"
 
 > **安全提醒**：密码禁止写死在配置文件中，仅通过环境变量或 VM 参数注入。
 
+## SpringDoc 分组
+
+| 分组      | 路径匹配 |
+|-----------|----------|
+| 01-管理端 | `/**`    |
+
+## 包结构
+
+```
+com.zjc.admin
+├── AdminApplication                启动类（@EnableDiscoveryClient + @EnableAdminServer）
+├── config
+│   ├── OpenApiConfig               SpringDoc 文档配置
+│   └── SecurityConfig              Spring Security 安全配置（SBA 面板登录认证）
+```
+
+## 自动继承的公共能力
+
+引入 service-common 依赖后，本模块自动获得以下能力（无需配置）：
+
+- **全局异常处理**：`GlobalExceptionHandler` 统一拦截异常并用 `ApiResponse` 包装返回
+- **接口日志切面**：`WebLogAspect` 自动记录 Controller 入参、返回值与执行耗时
+
 ## 配置说明
 
 本地 `application.yaml` 保留引导配置（端口、profile）和 Actuator 端点暴露配置，业务配置在 Nacos。
@@ -104,6 +103,8 @@ Nacos 配置位置：dataId=`dev`，group=`service-admin`
 
 - service-common
 - spring-boot-admin-starter-server（自带 web + actuator）
+- spring-boot-starter-security（SBA 面板登录认证）
 - springdoc-openapi-starter-webmvc-ui
 
-> SBA Server starter 自带 `spring-boot-starter-web` 和 `spring-boot-starter-actuator`，无需额外声明。
+> SBA Server starter 自带 `spring-boot-starter-web` 和 `spring-boot-starter-actuator`，无需额外声明。SBOM 数据由父 pom 的
+> `cyclonedx-maven-plugin` 在编译期自动生成。

@@ -1,4 +1,4 @@
-﻿# Spring Cloud Alibaba
+﻿﻿# Spring Cloud Alibaba
 
 基于 Spring Cloud Alibaba 的微服务学习与实践项目。
 
@@ -16,6 +16,7 @@
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
 | 配置加密      | Jasypt                          | 3.0.5      |
 | 服务监控      | Spring Boot Admin               | 4.1.2      |
+| SBOM 生成     | CycloneDX Maven Plugin          | 2.9.3      |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -492,6 +493,7 @@ SBA 面板提供以下功能：
 - **Loggers**：在线调整日志级别（无需重启）
 - **Health**：健康检查详情（数据库连接、磁盘空间、Nacos 连接等）
 - **Metrics**：JVM 指标、HTTP 请求统计等
+- **SBOM**：软件物料清单（CycloneDX 格式，展示组件依赖关系与版本）
 
 ### 监控范围
 
