@@ -505,7 +505,32 @@ SBA 通过 Nacos 发现以下服务（含 SBA Server 自身）：
 | service-gateway  | 80   | API 网关（WebFlux）    |
 | service-mail     | 9004 | 邮件服务               |
 
-> **安全提醒**：当前 SBA 面板未配置安全认证，生产环境请集成 Spring Security 添加登录保护。
+SBA 面板已集成 Spring Security 登录认证，访问 `http://localhost:9003` 会自动跳转到登录页。
+
+### 登录凭证
+
+通过环境变量注入（不写入配置文件）：
+
+| 配置项 | 环境变量       | 默认值 | 说明             |
+|--------|----------------|--------|------------------|
+| 用户名 | `SBA_USERNAME` | admin  | 登录用户名       |
+| 密码   | `SBA_PASSWORD` | 无     | 登录密码（必填） |
+
+**IDEA 本地开发**：Run Configuration -> VM Options 填入 `-DSBA_PASSWORD=your-password`
+
+**生产部署**：
+
+```bash
+# macOS / Linux
+export SBA_PASSWORD=your-password
+./service.sh start service-admin
+
+# Windows PowerShell
+$env:SBA_PASSWORD = "your-password"
+.\service.bat start service-admin
+```
+
+> 密码禁止写死在配置文件中，仅通过环境变量或 VM 参数注入。
 
 ## 接口文档
 

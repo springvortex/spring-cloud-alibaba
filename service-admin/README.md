@@ -8,7 +8,7 @@ Spring Boot Admin 监控面板服务，通过 Nacos 服务发现自动监控所�
 |------------|---------------------------------------|
 | 端口       | 9003                                  |
 | 服务名     | service-admin                         |
-| SBA 面板   | http://localhost:9003                 |
+| SBA 面板   | http://localhost:9003（需登录）       |
 | Swagger UI | http://localhost:9003/swagger-ui.html |
 
 ## 监控架构
@@ -58,6 +58,41 @@ com.zjc.admin
 
 - **全局异常处理**：`GlobalExceptionHandler` 统一拦截异常并用 `ApiResponse` 包装返回
 - **接口日志切面**：`WebLogAspect` 自动记录 Controller 入参、返回值与执行耗时
+
+## 安全认证（Spring Security）
+
+SBA 面板已集成 Spring Security，访问需登录认证。
+
+### 凭证配置
+
+登录凭证通过环境变量注入，不写入配置文件：
+
+| 配置项 | 环境变量       | 默认值 | 说明                             |
+|--------|----------------|--------|----------------------------------|
+| 用户名 | `SBA_USERNAME` | admin  | 登录用户名                       |
+| 密码   | `SBA_PASSWORD` | 无     | 登录密码（必填，不设则启动报错） |
+
+### 传入凭证
+
+**IDEA 本地开发**：Run Configuration -> VM Options
+
+```
+-DSBA_PASSWORD=your-password
+```
+
+**环境变量**：
+
+```bash
+# macOS / Linux
+export SBA_PASSWORD=your-password
+./service.sh start service-admin
+
+# Windows PowerShell
+$env:SBA_PASSWORD = "your-password"
+.\service.bat start service-admin
+```
+
+> **安全提醒**：密码禁止写死在配置文件中，仅通过环境变量或 VM 参数注入。
 
 ## 配置说明
 

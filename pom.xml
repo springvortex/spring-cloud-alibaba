@@ -50,6 +50,10 @@
         <!-- Spring Boot Admin（服务监控面板） -->
         <spring-boot-admin.version>4.1.2</spring-boot-admin.version>
 
+        <!-- CycloneDX（SBOM 生成，供 SBA 展示软件物料清单） -->
+        <cyclonedx.version>2.9.3</cyclonedx.version>
+        <cyclonedx.skip>false</cyclonedx.skip>
+
         <!-- Thin-JAR 打包：每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
         <dist.dir>${maven.multiModuleProjectDirectory}/build/${project.artifactId}</dist.dir>
         <dist.libDir>${dist.dir}/lib</dist.libDir>
@@ -69,6 +73,7 @@
             </activation>
             <properties>
                 <spring-boot.build-info.skip>true</spring-boot.build-info.skip>
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
         </profile>
     </profiles>
@@ -220,6 +225,28 @@
 
         <!-- 所有子模块自动继承以下插件 -->
         <plugins>
+            <!-- CycloneDX：生成 SBOM（软件物料清单），输出到 META-INF/sbom/application.cdx.json -->
+            <!-- Spring Boot Actuator 的 /actuator/sbom 端点读取此文件，SBA 面板展示依赖清单 -->
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>${cyclonedx.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputFormat>json</outputFormat>
+                    <outputName>application.cdx</outputName>
+                    <outputDirectory>${project.build.outputDirectory}/META-INF/sbom</outputDirectory>
+                    <skip>${cyclonedx.skip}</skip>
+                </configuration>
+            </plugin>
+
             <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
             <plugin>
                 <groupId>org.jacoco</groupId>

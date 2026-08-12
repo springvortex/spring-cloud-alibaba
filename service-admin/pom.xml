@@ -23,6 +23,12 @@
             <artifactId>spring-boot-admin-starter-server</artifactId>
         </dependency>
 
+        <!-- Spring Security（SBA 面板登录认证） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Nacos 服务发现 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
