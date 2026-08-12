@@ -225,31 +225,37 @@
 
         <!-- 所有子模块自动继承以下插件 -->
         <plugins>
-            <!-- CycloneDX：生成 SBOM（软件物料清单），输出到 META-INF/sbom/application.cdx.json -->
-            <!-- Spring Boot Actuator 的 /actuator/sbom 端点读取此文件，SBA 面板展示依赖清单 -->
-            <plugin>
-                <groupId>org.cyclonedx</groupId>
-                <artifactId>cyclonedx-maven-plugin</artifactId>
-                <version>${cyclonedx.version}</version>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>makeBom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <outputFormat>json</outputFormat>
-                    <outputName>application.cdx</outputName>
-                    <outputDirectory>${project.build.outputDirectory}/META-INF/sbom</outputDirectory>
-                    <skip>${cyclonedx.skip}</skip>
-                    <!-- 禁用 makeAggregateBom（默认会额外执行并重复 attach artifact） -->
-                    <skipAggregate>true</skipAggregate>
-                    <!-- 使用 1.5 规范（1.6 的 meta:enum/deprecated 关键字会触发 JSON Schema 校验 WARNING） -->
-                    <schemaVersion>1.5</schemaVersion>
-                </configuration>
-            </plugin>
+           <!-- CycloneDX：生成 SBOM（软件物料清单），输出到 META-INF/sbom/application.cdx.json -->
+           <!-- Spring Boot Actuator 的 /actuator/sbom 端点读取此文件，SBA 面板展示依赖清单 -->
+           <plugin>
+               <groupId>org.cyclonedx</groupId>
+               <artifactId>cyclonedx-maven-plugin</artifactId>
+               <version>${cyclonedx.version}</version>
+               <executions>
+                   <execution>
+                       <id>make-bom</id>
+                       <phase>generate-resources</phase>
+                       <goals>
+                           <goal>makeBom</goal>
+                       </goals>
+                   </execution>
+                   <!-- 禁用默认的 makeAggregateBom 执行（package 阶段自动绑定，会重复生成 BOM 并 attach artifact） -->
+                   <execution>
+                       <id>default</id>
+                       <phase>none</phase>
+                   </execution>
+               </executions>
+               <configuration>
+                   <outputFormat>json</outputFormat>
+                   <outputName>application.cdx</outputName>
+                   <outputDirectory>${project.build.outputDirectory}/META-INF/sbom</outputDirectory>
+                   <skip>${cyclonedx.skip}</skip>
+                   <!-- 不 attach BOM 为 Maven artifact（仅需 META-INF/sbom/ 下的文件供 SBA 读取） -->
+                   <skipAttach>true</skipAttach>
+                   <!-- 使用 1.5 规范（1.6 的 meta:enum/deprecated 关键字会触发 JSON Schema 校验 WARNING） -->
+                   <schemaVersion>1.5</schemaVersion>
+               </configuration>
+           </plugin>
 
             <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
             <plugin>
