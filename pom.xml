@@ -54,6 +54,9 @@
         <cyclonedx.version>2.9.3</cyclonedx.version>
         <cyclonedx.skip>false</cyclonedx.skip>
 
+        <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射） -->
+        <mapstruct.version>1.6.3</mapstruct.version>
+
         <!-- Thin-JAR 打包：每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
         <dist.dir>${maven.multiModuleProjectDirectory}/build/${project.artifactId}</dist.dir>
         <dist.libDir>${dist.dir}/lib</dist.libDir>
@@ -161,15 +164,22 @@
                 <version>${spring-boot-admin.version}</version>
             </dependency>
 
-            <!-- Spring Boot Admin 客户端 -->
-            <dependency>
-                <groupId>de.codecentric</groupId>
-                <artifactId>spring-boot-admin-starter-client</artifactId>
-                <version>${spring-boot-admin.version}</version>
-            </dependency>
+           <!-- Spring Boot Admin 客户端 -->
+           <dependency>
+               <groupId>de.codecentric</groupId>
+               <artifactId>spring-boot-admin-starter-client</artifactId>
+               <version>${spring-boot-admin.version}</version>
+           </dependency>
 
-        </dependencies>
-    </dependencyManagement>
+           <!-- MapStruct（编译期 Bean 映射，替代 BeanUtils.copyProperties） -->
+           <dependency>
+               <groupId>org.mapstruct</groupId>
+               <artifactId>mapstruct</artifactId>
+               <version>${mapstruct.version}</version>
+           </dependency>
+
+       </dependencies>
+   </dependencyManagement>
 
     <build>
         <pluginManagement>
@@ -187,16 +197,33 @@
                     </configuration>
                 </plugin>
 
-                <!-- 编译插件 -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
-                    <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                    </configuration>
-                </plugin>
+               <!-- 编译插件 -->
+               <plugin>
+                   <groupId>org.apache.maven.plugins</groupId>
+                   <artifactId>maven-compiler-plugin</artifactId>
+                   <version>3.11.0</version>
+                   <configuration>
+                       <source>${java.version}</source>
+                       <target>${java.version}</target>
+                       <annotationProcessorPaths>
+                           <path>
+                               <groupId>org.projectlombok</groupId>
+                               <artifactId>lombok</artifactId>
+                               <version>${lombok.version}</version>
+                           </path>
+                           <path>
+                               <groupId>org.projectlombok</groupId>
+                               <artifactId>lombok-mapstruct-binding</artifactId>
+                               <version>0.2.0</version>
+                           </path>
+                           <path>
+                               <groupId>org.mapstruct</groupId>
+                               <artifactId>mapstruct-processor</artifactId>
+                               <version>${mapstruct.version}</version>
+                           </path>
+                       </annotationProcessorPaths>
+                   </configuration>
+               </plugin>
 
                 <!-- 公共库模块拷贝 JAR 到 build/（仅 service-common 声明使用） -->
                 <plugin>

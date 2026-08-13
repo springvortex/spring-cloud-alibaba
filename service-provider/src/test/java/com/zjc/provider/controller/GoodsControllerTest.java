@@ -3,6 +3,7 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.GoodsDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.GoodsConverter;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
 import org.junit.jupiter.api.DisplayName;
@@ -35,11 +36,14 @@ class GoodsControllerTest {
     @Mock
     private GoodsService goodsService;
 
+    @Mock
+    private GoodsConverter goodsConverter;
+
     @InjectMocks
     private GoodsController goodsController;
 
     /**
-     * 验证根据 ID 查询商品时返回正确的 DTO，价格字段用 BigDecimal 精确比对。
+     * 验证根据 ID 查询商品时返回正确的 DTO。
      */
     @Test
     @DisplayName("getGoods: 返回单个商品 DTO")
@@ -48,7 +52,12 @@ class GoodsControllerTest {
         goods.setGoodsId(1L);
         goods.setGoodsName("iPhone");
         goods.setGoodsPrice(new BigDecimal("6999"));
+        GoodsDTO dto = new GoodsDTO();
+        dto.setGoodsId(1L);
+        dto.setGoodsName("iPhone");
+        dto.setGoodsPrice(new BigDecimal("6999"));
         when(goodsService.getById(1L)).thenReturn(goods);
+        when(goodsConverter.entityToDto(goods)).thenReturn(dto);
 
         ApiResponse<GoodsDTO> resp = goodsController.getGoods(1L);
 
@@ -64,6 +73,7 @@ class GoodsControllerTest {
     @DisplayName("getGoods: 商品不存在返回 null")
     void testGetGoodsNotFound() {
         when(goodsService.getById(999L)).thenReturn(null);
+        when(goodsConverter.entityToDto(null)).thenReturn(null);
 
         ApiResponse<GoodsDTO> resp = goodsController.getGoods(999L);
 
@@ -79,7 +89,11 @@ class GoodsControllerTest {
         Goods goods = new Goods();
         goods.setGoodsId(1L);
         goods.setGoodsName("iPhone");
+        GoodsDTO dto = new GoodsDTO();
+        dto.setGoodsId(1L);
+        dto.setGoodsName("iPhone");
         when(goodsService.list()).thenReturn(List.of(goods));
+        when(goodsConverter.entityListToDtoList(List.of(goods))).thenReturn(List.of(dto));
 
         ApiResponse<List<GoodsDTO>> resp = goodsController.list();
 
@@ -94,6 +108,7 @@ class GoodsControllerTest {
     @DisplayName("list: 空列表")
     void testListEmpty() {
         when(goodsService.list()).thenReturn(Collections.emptyList());
+        when(goodsConverter.entityListToDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         ApiResponse<List<GoodsDTO>> resp = goodsController.list();
 
@@ -114,7 +129,12 @@ class GoodsControllerTest {
         g2.setGoodsId(2L);
         g2.setGoodsName("iPad");
         page.setRecords(List.of(g1, g2));
+        GoodsDTO d1 = new GoodsDTO();
+        d1.setGoodsName("iPhone");
+        GoodsDTO d2 = new GoodsDTO();
+        d2.setGoodsName("iPad");
         when(goodsService.page(any(Page.class))).thenReturn(page);
+        when(goodsConverter.entityListToDtoList(List.of(g1, g2))).thenReturn(List.of(d1, d2));
 
         ApiResponse<Page<GoodsDTO>> resp = goodsController.page(1, 5);
 
@@ -131,6 +151,12 @@ class GoodsControllerTest {
         GoodsDTO dto = new GoodsDTO();
         dto.setGoodsName("new product");
         dto.setGoodsPrice(new BigDecimal("100"));
+        Goods entity = new Goods();
+        entity.setGoodsName("new product");
+        GoodsDTO resultDto = new GoodsDTO();
+        resultDto.setGoodsName("new product");
+        when(goodsConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(goodsConverter.entityToDto(entity)).thenReturn(resultDto);
         when(goodsService.save(any(Goods.class))).thenReturn(true);
 
         ApiResponse<GoodsDTO> resp = goodsController.add(dto);
@@ -149,6 +175,9 @@ class GoodsControllerTest {
         GoodsDTO dto = new GoodsDTO();
         dto.setGoodsId(1L);
         dto.setGoodsName("updated");
+        Goods entity = new Goods();
+        entity.setGoodsId(1L);
+        when(goodsConverter.dtoToEntity(dto)).thenReturn(entity);
         when(goodsService.updateById(any(Goods.class))).thenReturn(true);
 
         ApiResponse<Void> resp = goodsController.update(dto);

@@ -3,6 +3,7 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.UserConverter;
 import com.zjc.provider.entity.User;
 import com.zjc.provider.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +31,7 @@ import java.util.List;
  *
  * <p>CRUD 直接复用 {@link UserService}（继承 MyBatis-Plus 的 IService）
  * 自带的能力，无需在 service 层重复定义通用方法。
+ * Entity <-> DTO 转换使用 {@link UserConverter}（MapStruct 编译期生成，零反射）。
  *
  * @author jiancai.zhong
  */
@@ -41,18 +42,20 @@ public class UserController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private UserConverter userConverter;
+
     @Operation(summary = "根据ID查询单个用户")
     @GetMapping("/user/{id}")
     public ApiResponse<UserDTO> getUser(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
-        return ApiResponse.success(toDTO(userService.getById(id)));
+        return ApiResponse.success(userConverter.entityToDto(userService.getById(id)));
     }
 
     @Operation(summary = "查询全部有效用户")
     @GetMapping("/user/list")
     public ApiResponse<List<UserDTO>> list() {
-        List<UserDTO> list = userService.list().stream().map(this::toDTO).toList();
-        return ApiResponse.success(list);
+        return ApiResponse.success(userConverter.entityListToDtoList(userService.list()));
     }
 
     @Operation(summary = "分页查询有效用户")
@@ -62,25 +65,22 @@ public class UserController {
             @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<User> page = userService.page(new Page<>(current, size));
         Page<UserDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        result.setRecords(page.getRecords().stream().map(this::toDTO).toList());
+        result.setRecords(userConverter.entityListToDtoList(page.getRecords()));
         return ApiResponse.success(result);
     }
 
     @Operation(summary = "新增用户")
     @PostMapping("/user")
     public ApiResponse<UserDTO> add(@Valid @RequestBody UserDTO dto) {
-        User user = new User();
-        BeanUtils.copyProperties(dto, user);
+        User user = userConverter.dtoToEntity(dto);
         userService.save(user);
-        return ApiResponse.success(toDTO(user));
+        return ApiResponse.success(userConverter.entityToDto(user));
     }
 
     @Operation(summary = "根据ID修改用户")
     @PutMapping("/user")
     public ApiResponse<Void> update(@Valid @RequestBody UserDTO dto) {
-        User user = new User();
-        BeanUtils.copyProperties(dto, user);
-        userService.updateById(user);
+        userService.updateById(userConverter.dtoToEntity(dto));
         return ApiResponse.success();
     }
 
@@ -90,20 +90,5 @@ public class UserController {
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
         userService.removeById(id);
         return ApiResponse.success();
-    }
-
-    /**
-     * Entity 转 DTO，过滤内部字段。
-     *
-     * @param user 用户实体
-     * @return 用户 DTO，入参为 {@code null} 时返回 {@code null}
-     */
-    private UserDTO toDTO(User user) {
-        if (user == null) {
-            return null;
-        }
-        UserDTO dto = new UserDTO();
-        BeanUtils.copyProperties(user, dto);
-        return dto;
     }
 }

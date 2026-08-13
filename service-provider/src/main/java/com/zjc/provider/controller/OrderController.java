@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.OrderDTO;
 import com.zjc.common.dto.OrderDetailDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.OrderConverter;
 import com.zjc.provider.entity.Order;
 import com.zjc.provider.entity.OrderDetail;
 import com.zjc.provider.service.OrderDetailService;
@@ -14,7 +15,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +36,7 @@ import java.util.List;
  * <p>CRUD 直接复用 {@link OrderService}（继承 MyBatis-Plus 的 IService）
  * 自带的能力，无需在 service 层重复定义通用方法。
  * 订单详情查询（getById）会聚合明细表，一次性返回主表 + 明细列表。
+ * Entity <-> DTO 转换使用 {@link OrderConverter}（MapStruct 编译期生成，零反射）。
  *
  * @author jiancai.zhong
  */
@@ -49,6 +50,9 @@ public class OrderController {
     @Resource
     private OrderDetailService orderDetailService;
 
+    @Resource
+    private OrderConverter orderConverter;
+
     @Operation(summary = "根据ID查询单个订单（含明细）")
     @GetMapping("/order/{id}")
     public ApiResponse<OrderDTO> getOrder(
@@ -57,18 +61,18 @@ public class OrderController {
         if (order == null) {
             return ApiResponse.success(null);
         }
-        OrderDTO dto = toDTO(order);
+        OrderDTO dto = orderConverter.entityToDto(order);
         List<OrderDetail> details = orderDetailService.list(
                 new LambdaQueryWrapper<OrderDetail>().eq(OrderDetail::getOrderId, id));
-        dto.setOrderDetails(details.stream().map(this::toDTO).toList());
+        List<OrderDetailDTO> detailDTOs = details.stream().map(orderConverter::entityToDto).toList();
+        dto.setOrderDetails(detailDTOs);
         return ApiResponse.success(dto);
     }
 
     @Operation(summary = "查询全部有效订单（不含明细）")
     @GetMapping("/order/list")
     public ApiResponse<List<OrderDTO>> list() {
-        List<OrderDTO> list = orderService.list().stream().map(this::toDTO).toList();
-        return ApiResponse.success(list);
+        return ApiResponse.success(orderConverter.entityListToDtoList(orderService.list()));
     }
 
     @Operation(summary = "分页查询有效订单（不含明细）")
@@ -78,25 +82,22 @@ public class OrderController {
             @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<Order> page = orderService.page(new Page<>(current, size));
         Page<OrderDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        result.setRecords(page.getRecords().stream().map(this::toDTO).toList());
+        result.setRecords(orderConverter.entityListToDtoList(page.getRecords()));
         return ApiResponse.success(result);
     }
 
     @Operation(summary = "新增订单（仅主表）")
     @PostMapping("/order")
     public ApiResponse<OrderDTO> add(@Valid @RequestBody OrderDTO dto) {
-        Order order = new Order();
-        BeanUtils.copyProperties(dto, order);
+        Order order = orderConverter.dtoToEntity(dto);
         orderService.save(order);
-        return ApiResponse.success(toDTO(order));
+        return ApiResponse.success(orderConverter.entityToDto(order));
     }
 
     @Operation(summary = "根据ID修改订单")
     @PutMapping("/order")
     public ApiResponse<Void> update(@Valid @RequestBody OrderDTO dto) {
-        Order order = new Order();
-        BeanUtils.copyProperties(dto, order);
-        orderService.updateById(order);
+        orderService.updateById(orderConverter.dtoToEntity(dto));
         return ApiResponse.success();
     }
 
@@ -106,35 +107,5 @@ public class OrderController {
             @Parameter(description = "订单主键") @PathVariable("id") Long id) {
         orderService.removeById(id);
         return ApiResponse.success();
-    }
-
-    /**
-     * 订单主表 Entity 转 DTO。
-     *
-     * @param order 订单实体
-     * @return 订单 DTO，入参为 {@code null} 时返回 {@code null}
-     */
-    private OrderDTO toDTO(Order order) {
-        if (order == null) {
-            return null;
-        }
-        OrderDTO dto = new OrderDTO();
-        BeanUtils.copyProperties(order, dto);
-        return dto;
-    }
-
-    /**
-     * 订单明细 Entity 转 DTO。
-     *
-     * @param detail 订单明细实体
-     * @return 订单明细 DTO，入参为 {@code null} 时返回 {@code null}
-     */
-    private OrderDetailDTO toDTO(OrderDetail detail) {
-        if (detail == null) {
-            return null;
-        }
-        OrderDetailDTO dto = new OrderDetailDTO();
-        BeanUtils.copyProperties(detail, dto);
-        return dto;
     }
 }

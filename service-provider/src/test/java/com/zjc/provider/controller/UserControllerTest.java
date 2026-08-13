@@ -3,6 +3,7 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.UserConverter;
 import com.zjc.provider.entity.User;
 import com.zjc.provider.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -35,20 +36,23 @@ class UserControllerTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private UserConverter userConverter;
+
     @InjectMocks
     private UserController userController;
 
-    /**
-     * 验证根据 ID 查询用户时，Service 返回的数据能正确转换为 DTO。
-     */
     @Test
     @DisplayName("getUser: 返回单个用户 DTO")
     void testGetUserReturnsDto() {
         User user = new User();
         user.setUserId(1L);
         user.setUsername("zhangsan");
-        user.setNickName("张三");
+        UserDTO dto = new UserDTO();
+        dto.setUserId(1L);
+        dto.setUsername("zhangsan");
         when(userService.getById(1L)).thenReturn(user);
+        when(userConverter.entityToDto(user)).thenReturn(dto);
 
         ApiResponse<UserDTO> resp = userController.getUser(1L);
 
@@ -58,13 +62,11 @@ class UserControllerTest {
         verify(userService).getById(1L);
     }
 
-    /**
-     * 验证查询不存在的用户 ID 时，返回成功响应但 data 为 null。
-     */
     @Test
     @DisplayName("getUser: 用户不存在时返回 null data")
     void testGetUserNotFound() {
         when(userService.getById(999L)).thenReturn(null);
+        when(userConverter.entityToDto(null)).thenReturn(null);
 
         ApiResponse<UserDTO> resp = userController.getUser(999L);
 
@@ -72,16 +74,17 @@ class UserControllerTest {
         assertThat(resp.getData()).isNull();
     }
 
-    /**
-     * 验证列表查询返回的每个 Entity 都被正确转换为 DTO。
-     */
     @Test
     @DisplayName("list: 返回用户 DTO 列表")
     void testListReturnsDtoList() {
         User user = new User();
         user.setUserId(1L);
         user.setUsername("zhangsan");
+        UserDTO dto = new UserDTO();
+        dto.setUserId(1L);
+        dto.setUsername("zhangsan");
         when(userService.list()).thenReturn(List.of(user));
+        when(userConverter.entityListToDtoList(List.of(user))).thenReturn(List.of(dto));
 
         ApiResponse<List<UserDTO>> resp = userController.list();
 
@@ -90,22 +93,17 @@ class UserControllerTest {
         assertThat(resp.getData().get(0).getUsername()).isEqualTo("zhangsan");
     }
 
-    /**
-     * 验证数据库无数据时返回空列表而非 null。
-     */
     @Test
     @DisplayName("list: 无数据时返回空列表")
     void testListEmpty() {
         when(userService.list()).thenReturn(Collections.emptyList());
+        when(userConverter.entityListToDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         ApiResponse<List<UserDTO>> resp = userController.list();
 
         assertThat(resp.getData()).isEmpty();
     }
 
-    /**
-     * 验证分页查询时 total 和 records 都正确映射到 DTO 页。
-     */
     @Test
     @DisplayName("page: 分页查询返回 DTO 页")
     void testPageReturnsDtoPage() {
@@ -114,7 +112,10 @@ class UserControllerTest {
         user.setUserId(1L);
         user.setUsername("zhangsan");
         page.setRecords(List.of(user));
+        UserDTO dto = new UserDTO();
+        dto.setUserId(1L);
         when(userService.page(any(Page.class))).thenReturn(page);
+        when(userConverter.entityListToDtoList(List.of(user))).thenReturn(List.of(dto));
 
         ApiResponse<Page<UserDTO>> resp = userController.page(1, 10);
 
@@ -124,15 +125,17 @@ class UserControllerTest {
         assertThat(resp.getData().getRecords().get(0).getUserId()).isEqualTo(1L);
     }
 
-    /**
-     * 验证新增用户时 DTO 正确复制到 Entity 并调用 save，返回回填后的 DTO。
-     */
     @Test
     @DisplayName("add: 新增用户后返回 DTO")
     void testAddReturnsDto() {
         UserDTO dto = new UserDTO();
         dto.setUsername("lisi");
-        dto.setNickName("李四");
+        User entity = new User();
+        entity.setUsername("lisi");
+        UserDTO resultDto = new UserDTO();
+        resultDto.setUsername("lisi");
+        when(userConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(userConverter.entityToDto(entity)).thenReturn(resultDto);
         when(userService.save(any(User.class))).thenReturn(true);
 
         ApiResponse<UserDTO> resp = userController.add(dto);
@@ -142,15 +145,15 @@ class UserControllerTest {
         verify(userService).save(any(User.class));
     }
 
-    /**
-     * 验证修改用户时 DTO 正确复制到 Entity 并调用 updateById。
-     */
     @Test
     @DisplayName("update: 修改用户")
     void testUpdateSuccess() {
         UserDTO dto = new UserDTO();
         dto.setUserId(1L);
         dto.setUsername("updated");
+        User entity = new User();
+        entity.setUserId(1L);
+        when(userConverter.dtoToEntity(dto)).thenReturn(entity);
         when(userService.updateById(any(User.class))).thenReturn(true);
 
         ApiResponse<Void> resp = userController.update(dto);
@@ -159,9 +162,6 @@ class UserControllerTest {
         verify(userService).updateById(any(User.class));
     }
 
-    /**
-     * 验证删除用户时正确调用 removeById 实现逻辑删除。
-     */
     @Test
     @DisplayName("delete: 逻辑删除用户")
     void testDeleteSuccess() {

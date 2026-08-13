@@ -3,6 +3,7 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.GoodsDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.GoodsConverter;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +31,7 @@ import java.util.List;
  *
  * <p>CRUD 直接复用 {@link GoodsService}（继承 MyBatis-Plus 的 IService）
  * 自带的能力，无需在 service 层重复定义通用方法。
+ * Entity <-> DTO 转换使用 {@link GoodsConverter}（MapStruct 编译期生成，零反射）。
  *
  * @author jiancai.zhong
  */
@@ -41,18 +42,20 @@ public class GoodsController {
     @Resource
     private GoodsService goodsService;
 
+    @Resource
+    private GoodsConverter goodsConverter;
+
     @Operation(summary = "根据ID查询单个商品")
     @GetMapping("/goods/{id}")
     public ApiResponse<GoodsDTO> getGoods(
             @Parameter(description = "商品主键") @PathVariable("id") Long id) {
-        return ApiResponse.success(toDTO(goodsService.getById(id)));
+        return ApiResponse.success(goodsConverter.entityToDto(goodsService.getById(id)));
     }
 
     @Operation(summary = "查询全部有效商品")
     @GetMapping("/goods/list")
     public ApiResponse<List<GoodsDTO>> list() {
-        List<GoodsDTO> list = goodsService.list().stream().map(this::toDTO).toList();
-        return ApiResponse.success(list);
+        return ApiResponse.success(goodsConverter.entityListToDtoList(goodsService.list()));
     }
 
     @Operation(summary = "分页查询有效商品")
@@ -62,25 +65,22 @@ public class GoodsController {
             @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<Goods> page = goodsService.page(new Page<>(current, size));
         Page<GoodsDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        result.setRecords(page.getRecords().stream().map(this::toDTO).toList());
+        result.setRecords(goodsConverter.entityListToDtoList(page.getRecords()));
         return ApiResponse.success(result);
     }
 
     @Operation(summary = "新增商品")
     @PostMapping("/goods")
     public ApiResponse<GoodsDTO> add(@Valid @RequestBody GoodsDTO dto) {
-        Goods goods = new Goods();
-        BeanUtils.copyProperties(dto, goods);
+        Goods goods = goodsConverter.dtoToEntity(dto);
         goodsService.save(goods);
-        return ApiResponse.success(toDTO(goods));
+        return ApiResponse.success(goodsConverter.entityToDto(goods));
     }
 
     @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
     public ApiResponse<Void> update(@Valid @RequestBody GoodsDTO dto) {
-        Goods goods = new Goods();
-        BeanUtils.copyProperties(dto, goods);
-        goodsService.updateById(goods);
+        goodsService.updateById(goodsConverter.dtoToEntity(dto));
         return ApiResponse.success();
     }
 
@@ -90,20 +90,5 @@ public class GoodsController {
             @Parameter(description = "商品主键") @PathVariable("id") Long id) {
         goodsService.removeById(id);
         return ApiResponse.success();
-    }
-
-    /**
-     * Entity 转 DTO，过滤内部字段。
-     *
-     * @param goods 商品实体
-     * @return 商品 DTO，入参为 {@code null} 时返回 {@code null}
-     */
-    private GoodsDTO toDTO(Goods goods) {
-        if (goods == null) {
-            return null;
-        }
-        GoodsDTO dto = new GoodsDTO();
-        BeanUtils.copyProperties(goods, dto);
-        return dto;
     }
 }

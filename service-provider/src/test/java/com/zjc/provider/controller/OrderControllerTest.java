@@ -3,7 +3,9 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.dto.OrderDTO;
+import com.zjc.common.dto.OrderDetailDTO;
 import com.zjc.common.web.ApiResponse;
+import com.zjc.provider.converter.OrderConverter;
 import com.zjc.provider.entity.Order;
 import com.zjc.provider.entity.OrderDetail;
 import com.zjc.provider.service.OrderDetailService;
@@ -43,12 +45,12 @@ class OrderControllerTest {
     @Mock
     private OrderDetailService orderDetailService;
 
+    @Mock
+    private OrderConverter orderConverter;
+
     @InjectMocks
     private OrderController orderController;
 
-    /**
-     * 验证查询订单时主表和明细表的数据被聚合到同一个 DTO 中。
-     */
     @Test
     @DisplayName("getOrder: 查询订单含明细聚合")
     void testGetOrderWithDetails() {
@@ -56,13 +58,19 @@ class OrderControllerTest {
         order.setOrderId(1L);
         order.setOrderNo("NO001");
         order.setTotalAmount(new BigDecimal("100"));
+        OrderDTO orderDto = new OrderDTO();
+        orderDto.setOrderNo("NO001");
         when(orderService.getById(1L)).thenReturn(order);
+        when(orderConverter.entityToDto(order)).thenReturn(orderDto);
 
         OrderDetail detail = new OrderDetail();
         detail.setId(10L);
         detail.setOrderId(1L);
         detail.setGoodsName("iPhone");
+        OrderDetailDTO detailDto = new OrderDetailDTO();
+        detailDto.setGoodsName("iPhone");
         when(orderDetailService.list(any(LambdaQueryWrapper.class))).thenReturn(List.of(detail));
+        when(orderConverter.entityToDto(detail)).thenReturn(detailDto);
 
         ApiResponse<OrderDTO> resp = orderController.getOrder(1L);
 
@@ -73,9 +81,6 @@ class OrderControllerTest {
         verify(orderDetailService).list(any(LambdaQueryWrapper.class));
     }
 
-    /**
-     * 验证订单不存在时返回 null data，且不会查询明细表。
-     */
     @Test
     @DisplayName("getOrder: 订单不存在返回 null data")
     void testGetOrderNotFound() {
@@ -88,16 +93,16 @@ class OrderControllerTest {
         verify(orderDetailService, never()).list(any(LambdaQueryWrapper.class));
     }
 
-    /**
-     * 验证列表查询只返回主表数据，orderDetails 为 null。
-     */
     @Test
     @DisplayName("list: 查询订单列表(不含明细)")
     void testListReturnsList() {
         Order order = new Order();
         order.setOrderId(1L);
         order.setOrderNo("NO001");
+        OrderDTO dto = new OrderDTO();
+        dto.setOrderNo("NO001");
         when(orderService.list()).thenReturn(List.of(order));
+        when(orderConverter.entityListToDtoList(List.of(order))).thenReturn(List.of(dto));
 
         ApiResponse<List<OrderDTO>> resp = orderController.list();
 
@@ -106,22 +111,17 @@ class OrderControllerTest {
         assertThat(resp.getData().get(0).getOrderDetails()).isNull();
     }
 
-    /**
-     * 验证无数据时返回空列表。
-     */
     @Test
     @DisplayName("list: 空列表")
     void testListEmpty() {
         when(orderService.list()).thenReturn(Collections.emptyList());
+        when(orderConverter.entityListToDtoList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         ApiResponse<List<OrderDTO>> resp = orderController.list();
 
         assertThat(resp.getData()).isEmpty();
     }
 
-    /**
-     * 验证分页查询只返回主表数据，不含明细。
-     */
     @Test
     @DisplayName("page: 分页查询(不含明细)")
     void testPageReturnsPage() {
@@ -130,7 +130,10 @@ class OrderControllerTest {
         order.setOrderId(1L);
         order.setOrderNo("NO001");
         page.setRecords(List.of(order));
+        OrderDTO dto = new OrderDTO();
+        dto.setOrderNo("NO001");
         when(orderService.page(any(Page.class))).thenReturn(page);
+        when(orderConverter.entityListToDtoList(List.of(order))).thenReturn(List.of(dto));
 
         ApiResponse<Page<OrderDTO>> resp = orderController.page(1, 10);
 
@@ -138,15 +141,18 @@ class OrderControllerTest {
         assertThat(resp.getData().getRecords().get(0).getOrderNo()).isEqualTo("NO001");
     }
 
-    /**
-     * 验证新增订单时只保存主表，返回回填的 DTO。
-     */
     @Test
     @DisplayName("add: 新增订单(仅主表)")
     void testAddReturnsDto() {
         OrderDTO dto = new OrderDTO();
         dto.setOrderNo("NEW001");
         dto.setTotalAmount(new BigDecimal("200"));
+        Order entity = new Order();
+        entity.setOrderNo("NEW001");
+        OrderDTO resultDto = new OrderDTO();
+        resultDto.setOrderNo("NEW001");
+        when(orderConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(orderConverter.entityToDto(entity)).thenReturn(resultDto);
         when(orderService.save(any(Order.class))).thenReturn(true);
 
         ApiResponse<OrderDTO> resp = orderController.add(dto);
@@ -156,15 +162,15 @@ class OrderControllerTest {
         verify(orderService).save(any(Order.class));
     }
 
-    /**
-     * 验证修改订单时调用 updateById。
-     */
     @Test
     @DisplayName("update: 修改订单")
     void testUpdateSuccess() {
         OrderDTO dto = new OrderDTO();
         dto.setOrderId(1L);
         dto.setOrderNo("UPDATED");
+        Order entity = new Order();
+        entity.setOrderId(1L);
+        when(orderConverter.dtoToEntity(dto)).thenReturn(entity);
         when(orderService.updateById(any(Order.class))).thenReturn(true);
 
         ApiResponse<Void> resp = orderController.update(dto);
@@ -173,9 +179,6 @@ class OrderControllerTest {
         verify(orderService).updateById(any(Order.class));
     }
 
-    /**
-     * 验证删除订单时调用 removeById 实现逻辑删除。
-     */
     @Test
     @DisplayName("delete: 逻辑删除订单")
     void testDeleteSuccess() {

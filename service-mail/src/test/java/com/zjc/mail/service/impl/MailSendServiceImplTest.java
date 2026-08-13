@@ -2,6 +2,7 @@ package com.zjc.mail.service.impl;
 
 import com.zjc.common.dto.MailLogDTO;
 import com.zjc.common.dto.MailSendDTO;
+import com.zjc.mail.converter.MailLogConverter;
 import com.zjc.mail.entity.MailLog;
 import com.zjc.mail.service.MailLogService;
 import jakarta.mail.Session;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -46,12 +48,23 @@ class MailSendServiceImplTest {
     @Mock
     private MailLogService mailLogService;
 
+    @Mock
+    private MailLogConverter mailLogConverter;
+
     @InjectMocks
     private MailSendServiceImpl mailSendService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(mailSendService, "fromEmail", "noreply@xx.com");
+        lenient().when(mailLogConverter.entityToDto(any(MailLog.class))).thenAnswer(inv -> {
+            MailLog log = inv.getArgument(0);
+            MailLogDTO dto = new MailLogDTO();
+            dto.setStatus(log.getStatus());
+            dto.setFromEmail(log.getFromEmail());
+            dto.setErrorMsg(log.getErrorMsg());
+            return dto;
+        });
     }
 
     /**

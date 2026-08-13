@@ -2,6 +2,7 @@ package com.zjc.mail.service.impl;
 
 import com.zjc.common.dto.MailLogDTO;
 import com.zjc.common.dto.MailSendDTO;
+import com.zjc.mail.converter.MailLogConverter;
 import com.zjc.mail.entity.MailLog;
 import com.zjc.mail.service.MailLogService;
 import com.zjc.mail.service.MailSendService;
@@ -9,7 +10,6 @@ import jakarta.annotation.Resource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -58,6 +58,9 @@ public class MailSendServiceImpl implements MailSendService {
     @Resource
     private MailLogService mailLogService;
 
+    @Resource
+    private MailLogConverter mailLogConverter;
+
     /**
      * 发件人邮箱，来自 Nacos 配置 spring.mail.username
      */
@@ -93,7 +96,7 @@ public class MailSendServiceImpl implements MailSendService {
 
         // 3. 更新记录状态
         mailLogService.updateById(mailLog);
-        return toDTO(mailLog);
+        return mailLogConverter.entityToDto(mailLog);
     }
 
     /**
@@ -209,17 +212,5 @@ public class MailSendServiceImpl implements MailSendService {
         mailLog.setContent(dto.getContent());
         mailLog.setIsHtml(Boolean.TRUE.equals(dto.getIsHtml()) ? 1 : 0);
         return mailLog;
-    }
-
-    /**
-     * Entity 转 DTO。
-     *
-     * @param mailLog 邮件记录实体
-     * @return 邮件记录 DTO
-     */
-    private MailLogDTO toDTO(MailLog mailLog) {
-        MailLogDTO dto = new MailLogDTO();
-        BeanUtils.copyProperties(mailLog, dto);
-        return dto;
     }
 }

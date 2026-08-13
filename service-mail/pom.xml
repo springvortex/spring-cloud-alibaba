@@ -99,6 +99,12 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射）-->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
