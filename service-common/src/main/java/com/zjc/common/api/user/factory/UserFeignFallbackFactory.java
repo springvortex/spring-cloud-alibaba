@@ -1,8 +1,8 @@
-package com.zjc.consumer.feign.factory;
+package com.zjc.common.api.user.factory;
 
+import com.zjc.common.api.user.UserFeignApi;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.consumer.feign.UserFeignClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * {@link UserFeignClient} 的降级工厂。
+ * {@link UserFeignApi} 的降级工厂。
  *
  * <p>当远程调用失败时（provider 宕机、网络超时、返回异常等），
  * Feign 会自动创建本工厂的实例并注入 {@link Throwable} 失败原因，
@@ -31,14 +31,19 @@ import java.util.List;
  */
 @Slf4j
 @Component
-public class UserFeignFallbackFactory implements FallbackFactory<UserFeignClient> {
+public class UserFeignFallbackFactory implements FallbackFactory<UserFeignApi> {
 
+    /**
+     * 创建降级代理对象，远程调用失败时由 Feign 自动回调。
+     *
+     * @param cause 远程调用失败原因（超时、连接拒绝、服务不可用等）
+     * @return 降级代理，返回兜底数据而非抛异常
+     */
     @Override
-    public UserFeignClient create(Throwable cause) {
-        // 记录失败原因，生产环境可接入告警（钉钉/邮件/Prometheus）
+    public UserFeignApi create(Throwable cause) {
         log.error("调用 service-provider 用户接口失败，触发降级", cause);
 
-        return new UserFeignClient() {
+        return new UserFeignApi() {
 
             @Override
             public ApiResponse<UserDTO> getUser(Long userId) {

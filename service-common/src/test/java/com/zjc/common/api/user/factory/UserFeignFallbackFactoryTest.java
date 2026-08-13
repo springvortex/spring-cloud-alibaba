@@ -1,7 +1,8 @@
-package com.zjc.consumer.feign.factory;
+package com.zjc.common.api.user.factory;
 
+import com.zjc.common.api.user.UserFeignApi;
+import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.consumer.feign.UserFeignClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("用户 Feign 降级工厂")
 class UserFeignFallbackFactoryTest {
 
+    /**
+     * 被测的降级工厂实例。
+     */
     private final UserFeignFallbackFactory factory = new UserFeignFallbackFactory();
 
     /**
@@ -28,9 +32,9 @@ class UserFeignFallbackFactoryTest {
     @Test
     @DisplayName("getUser 降级: 返回成功响应但 data 为 null")
     void testFallbackGetUserReturnsNullData() {
-        UserFeignClient fallback = factory.create(new RuntimeException("timeout"));
+        UserFeignApi fallback = factory.create(new RuntimeException("timeout"));
 
-        ApiResponse<com.zjc.common.dto.UserDTO> resp = fallback.getUser(1L);
+        ApiResponse<UserDTO> resp = fallback.getUser(1L);
 
         assertThat(resp.isSuccess()).isTrue();
         assertThat(resp.getData()).isNull();
@@ -42,9 +46,9 @@ class UserFeignFallbackFactoryTest {
     @Test
     @DisplayName("list 降级: 返回成功响应但 data 为空列表")
     void testFallbackListReturnsEmptyList() {
-        UserFeignClient fallback = factory.create(new RuntimeException("provider down"));
+        UserFeignApi fallback = factory.create(new RuntimeException("provider down"));
 
-        ApiResponse<List<com.zjc.common.dto.UserDTO>> resp = fallback.list();
+        ApiResponse<List<UserDTO>> resp = fallback.list();
 
         assertThat(resp.isSuccess()).isTrue();
         assertThat(resp.getData()).isEmpty();
@@ -56,8 +60,8 @@ class UserFeignFallbackFactoryTest {
     @Test
     @DisplayName("不同异常原因均能正常降级")
     void testFallbackVariousExceptions() {
-        UserFeignClient fallback1 = factory.create(new IllegalStateException("conn refused"));
-        UserFeignClient fallback2 = factory.create(new Error("OOM"));
+        UserFeignApi fallback1 = factory.create(new IllegalStateException("conn refused"));
+        UserFeignApi fallback2 = factory.create(new Error("OOM"));
 
         assertThat(fallback1.getUser(1L).isSuccess()).isTrue();
         assertThat(fallback2.list().isSuccess()).isTrue();

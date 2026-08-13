@@ -1,8 +1,8 @@
 package com.zjc.consumer.controller;
 
+import com.zjc.common.api.user.UserFeignApi;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.consumer.feign.UserFeignClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link UserConsumerController} 单元测试。
  *
- * <p>验证 consumer 通过 Feign 客户端远程调用的委托逻辑，
+ * <p>验证 consumer 通过 Feign API 远程调用的委托逻辑，
  * Controller 不做业务处理，只负责转发。
  *
  * @author jiancai.zhong
@@ -28,43 +28,46 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UserConsumerControllerTest {
 
+    /**
+     * 共享 Feign API 的 Mock 实例。
+     */
     @Mock
-    private UserFeignClient userFeignClient;
+    private UserFeignApi userFeignApi;
 
     @InjectMocks
     private UserConsumerController controller;
 
     /**
-     * 验证 getUser 将请求转发给 Feign 客户端并返回结果。
+     * 验证 getUser 将请求转发给 Feign API 并返回结果。
      */
     @Test
-    @DisplayName("getUser: 委托给 Feign 客户端")
+    @DisplayName("getUser: 委托给 Feign API")
     void testGetUserDelegates() {
         UserDTO dto = new UserDTO();
         dto.setUserId(1L);
         dto.setUsername("zhangsan");
-        when(userFeignClient.getUser(1L)).thenReturn(ApiResponse.success(dto));
+        when(userFeignApi.getUser(1L)).thenReturn(ApiResponse.success(dto));
 
         ApiResponse<UserDTO> resp = controller.getUser(1L);
 
         assertThat(resp.isSuccess()).isTrue();
         assertThat(resp.getData().getUsername()).isEqualTo("zhangsan");
-        verify(userFeignClient).getUser(1L);
+        verify(userFeignApi).getUser(1L);
     }
 
     /**
-     * 验证 list 将请求转发给 Feign 客户端并返回列表结果。
+     * 验证 list 将请求转发给 Feign API 并返回列表结果。
      */
     @Test
-    @DisplayName("list: 委托给 Feign 客户端")
+    @DisplayName("list: 委托给 Feign API")
     void testListDelegates() {
         UserDTO dto = new UserDTO();
         dto.setUserId(1L);
-        when(userFeignClient.list()).thenReturn(ApiResponse.success(List.of(dto)));
+        when(userFeignApi.list()).thenReturn(ApiResponse.success(List.of(dto)));
 
         ApiResponse<List<UserDTO>> resp = controller.list();
 
         assertThat(resp.getData()).hasSize(1);
-        verify(userFeignClient).list();
+        verify(userFeignApi).list();
     }
 }

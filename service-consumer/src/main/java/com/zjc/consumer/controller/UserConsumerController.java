@@ -1,8 +1,8 @@
 package com.zjc.consumer.controller;
 
+import com.zjc.common.api.user.UserFeignApi;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.consumer.feign.UserFeignClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Consumer 侧用户接口演示。
+ * Consumer 侧用户接口。
  *
- * <p>展示 consumer 如何通过本地 Feign 客户端 {@link UserFeignClient} 调用 provider，
- * 调用链路为：浏览器 → 本 Controller → {@link UserFeignClient}（Feign 代理）
+ * <p>展示 consumer 如何通过 common 模块共享的 Feign API {@link UserFeignApi} 调用 provider，
+ * 调用链路为：浏览器 → 本 Controller → {@link UserFeignApi}（Feign 代理）
  * → service-provider 的 {@code UserController}。
  *
- * <p>provider 不可用时由 {@link com.zjc.consumer.feign.factory.UserFeignFallbackFactory}
+ * <p>provider 不可用时由 {@link com.zjc.common.api.user.factory.UserFeignFallbackFactory}
  * 自动降级，上层无需 try-catch。
  *
  * @author jiancai.zhong
@@ -29,20 +29,33 @@ import java.util.List;
 @RestController
 public class UserConsumerController {
 
+    /**
+     * 用户服务共享 Feign 客户端，由 common 模块提供。
+     */
     @Resource
-    private UserFeignClient userFeignClient;
+    private UserFeignApi userFeignApi;
 
+    /**
+     * 远程查询单个用户，底层通过 Feign 代理调用 service-provider。
+     *
+     * @param id 用户主键
+     * @return 用户信息，降级时 data 为 null
+     */
     @Operation(summary = "远程查询用户（Feign + 降级演示）")
     @GetMapping("/consumer/user/{id}")
     public ApiResponse<UserDTO> getUser(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
-        // 无需 try-catch：失败时 fallback 自动返回兜底数据
-        return userFeignClient.getUser(id);
+        return userFeignApi.getUser(id);
     }
 
+    /**
+     * 远程查询用户列表，底层通过 Feign 代理调用 service-provider。
+     *
+     * @return 用户列表，降级时返回空列表
+     */
     @Operation(summary = "远程查询用户列表")
     @GetMapping("/consumer/user/list")
     public ApiResponse<List<UserDTO>> list() {
-        return userFeignClient.list();
+        return userFeignApi.list();
     }
 }
