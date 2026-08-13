@@ -15,8 +15,6 @@
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
 | 配置加密      | Jasypt                          | 3.0.5      |
-| 服务监控      | Spring Boot Admin               | 4.1.2      |
-| SBOM 生成     | CycloneDX Maven Plugin          | 2.9.3      |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -29,7 +27,6 @@ spring-cloud-alibaba
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
-├── service-admin       服务监控面板（Spring Boot Admin），端口 9003
 ├── service-mail        邮件服务，端口 9004，统一收发邮件，记录入库
 └── MP-Generator        MyBatis-Plus 代码生成器，按数据库表生成 Entity/Mapper/Service
 ```
@@ -62,7 +59,7 @@ spring-cloud-alibaba
 1. 启动 Nacos
 2. `service-provider`（业务核心）
 3. `service-gateway`（可选，按需）
-4. `service-consumer` / `service-admin` / `service-mail`（按需）
+4. `service-consumer` / `service-mail`（按需）
 
 ---
 
@@ -82,9 +79,6 @@ mvn clean package -DskipTests
 
 ```
 build/
-├── service-admin/
-│   ├── service-admin-1.0.0.jar          # Thin JAR（自身代码 + Spring Boot Loader）
-│   └── lib/                             # 该服务所有 runtime 依赖（约 131 个 JAR）
 ├── service-common/
 │   ├── service-common-1.0.0.jar         # 普通 JAR（公共库，不启动）
 │   └── lib/
@@ -152,9 +146,6 @@ deploy/
     │   └── lib/
     ├── service-consumer/
     │   ├── service-consumer-1.0.0.jar
-    │   └── lib/
-    ├── service-admin/
-    │   ├── service-admin-1.0.0.jar
     │   └── lib/
     └── service-mail/
         ├── service-mail-1.0.0.jar
@@ -236,7 +227,6 @@ java -version
     Spring Cloud Alibaba - Service Manager
   ==================================================
 
-  [1] service-admin          STOPPED
   [2] service-consumer       STOPPED
   [3] service-gateway        RUNNING  (PID: 31332)
   [4] service-mail           STOPPED
@@ -453,87 +443,6 @@ Nacos 地址：`127.0.0.1:8848`
 每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import
 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
 
-## 服务监控（SBA）
-
-项目使用 [Spring Boot Admin](https://docs.spring-boot-admin.com/) (SBA) 4.1.2 作为服务监控面板。`service-admin` 模块作为
-SBA Server，通过 Nacos 服务发现自动监控所有注册的微服务。
-
-### 工作原理
-
-- **SBA Server**（service-admin）：启用 `@EnableAdminServer`，通过 Nacos Discovery 自动发现所有注册的实例
-- **被监控服务**：无需引入 SBA Client 依赖，只需暴露 Actuator 端点即可被 SBA 自动发现和采集
-
-各服务本地 `application.yaml` 中已配置 Actuator 端点暴露：
-
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: '*'
-  endpoint:
-    health:
-      show-details: always
-```
-
-> 此配置也可迁移到 Nacos 公共配置组（group: `spring-cloud-alibaba-public`）集中管理，与 Jasypt 配置同理。
-
-### 访问面板
-
-启动 `service-admin` 后，浏览器访问：
-
-```
-http://localhost:9003
-```
-
-SBA 面板提供以下功能：
-
-- **Wallboard**：所有服务健康状态一览
-- **Details**：单个服务的完整信息（JVM 内存/线程、日志级别、环境变量、缓存等）
-- **Loggers**：在线调整日志级别（无需重启）
-- **Health**：健康检查详情（数据库连接、磁盘空间、Nacos 连接等）
-- **Metrics**：JVM 指标、HTTP 请求统计等
-- **SBOM**：软件物料清单（CycloneDX 格式，展示组件依赖关系与版本）
-
-### 监控范围
-
-SBA 通过 Nacos 发现以下服务（含 SBA Server 自身）：
-
-| 服务             | 端口 | 说明                   |
-|------------------|------|------------------------|
-| service-admin    | 9003 | SBA Server（监控自身） |
-| service-provider | 9001 | 业务提供者             |
-| service-consumer | 9002 | 业务消费者             |
-| service-gateway  | 80   | API 网关（WebFlux）    |
-| service-mail     | 9004 | 邮件服务               |
-
-SBA 面板已集成 Spring Security 登录认证，访问 `http://localhost:9003` 会自动跳转到登录页。
-
-### 登录凭证
-
-通过环境变量注入（不写入配置文件）：
-
-| 配置项 | 环境变量       | 默认值 | 说明             |
-|--------|----------------|--------|------------------|
-| 用户名 | `SBA_USERNAME` | admin  | 登录用户名       |
-| 密码   | `SBA_PASSWORD` | 无     | 登录密码（必填） |
-
-**IDEA 本地开发**：Run Configuration -> VM Options 填入 `-DSBA_PASSWORD=your-password`
-
-**生产部署**：
-
-```bash
-# macOS / Linux
-export SBA_PASSWORD=your-password
-./service.sh start service-admin
-
-# Windows PowerShell
-$env:SBA_PASSWORD = "your-password"
-.\service.bat start service-admin
-```
-
-> 密码禁止写死在配置文件中，仅通过环境变量或 VM 参数注入。
-
 ## 接口文档
 
 以下业务模块集成了 SpringDoc OpenAPI，启动后访问各模块的 Swagger UI：
@@ -542,7 +451,6 @@ $env:SBA_PASSWORD = "your-password"
 |------------------|-----------------------------------------|
 | service-provider | `http://localhost:9001/swagger-ui.html` |
 | service-consumer | `http://localhost:9002/swagger-ui.html` |
-| service-admin    | `http://localhost:9003/swagger-ui.html` |
 | service-mail     | `http://localhost:9004/swagger-ui.html` |
 
 各模块 SpringDoc 分组按业务划分，Swagger UI 顶部下拉框可切换。

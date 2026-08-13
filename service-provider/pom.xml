@@ -42,12 +42,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Actuator（健康检查与监控端点） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
         <!-- Lombok（简化代码） -->
         <dependency>
             <groupId>org.projectlombok</groupId>

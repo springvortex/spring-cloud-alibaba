@@ -24,7 +24,6 @@
         <module>service-provider</module>
         <module>service-consumer</module>
         <module>service-gateway</module>
-        <module>service-admin</module>
         <module>service-mail</module>
     </modules>
 
@@ -46,13 +45,6 @@
         <swagger.version>2.2.53</swagger.version>
         <!-- JaCoCo 版本（支持 Java 21 字节码） -->
         <jacoco.version>0.8.15</jacoco.version>
-
-        <!-- Spring Boot Admin（服务监控面板） -->
-        <spring-boot-admin.version>4.1.2</spring-boot-admin.version>
-
-        <!-- CycloneDX（SBOM 生成，供 SBA 展示软件物料清单） -->
-        <cyclonedx.version>2.9.3</cyclonedx.version>
-        <cyclonedx.skip>false</cyclonedx.skip>
 
         <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射） -->
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -76,7 +68,6 @@
             </activation>
             <properties>
                 <spring-boot.build-info.skip>true</spring-boot.build-info.skip>
-                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
         </profile>
     </profiles>
@@ -157,19 +148,6 @@
                 <version>3.0.5</version>
             </dependency>
 
-            <!-- Spring Boot Admin 服务端 -->
-            <dependency>
-                <groupId>de.codecentric</groupId>
-                <artifactId>spring-boot-admin-starter-server</artifactId>
-                <version>${spring-boot-admin.version}</version>
-            </dependency>
-
-           <!-- Spring Boot Admin 客户端 -->
-           <dependency>
-               <groupId>de.codecentric</groupId>
-               <artifactId>spring-boot-admin-starter-client</artifactId>
-               <version>${spring-boot-admin.version}</version>
-           </dependency>
 
            <!-- MapStruct（编译期 Bean 映射，替代 BeanUtils.copyProperties） -->
            <dependency>
@@ -252,38 +230,6 @@
 
         <!-- 所有子模块自动继承以下插件 -->
         <plugins>
-           <!-- CycloneDX：生成 SBOM（软件物料清单），输出到 META-INF/sbom/application.cdx.json -->
-           <!-- Spring Boot Actuator 的 /actuator/sbom 端点读取此文件，SBA 面板展示依赖清单 -->
-           <plugin>
-               <groupId>org.cyclonedx</groupId>
-               <artifactId>cyclonedx-maven-plugin</artifactId>
-               <version>${cyclonedx.version}</version>
-               <executions>
-                   <execution>
-                       <id>make-bom</id>
-                       <phase>generate-resources</phase>
-                       <goals>
-                           <goal>makeBom</goal>
-                       </goals>
-                   </execution>
-                   <!-- 禁用默认的 makeAggregateBom 执行（package 阶段自动绑定，会重复生成 BOM 并 attach artifact） -->
-                   <execution>
-                       <id>default</id>
-                       <phase>none</phase>
-                   </execution>
-               </executions>
-               <configuration>
-                   <outputFormat>json</outputFormat>
-                   <outputName>application.cdx</outputName>
-                   <outputDirectory>${project.build.outputDirectory}/META-INF/sbom</outputDirectory>
-                   <skip>${cyclonedx.skip}</skip>
-                   <!-- 不 attach BOM 为 Maven artifact（仅需 META-INF/sbom/ 下的文件供 SBA 读取） -->
-                   <skipAttach>true</skipAttach>
-                   <!-- 使用 1.5 规范（1.6 的 meta:enum/deprecated 关键字会触发 JSON Schema 校验 WARNING） -->
-                   <schemaVersion>1.5</schemaVersion>
-               </configuration>
-           </plugin>
-
             <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
             <plugin>
                 <groupId>org.jacoco</groupId>

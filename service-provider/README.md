@@ -92,7 +92,7 @@ Nacos 配置位置：dataId=`dev`，group=`service-provider`
 ## 依赖
 
 - service-common
-- spring-boot-starter-web / actuator
+- spring-boot-starter-web
 - mybatis-plus-spring-boot4-starter
 - mysql-connector-j
 - springdoc-openapi-starter-webmvc-ui

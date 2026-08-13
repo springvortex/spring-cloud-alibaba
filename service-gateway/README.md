@@ -50,7 +50,6 @@ com.zjc.gateway
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）
 - spring-cloud-starter-alibaba-nacos-discovery / config
-- spring-boot-starter-actuator（健康检查与监控端点，供 SBA 采集）
 
 ## WebFlux 约束
 

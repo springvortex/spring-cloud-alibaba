@@ -34,12 +34,6 @@
             <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
 
-        <!-- Spring Boot Actuator（健康检查与监控端点） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
         <!-- OpenFeign 声明式调用（共享 Feign API 契约） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
