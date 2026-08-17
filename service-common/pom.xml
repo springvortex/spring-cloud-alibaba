@@ -122,11 +122,6 @@
                 </executions>
             </plugin>
 
-            <!-- 拷贝公共库 JAR 到 build/ 目录（不执行 repackage） -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 

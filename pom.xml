@@ -49,12 +49,6 @@
         <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射） -->
         <mapstruct.version>1.6.3</mapstruct.version>
 
-        <!-- Thin-JAR 打包：每个服务独立目录 build/<artifactId>/，依赖在 build/<artifactId>/lib/ -->
-        <dist.dir>${maven.multiModuleProjectDirectory}/build/${project.artifactId}</dist.dir>
-        <dist.libDir>${dist.dir}/lib</dist.libDir>
-
-        <!-- 公共库模块跳过 repackage（service-common 需覆写为 true） -->
-        <spring-boot.repackage.skip>false</spring-boot.repackage.skip>
     </properties>
 
     <!-- 没有 src/main/java 的模块（如父 pom）自动跳过 build-info -->
@@ -162,19 +156,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- mvn clean 时额外删除 build/ 目录 -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <configuration>
-                        <filesets>
-                            <fileset>
-                                <directory>${maven.multiModuleProjectDirectory}/build</directory>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
-
                <!-- 编译插件 -->
                <plugin>
                    <groupId>org.apache.maven.plugins</groupId>
@@ -203,28 +184,6 @@
                    </configuration>
                </plugin>
 
-                <!-- 公共库模块拷贝 JAR 到 build/（仅 service-common 声明使用） -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <version>3.1.0</version>
-                    <executions>
-                        <execution>
-                            <id>copy-jar</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>run</goal>
-                            </goals>
-                            <configuration>
-                                <target>
-                                    <copy file="${project.build.directory}/${project.build.finalName}.jar"
-                                          todir="${dist.dir}"
-                                          failonerror="false"/>
-                                </target>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -262,19 +221,12 @@
                 </configuration>
             </plugin>
 
-            <!-- Spring Boot 打包：ZIP layout，thin JAR（仅含自身代码），输出到 build/ -->
+            <!-- Spring Boot 打包：生成包含全部运行依赖的可执行 Fat JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <includes>
-                        <include>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>${project.artifactId}</artifactId>
-                        </include>
-                    </includes>
-                    <layout>ZIP</layout>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -288,9 +240,6 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
-                        <configuration>
-                            <outputDirectory>${dist.dir}</outputDirectory>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>build-info</id>
@@ -306,24 +255,6 @@
                 </executions>
             </plugin>
 
-            <!-- 拷贝所有 runtime 依赖到 build/<artifactId>/lib/ -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${dist.libDir}</outputDirectory>
-                            <includeScope>runtime</includeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 

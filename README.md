@@ -65,46 +65,41 @@ spring-cloud-alibaba
 
 ## 打包
 
-项目采用 **Thin JAR + 外部 lib** 的打包方式：每个服务只打自身代码（约 260-300 KB），依赖 JAR 单独输出到 `lib/` 目录，实现 JAR
-包与依赖分离。
+项目采用 Spring Boot 标准 **Fat JAR** 打包方式：每个可启动服务的业务代码和全部运行依赖都打包在同一个 JAR 中，可直接通过
+`java -jar` 启动，不再需要外部 `lib/` 目录和 `loader.path` 参数。
 
 ### 打包命令
 
 ```bash
 # 在项目根目录执行，构建全部模块
 mvn clean package -DskipTests
+
+# 需要同时执行单元测试时
+mvn clean package
 ```
 
 打包后的输出结构：
 
 ```
-build/
-├── service-common/
-│   ├── service-common-1.0.0.jar         # 普通 JAR（公共库，不启动）
-│   └── lib/
-├── service-consumer/
-│   ├── service-consumer-1.0.0.jar
-│   └── lib/                             # 约 142 个 JAR
-├── service-gateway/
-│   ├── service-gateway-1.0.0.jar
-│   └── lib/                             # 约 112 个 JAR（WebFlux 栈，与其他服务隔离）
-├── service-mail/
-│   ├── service-mail-1.0.0.jar
-│   └── lib/                             # 约 159 个 JAR
-└── service-provider/
-    ├── service-provider-1.0.0.jar
-    └── lib/                             # 约 153 个 JAR
+service-common/target/
+└── service-common-1.0.0.jar             # 普通 JAR，公共库，不独立启动
+service-consumer/target/
+└── service-consumer-1.0.0.jar           # 可执行 Fat JAR
+service-gateway/target/
+└── service-gateway-1.0.0.jar            # 可执行 Fat JAR
+service-mail/target/
+└── service-mail-1.0.0.jar               # 可执行 Fat JAR
+service-provider/target/
+└── service-provider-1.0.0.jar           # 可执行 Fat JAR
 ```
 
 ### 打包原理
 
-- **spring-boot-maven-plugin**：`repackage` 目标，`layout=ZIP`（PropertiesLauncher），`includes` 只含模块自身代码。thin JAR 通过
-  `-Dloader.path=lib` 从外部 lib 目录加载依赖
-- **maven-dependency-plugin**：`copy-dependencies` 目标，将所有 runtime 依赖复制到各服务的 `lib/` 目录
-- **每个服务独立 lib**：gateway 是 WebFlux 栈，其余服务是 Spring MVC 栈，依赖天然冲突，必须隔离
+- **业务服务模块**：继承父 POM 中的 `spring-boot-maven-plugin`，执行 `repackage` 后生成可执行 Fat JAR
+- **service-common**：通过 `spring-boot.repackage.skip=true` 保持普通库 JAR，供其他模块 Maven 依赖，不独立部署
+- **依赖隔离**：每个业务服务的依赖都打在各自 Fat JAR 内，gateway 的 WebFlux 栈与其他服务的 MVC 栈天然隔离
 
-> **注意**：`service-common` 是公共库模块，不执行 repackage（通过 `spring-boot.repackage.skip=true` 跳过），保持标准 JAR
-> 供其他模块 Maven 依赖。部署时不需要拷贝 `build/service-common/`，它已经作为依赖打包在各服务的 `lib/` 中。
+> **注意**：部署时不需要拷贝 `service-common` JAR，它已经作为依赖打进每个业务服务的 Fat JAR。
 
 ### 配置位置
 
@@ -123,144 +118,89 @@ build/
 
 ### 需要拷贝的文件
 
-| 文件/目录     | 说明                                         |
-|---------------|----------------------------------------------|
-| `service.bat` | Windows 启动脚本                             |
-| `service.ps1` | Windows 核心脚本（被 service.bat 调用）      |
-| `service.sh`  | macOS/Linux 启动脚本                         |
-| `build/`      | 全部服务目录（排除 `build/service-common/`） |
+| 文件                                       | 说明                     |
+|--------------------------------------------|--------------------------|
+| `service-consumer/target/*-1.0.0.jar`      | Consumer 可执行 Fat JAR  |
+| `service-gateway/target/*-1.0.0.jar`       | Gateway 可执行 Fat JAR   |
+| `service-mail/target/*-1.0.0.jar`          | Mail 可执行 Fat JAR      |
+| `service-provider/target/*-1.0.0.jar`      | Provider 可执行 Fat JAR  |
 
 部署后的目录结构：
 
 ```
 deploy/
-├── service.bat              # Windows 脚本
-├── service.ps1
-├── service.sh               # macOS/Linux 脚本
-└── build/
-    ├── service-gateway/
-    │   ├── service-gateway-1.0.0.jar
-    │   └── lib/
-    ├── service-provider/
-    │   ├── service-provider-1.0.0.jar
-    │   └── lib/
-    ├── service-consumer/
-    │   ├── service-consumer-1.0.0.jar
-    │   └── lib/
-    └── service-mail/
-        ├── service-mail-1.0.0.jar
-        └── lib/
+├── service-gateway-1.0.0.jar
+├── service-provider-1.0.0.jar
+├── service-consumer-1.0.0.jar
+└── service-mail-1.0.0.jar
 ```
 
-> 脚本和 `build/` 目录必须放在同一层级。脚本通过相对路径 `./build` 或 `.\build` 查找服务。
+> 只部署需要的服务即可；每个 Fat JAR 都是独立制品，不要求放在同一个目录。
 
 ### Windows 部署
 
 #### 1. 拷贝文件
 
-将 `service.bat`、`service.ps1` 和 `build/`（排除 `service-common`）拷贝到部署目录。
+将需要部署的 Fat JAR 拷贝到部署目录。
 
 #### 2. 确保 Java 可用
 
 ```powershell
 java -version
-# 确认输出 Java 21
+# 确认输出 Java 21+
 ```
 
 #### 3. 启动服务
 
-```bat
-rem 交互式菜单（双击 service.bat 也可以）
-service.bat
-
-rem 命令行直接操作
-service.bat start all                      rem 一键启动全部
-service.bat start service-provider          rem 启动单个服务
-service.bat stop service-provider           rem 停止单个服务
-service.bat restart service-gateway         rem 重启单个服务
-service.bat stop all                        rem 一键停止全部
-service.bat status                          rem 查看所有服务状态
+```powershell
+java -jar service-provider-1.0.0.jar
 ```
 
-> **注意**：PowerShell 中需要加 `.\` 前缀：`.\service.bat start all`。CMD 中直接 `service.bat start all` 即可。
+生产环境可后台启动，例如：
+
+```powershell
+$env:JASYPT_ENCRYPTOR_PASSWORD = "your-secret-key"
+Start-Process -FilePath "java" `
+  -ArgumentList "-Xms256m", "-Xmx512m", "-jar", "service-provider-1.0.0.jar" `
+  -RedirectStandardOutput "provider.out" `
+  -RedirectStandardError "provider.err"
+```
 
 ### macOS / Linux 部署
 
 #### 1. 拷贝文件
 
-将 `service.sh` 和 `build/`（排除 `service-common`）拷贝到部署目录。
+将需要部署的 Fat JAR 拷贝到部署目录。
 
-#### 2. 赋予脚本执行权限
-
-```bash
-chmod +x service.sh
-```
-
-#### 3. 确保 Java 可用
+#### 2. 确保 Java 可用
 
 ```bash
 java -version
-# 确认输出 Java 21
+# 确认输出 Java 21+
 ```
 
-#### 4. 启动服务
+#### 3. 启动服务
 
 ```bash
-# 交互式菜单
-./service.sh
+# 前台启动
+java -jar service-provider-1.0.0.jar
 
-# 命令行直接操作
-./service.sh start all                     # 一键启动全部
-./service.sh start service-provider         # 启动单个服务
-./service.sh stop service-provider          # 停止单个服务
-./service.sh restart service-gateway        # 重启单个服务
-./service.sh stop all                       # 一键停止全部
-./service.sh status                         # 查看所有服务状态
+# 后台启动，并记录 PID
+export JASYPT_ENCRYPTOR_PASSWORD="your-secret-key"
+nohup java -Xms256m -Xmx512m -jar service-provider-1.0.0.jar \
+  > provider.out 2> provider.err &
+echo $! > provider.pid
 ```
 
-### 交互式菜单
+#### 4. 停止服务
 
-双击 `service.bat`（Windows）或执行 `./service.sh`（macOS/Linux）进入交互式菜单：
-
+```bash
+kill "$(cat provider.pid)"
 ```
-  ==================================================
-    Spring Cloud Alibaba - Service Manager
-  ==================================================
-
-  [2] service-consumer       STOPPED
-  [3] service-gateway        RUNNING  (PID: 31332)
-  [4] service-mail           STOPPED
-  [5] service-provider       RUNNING  (PID: 17552)
-
-  Jasypt: ENABLED
-
-  [a] Start all    [s] Stop all    [x] Restart all
-  [r] Refresh      [q] Quit
-```
-
-| 操作               | 输入                     |
-|--------------------|--------------------------|
-| 启动全部服务       | `a`                      |
-| 停止全部服务       | `s`                      |
-| 重启全部服务       | `x`                      |
-| 启动/停止/重启单个 | 输入编号，进入子菜单操作 |
-| 刷新状态           | `r`                      |
-| 退出               | `q`                      |
-
-菜单自动扫描 `build/` 下的服务目录（排除 `service-common`），无需手动配置服务列表。菜单还会显示 Jasypt
-密钥是否已加载（ENABLED / DISABLED）。
-
-### 进程与日志
-
-- **PID 文件**：`build/<service>/<service>.pid`，记录进程号，用于精确启停
-- **stdout 日志**：`build/<service>/<service>.out`
-- **stderr 日志**：`build/<service>/<service>.err`
-
-排查启动问题时，先看 `.err` 文件，再看 `.out` 文件末尾。
 
 ### 部分部署
 
-生产环境如果只需要部分服务（如 gateway + provider），只需拷贝对应的 `build/<service>/` 目录，脚本自动扫描，菜单只显示已部署的服务。
+生产环境如果只需要部分服务（如 gateway + provider），只拷贝对应的 Fat JAR 即可。
 
 ### Linux 端口注意事项
 
@@ -269,10 +209,11 @@ Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80
 
 ### JVM 参数调整
 
-默认 JVM 参数 `-Xms256m -Xmx512m`，可在脚本顶部修改：
+JVM 参数直接放在 `java` 命令和 `-jar` 之间：
 
-- `service.ps1`：`$JVM_OPTS = "-Xms256m -Xmx512m"`
-- `service.sh`：`JVM_OPTS="-Xms256m -Xmx512m"`
+```bash
+java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
+```
 
 ---
 
