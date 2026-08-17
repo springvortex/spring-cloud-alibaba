@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <mysql.version>9.5.0</mysql.version>
+        <mysql.version>26.7.0</mysql.version>
         <freemarker.version>2.3.34</freemarker.version>
         <lombok.version>1.18.46</lombok.version>
     </properties>
