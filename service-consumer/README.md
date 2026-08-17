@@ -45,21 +45,20 @@
 
 ```
 com.zjc.consumer
-├── ConsumerApplication              启动类（开启 @EnableFeignClients）
+├── ConsumerApplication              启动类（扫描 com.zjc.common.api 中的 Feign 契约）
 ├── config
 │   └── OpenApiConfig                SpringDoc 分组配置
 ├── controller                       REST 接口（UserConsumer/TestFeign/TestConfig）
-├── feign
-│   ├── UserFeignClient              用户 Feign 客户端
-│   └── factory
-│       └── UserFeignFallbackFactory 降级工厂
 └── service / impl                   FeignService 封装
 ```
 
 ## Feign 降级机制
 
-`UserFeignClient` 通过 `UserFeignFallbackFactory` 实现 fallback：当 provider 不可用时，自动返回兜底数据，上层 Controller 无需
-try-catch。
+用户调用复用 `service-common` 中的 `UserFeignApi`，其 `UserFeignFallbackFactory` 也由 common 自动注册。provider 不可用或调用超时
+时，单个用户查询返回空 `data`，用户列表返回空列表，上层 Controller 无需 try-catch。
+
+`/feign/port` 使用 common 中的 `TestApi`。consumer 通过
+`@EnableFeignClients(basePackages = {"com.zjc.common.api"})` 扫描共享契约，本地没有重复定义 Feign 客户端。
 
 ## 自动继承的公共能力
 
@@ -70,7 +69,7 @@ try-catch。
 
 ## 配置说明
 
-Nacos 配置位置：dataId=`dev`，group=`service-consumer`
+Nacos 配置位置：dataId=`dev`，group=`service-consumer`；当前引导配置地址为 `192.168.100.128:8848`。
 
 OpenFeign 超时配置（在 Nacos 中）：
 
@@ -88,6 +87,8 @@ spring:
 ## 依赖
 
 - service-common
+- spring-cloud-starter-alibaba-nacos-discovery / config
+- spring-boot-starter-web
 - spring-cloud-starter-openfeign
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）

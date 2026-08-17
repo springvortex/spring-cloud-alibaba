@@ -1,6 +1,6 @@
 ﻿# Service Common
 
-公共模块，所有微服务的基础依赖。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力。
+公共模块，业务服务的基础依赖（Gateway 基于 WebFlux，刻意不引入）。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力。
 
 ## 职责
 
@@ -11,6 +11,7 @@
 - 跨服务传输 DTO
 - 跨服务共享的 Feign API 契约
 - 配置加密（Jasypt，引入后自动生效）
+- Sentinel / OpenFeign 相关服务容错依赖
 
 ## 包结构
 
@@ -20,7 +21,10 @@ com.zjc.common
 │   └── WebLogAspect               Web 接口日志切面（入参/返回/耗时）
 ├── api
 │   ├── mail                       MailFeignApi - 邮件服务 Feign 客户端
-│   └── test                       TestApi - 连通性测试 Feign 客户端
+│   ├── test                       TestApi - 连通性测试 Feign 客户端
+│   └── user
+│       ├── UserFeignApi           用户服务 Feign 客户端
+│       └── factory                UserFeignFallbackFactory - 用户接口降级工厂
 ├── constant
 │   ├── ApiResponseEnum            响应码标准枚举（实现 ErrorCode 接口）
 │   └── ErrorCode                  错误码接口
@@ -41,9 +45,10 @@ common 模块通过 `META-INF/spring/org.springframework.boot.autoconfigure.Auto
 ```
 com.zjc.common.exception.GlobalExceptionHandler
 com.zjc.common.aop.WebLogAspect
+com.zjc.common.api.user.factory.UserFeignFallbackFactory
 ```
 
-任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理和接口日志切面，无需手动 `@Import` 或
+任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、接口日志切面和用户 Feign 降级工厂，无需手动 `@Import` 或
 `@ComponentScan`。
 
 > **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux
@@ -102,14 +107,10 @@ com.zjc.common.aop.WebLogAspect
 throw new BusinessException(ApiResponseEnum.USER_NOT_FOUND);
 
 // 自定义提示信息，错误码默认 -1
-throw new
-
-BusinessException("用户不存在");
+throw new BusinessException("用户不存在");
 
 // 自定义错误码 + 提示信息
-throw new
-
-BusinessException(10001,"用户不存在");
+throw new BusinessException(10001, "用户不存在");
 ```
 
 自定义错误码只需实现 `ErrorCode` 接口：
@@ -155,12 +156,12 @@ spring:
 启动服务时传入密钥（不写入配置文件）：
 
 ```bash
-# 命令行参数
-./service.sh start all jasypt.encryptor.password=your-secret-key
+# JVM 系统属性
+java -Djasypt.encryptor.password=your-secret-key -jar service-provider-1.0.0.jar
 
 # 环境变量
 export JASYPT_ENCRYPTOR_PASSWORD=your-secret-key
-./service.sh start all
+java -jar service-provider-1.0.0.jar
 ```
 
 > **安全注意**：密钥禁止写死在配置文件中，仅通过命令行参数或环境变量注入。
@@ -182,8 +183,11 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 |----------------|------------------|-------------------|----------------------------------------|
 | `MailFeignApi` | service-mail     | `POST /mail/send` | 发送邮件                               |
 | `TestApi`      | service-provider | `GET /port`       | 获取 provider 实例端口，验证链路连通性 |
+| `UserFeignApi` | service-provider | `GET /user/{id}` | 远程查询单个用户，失败时返回空 data    |
+| `UserFeignApi` | service-provider | `GET /user/list` | 远程查询用户列表，失败时返回空列表     |
 
 ## 依赖说明
 
-该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。源码通过
+该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。模块包含 Web MVC、AOP、
+OpenFeign、Sentinel、Jasypt、Hutool 和 Swagger 注解等公共依赖。源码通过
 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。

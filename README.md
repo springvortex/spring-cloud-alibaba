@@ -15,6 +15,8 @@
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
 | 配置加密      | Jasypt                          | 3.0.5      |
+| 对象映射      | MapStruct                       | 1.6.3      |
+| 服务容错      | Alibaba Sentinel                | -          |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -23,11 +25,11 @@
 
 ```
 spring-cloud-alibaba
-├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，所有微服务依赖
+├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
-├── service-mail        邮件服务，端口 9004，统一收发邮件，记录入库
+├── service-mail        邮件服务，端口 9004，统一发送邮件，记录入库
 └── MP-Generator        MyBatis-Plus 代码生成器，按数据库表生成 Entity/Mapper/Service
 ```
 
@@ -40,7 +42,7 @@ spring-cloud-alibaba
 - JDK 21+
 - Maven 3.9+
 - MySQL 8+
-- Nacos 2.x（默认地址 `127.0.0.1:8848`，账号密码 `nacos/nacos`）
+- Nacos 2.x（当前引导配置地址 `192.168.100.128:8848`，账号密码 `nacos/nacos`；本地部署时可修改各模块 `config/application-nacos.yaml` 或用启动参数覆盖）
 
 ### 数据库
 
@@ -267,11 +269,11 @@ Jasypt 会在应用启动时自动检测 `ENC()` 包裹的值并解密。
 **方式一：命令行参数（推荐）**
 
 ```bash
-# macOS / Linux
-./service.sh start all jasypt.encryptor.password=your-secret-key
+# macOS / Linux / Windows
+java -Djasypt.encryptor.password=your-secret-key -jar service-provider-1.0.0.jar
 
-# Windows
-.\service.bat start all jasypt.encryptor.password=your-secret-key
+# 也可使用 Spring Boot 命令行参数
+java -jar service-provider-1.0.0.jar --jasypt.encryptor.password=your-secret-key
 ```
 
 **方式二：环境变量**
@@ -279,14 +281,14 @@ Jasypt 会在应用启动时自动检测 `ENC()` 包裹的值并解密。
 ```bash
 # macOS / Linux
 export JASYPT_ENCRYPTOR_PASSWORD=your-secret-key
-./service.sh start all
+java -jar service-provider-1.0.0.jar
 
 # Windows PowerShell
 $env:JASYPT_ENCRYPTOR_PASSWORD = "your-secret-key"
-.\service.bat start all
+java -jar service-provider-1.0.0.jar
 ```
 
-菜单界面会显示 Jasypt 是否已启用（`ENABLED` / `DISABLED`），不显示密钥本身。
+上述示例以 provider 为例，其他服务替换对应 JAR 文件名即可。
 
 ### 加密算法配置
 
@@ -358,11 +360,11 @@ DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免�
 ```properties
 # 要生成的表
 generator.tables=t_user,t_order,t_order_detail,t_goods
-# 输出目标模块（相对聚合工程根）
-generator.outputModule=service-provider
 ```
 
-直接运行 `CodeGenerator#main` 即可生成，tinyint 字段统一生成 Integer 类型。
+直接运行 `CodeGenerator#main` 即可生成，tinyint 字段统一生成 Integer 类型。生成结果输出到
+`MP-Generator/src/main/java` 与 `MP-Generator/src/main/resources/mapper`，需要再迁移到实际业务模块；当前配置的父包是
+`com.zjc.provider`，对应迁移目标为 `service-provider`。
 
 ## 配置中心
 
@@ -379,7 +381,7 @@ generator.outputModule=service-provider
 公共配置组（group: `spring-cloud-alibaba-public`）存放所有服务共享的配置，如 Jasypt 加密算法参数（dataId: `jasypt`）。各服务通过
 `config.import` 引入。
 
-Nacos 地址：`127.0.0.1:8848`
+Nacos 地址：当前引导配置为 `192.168.100.128:8848`
 
 每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import
 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。

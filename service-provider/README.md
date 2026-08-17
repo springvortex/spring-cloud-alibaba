@@ -71,6 +71,7 @@ com.zjc.provider
 │   ├── NacosConfigListenerConfig   Nacos 配置变更监听
 │   └── OpenApiConfig               SpringDoc 分组配置
 ├── controller                      REST 接口（User/Goods/Order/Test）
+├── converter                       MapStruct Entity/DTO 转换器
 ├── entity                          数据库实体（User/Goods/Order/OrderDetail）
 ├── mapper                          MyBatis-Plus Mapper
 └── service / impl                  业务逻辑
@@ -87,12 +88,15 @@ com.zjc.provider
 
 本地仅保留引导配置（端口、profile、Nacos 地址），数据源、MyBatis-Plus 等业务配置在 Nacos。
 
-Nacos 配置位置：dataId=`dev`，group=`service-provider`
+Nacos 配置位置：dataId=`dev`，group=`service-provider`；当前引导配置地址为 `192.168.100.128:8848`。
 
 ## 依赖
 
 - service-common
+- spring-cloud-starter-alibaba-nacos-discovery / config
 - spring-boot-starter-web
 - mybatis-plus-spring-boot4-starter
+- mybatis-plus-jsqlparser
 - mysql-connector-j
+- mapstruct
 - springdoc-openapi-starter-webmvc-ui
