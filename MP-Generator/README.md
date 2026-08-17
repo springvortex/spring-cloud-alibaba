@@ -45,10 +45,10 @@ MP-Generator/
 ### 方式二：命令行
 
 ```bash
-# 编译
+# 在 MP-Generator 目录执行
 mvn compile
-# 运行（需确保 target/classes 已生成）
-mvn exec:java -Dexec.mainClass="com.zjc.CodeGenerator"
+# 运行（需确保上一步已经生成 target/classes）
+mvn org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass="com.zjc.CodeGenerator"
 ```
 
 ## 生成内容
