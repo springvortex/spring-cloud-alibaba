@@ -51,21 +51,6 @@
 
     </properties>
 
-    <!-- 没有 src/main/java 的模块（如父 pom）自动跳过 build-info -->
-    <profiles>
-        <profile>
-            <id>aggregator-skip</id>
-            <activation>
-                <file>
-                    <missing>src/main/java</missing>
-                </file>
-            </activation>
-            <properties>
-                <spring-boot.build-info.skip>true</spring-boot.build-info.skip>
-            </properties>
-        </profile>
-    </profiles>
-
     <dependencyManagement>
         <dependencies>
             <!-- Spring Cloud 依赖管理（BOM） -->
@@ -240,17 +225,6 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>build-info</id>
-                        <goals>
-                            <goal>build-info</goal>
-                        </goals>
-                        <configuration>
-                            <additionalProperties>
-                                <description>${project.description}</description>
-                            </additionalProperties>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
