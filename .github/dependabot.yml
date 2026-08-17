@@ -1,0 +1,46 @@
+version: 2
+
+updates:
+
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - maven
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+
+  - package-ecosystem: maven
+    directory: /MP-Generator
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - maven
+    commit-message:
+      prefix: deps-generator
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
