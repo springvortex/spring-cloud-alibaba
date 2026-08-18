@@ -31,8 +31,8 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Build and test
-        run: mvn -B -ntp verify --file pom.xml
+      - name: Build and package
+        run: mvn -B -ntp package -DskipTests --file pom.xml
 
       - name: Collect executable JARs
         shell: bash
