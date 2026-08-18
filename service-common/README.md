@@ -169,8 +169,8 @@ java -jar service-provider-1.0.0.jar
 ### 加密算法配置
 
 Jasypt 加密参数集中存放在 Nacos 配置中心的公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），各服务通过
-`config.import` 引入。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。虽然在 jasypt-spring-boot-starter 3.0.5
-中这些是默认值，但在 Spring Boot 4.x 下默认值解析存在兼容性问题，因此显式声明并集中管理。
+`config.import` 引入。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。当前使用已适配 Spring Boot 4.x 的
+jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值，并便于集中管理。
 
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
 > 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。

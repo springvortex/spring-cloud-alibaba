@@ -14,7 +14,7 @@
 | 数据库        | MySQL                           | -          |
 | 网关          | Spring Cloud Gateway            | -          |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
-| 配置加密      | Jasypt                          | 3.0.5      |
+| 配置加密      | Jasypt                          | 4.0.4      |
 | 对象映射      | MapStruct                       | 1.6.3      |
 | 服务容错      | Alibaba Sentinel                | -          |
 | 工具库        | Hutool                          | 5.8.47     |
@@ -316,8 +316,8 @@ jasypt:
     string-output-type: base64
 ```
 
-> **注意**：jasypt-spring-boot-starter 3.0.5 的默认值与上述参数完全一致，但在 Spring Boot 4.x
-> 下，默认值解析存在兼容性问题，可能导致解密失败。因此显式声明这些参数并集中放在 Nacos 公共配置组中，所有服务共享同一份配置，便于维护和动态刷新。
+> **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，并集中放在
+> Nacos 公共配置组中，避免依赖隐式默认值；所有服务共享同一份配置，也便于维护和动态刷新。
 
 ### 本地开发（IDEA）
 
