@@ -1,0 +1,26 @@
+# Set default repository text policy.
+* text=auto eol=lf
+
+# Windows scripts must keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Common binary assets; prevents accidental line-ending normalization.
+*.jar binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.keystore binary
+*.p12 binary
+*.jks binary
