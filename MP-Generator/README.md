@@ -2,8 +2,7 @@
 
 基于 [MyBatis-Plus](https://baomidou.com/) 3.5.17 的 `FastAutoGenerator`，连接数据库后自动生成
 Entity、Mapper、Service、ServiceImpl、Mapper XML 等代码。仓库只保留 `generator.properties.template`
-模板文件；实际配置由模板复制并重命名为 `generator.properties`，换库、换表只需修改该文件，无需改动
-Java 代码。
+模板文件；实际配置由模板复制并重命名为 `generator.properties`，换库、换表只需修改该文件，无需改动 Java 代码。
 
 ## 环境要求
 
@@ -49,8 +48,8 @@ Copy-Item src/main/resources/generator.properties.template src/main/resources/ge
 | `generator.tables`      | 需要生成的表，逗号分隔             | `t_user,t_order`                |
 | `generator.tablePrefix` | 表前缀（生成类名时去掉），逗号分隔 | `t_,sys_`                       |
 
-`generator.properties` 已加入 Git 忽略规则，可安全填写本机数据库地址、用户名和密码；不要把真实环境
-信息写回 `generator.properties.template`。
+`generator.properties` 已加入 Git 忽略规则，可安全填写本机数据库地址、用户名和密码；不要把真实环境 信息写回
+`generator.properties.template`。
 
 ## 运行方式
 

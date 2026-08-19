@@ -19,6 +19,7 @@ import java.util.Properties;
  * 自动生成 Entity / Mapper / Service / ServiceImpl / Mapper XML 等代码。
  * 所有可变参数（数据库连接、表名、表前缀、父包名）均外置到配置文件，
  * 修改后无需改动本类即可重新生成。
+ *
  * @author jiancai.zhong
  */
 public class CodeGenerator {
