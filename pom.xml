@@ -39,6 +39,8 @@
         <spring-boot.version>4.1.0</spring-boot.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+        <!-- Jackson 2 兼容链安全版本覆盖 -->
+        <jackson-2-bom.version>2.21.5</jackson-2-bom.version>
         <!-- 其他依赖 -->
         <hutool.version>5.8.47</hutool.version>
         <bouncycastle.version>1.85.2</bouncycastle.version>
