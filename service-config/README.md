@@ -25,13 +25,24 @@
 zjc:
   config:
     env: ${app.env:dev}
-    source: ${app.config.source:remote}
+    source: ${app.config.source:local}
   infrastructure:
     host: ${INFRASTRUCTURE_HOST:129.204.226.206}
+
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${zjc.infrastructure.host}:8848
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
 ```
 
 `zjc.infrastructure.host` 是 Nacos、MySQL、Zipkin 共用的基础设施主机变量。业务配置只引用该变量，不再重复写 IP；
 部署环境可通过 `INFRASTRUCTURE_HOST` 覆盖。`ZIPKIN_ENDPOINT` 显式设置时优先于统一主机变量。
+
+Nacos 认证统一通过 `NACOS_USERNAME`、`NACOS_PASSWORD` 覆盖，默认值为 `nacos/nacos`。公共基础配置中的
+Nacos Discovery 与各服务 `application-remote.yaml` 中的 Nacos Config 使用同一组变量；生产环境必须配置强密码。
 
 各服务根目录 `application.yaml` 中定义了 `local` profile group，并引用上述变量激活环境与来源：
 
@@ -48,7 +59,9 @@ spring:
 ```
 
 Gateway 不加载业务接口前缀和 Jasypt 配置，其 `local` 组只包含 `zipkin`。`local` profile 本身由 `app.config.source=local`
-直接激活，用于关闭 Nacos Config 与导入检查；Nacos 服务发现保持独立开关，local 模式默认仍可注册到注册中心。
+直接激活，用于关闭 Nacos Config 与导入检查；Nacos 服务发现保持独立开关，连接地址由公共基础配置统一提供，因此 local
+配置来源下默认仍会注册到 `${zjc.infrastructure.host}:8848`。如需完全脱离 Nacos 运行单个服务，可显式设置
+`spring.cloud.nacos.discovery.enabled=false`。
 
 注意不要在业务服务中创建 `src/main/resources/config/application.yaml`。classpath 上的同名路径只能加载一个，业务服务的同名文件会遮住 `service-config` 中的公共基础配置。
 

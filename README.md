@@ -122,8 +122,13 @@ $env:INFRASTRUCTURE_HOST = "10.0.0.10"
 
 `ZIPKIN_ENDPOINT` 仍可单独覆盖 Zipkin 上报地址；未设置时会基于 `zjc.infrastructure.host` 拼接默认值。
 
+Nacos 认证统一使用 `NACOS_USERNAME`、`NACOS_PASSWORD` 环境变量，默认值为 `nacos/nacos`。这两个变量同时作用于
+Nacos Config 与 Nacos Discovery；生产环境必须改为强密码，不要依赖默认账号。
+
 `local` 模式会加载 `service-config` 中的 `application-local.yaml`，关闭 Nacos Config 与导入检查；Nacos 服务发现仍由
-`spring.cloud.nacos.discovery.enabled` 单独控制。
+`spring.cloud.nacos.discovery.enabled` 单独控制。服务发现连接地址由公共基础配置统一提供，local 配置来源下也会注册到
+`${zjc.infrastructure.host}:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
+`spring.cloud.nacos.discovery.enabled=false`。
 
 ### 数据库
 

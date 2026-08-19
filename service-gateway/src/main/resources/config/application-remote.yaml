@@ -4,12 +4,8 @@ spring:
       config:
         server-addr: ${zjc.infrastructure.host}:8848
         file-extension: yaml
-        username: nacos
-        password: nacos
-      discovery:
-        server-addr: ${zjc.infrastructure.host}:8848
-        username: nacos
-        password: nacos
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
   config:
     import:
       - nacos:${zjc.config.env}?group=${spring.application.name}&namespace=public&refreshEnabled=true
