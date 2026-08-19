@@ -85,8 +85,8 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
-           <scope>provided</scope>
-       </dependency>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射）-->
         <dependency>

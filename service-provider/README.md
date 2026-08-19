@@ -12,6 +12,9 @@
 
 ## 接口
 
+下表是 Controller 内编写的资源路径；服务启动时会根据 `spring.application.name=service-provider`
+自动追加全局前缀，实际请求路径为 `/api/v1/provider + 资源路径`。
+
 ### 用户管理
 
 | 方法   | 路径                           | 说明                 |
@@ -53,12 +56,13 @@
 
 ## SpringDoc 分组
 
-| 分组          | 路径匹配    |
-|---------------|-------------|
-| 01-用户管理   | `/user/**`  |
-| 02-商品管理   | `/goods/**` |
-| 03-订单管理   | `/order/**` |
-| 04-连通性测试 | `/port`     |
+版本分组由 `service-common` 自动生成：
+
+| 分组          | 路径匹配              |
+|---------------|-----------------------|
+| `v1-provider` | `/api/v1/provider/**` |
+
+如需 v1/v2 共存，在 `zjc.api.versions` 中同时配置 `v1`、`v2`，并在 v2 Controller 上标注 `@ApiVersion("v2")`。
 
 ## 包结构
 
@@ -69,7 +73,7 @@ com.zjc.provider
 │   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime（时区 Asia/Shanghai）
 │   ├── MybatisPlusConfig           分页插件
 │   ├── NacosConfigListenerConfig   Nacos 配置变更监听
-│   └── OpenApiConfig               SpringDoc 分组配置
+│   └── OpenApiConfig               SpringDoc 元信息配置
 ├── controller                      REST 接口（User/Goods/Order/Test）
 ├── converter                       MapStruct Entity/DTO 转换器
 ├── entity                          数据库实体（User/Goods/Order/OrderDetail）
