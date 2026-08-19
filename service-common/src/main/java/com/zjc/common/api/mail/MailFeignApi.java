@@ -28,6 +28,6 @@ public interface MailFeignApi {
      * @param dto 邮件发送请求
      * @return 邮件发送记录，含主键和发送状态
      */
-    @PostMapping("/mail/send")
+    @PostMapping("/send")
     ApiResponse<MailLogDTO> send(@Valid @RequestBody MailSendDTO dto);
 }

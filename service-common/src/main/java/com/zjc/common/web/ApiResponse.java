@@ -41,6 +41,8 @@ public class ApiResponse<T> implements Serializable {
 
     /**
      * 是否请求成功
+     *
+     * <p>只生成 setter，读取统一走 {@link #isSuccess()}，避免 Boolean 为空时拆箱异常。
      */
     @Setter
     protected Boolean success;
@@ -80,7 +82,6 @@ public class ApiResponse<T> implements Serializable {
     public boolean isSuccess() {
         return Boolean.TRUE.equals(success);
     }
-
 
     /**
      * 成功响应，无数据

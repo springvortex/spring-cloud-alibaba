@@ -48,7 +48,8 @@ com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.user.factory.UserFeignFallbackFactory
 ```
 
-任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、接口日志切面和用户 Feign 降级工厂，无需手动 `@Import` 或
+任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、接口日志切面和用户 Feign 降级工厂，无需手动
+`@Import` 或
 `@ComponentScan`。
 
 > **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux
@@ -175,16 +176,34 @@ jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
 > 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
 
+## 统一 API 路径
+
+业务 Controller 只编写资源路径，本模块根据 `spring.application.name` 自动生成
+`/api/{版本}/{模块}` 前缀，例如 `service-provider` 使用 `/api/v1/provider/**`。
+
+```yaml
+zjc:
+  api:
+    prefix: /api
+    versions:
+      - v1
+      - v2
+    default-version: v1
+```
+
+未标注版本的 Controller 使用 `default-version`；v2 Controller 标注 `@ApiVersion("v2")`。 SpringDoc 分组由本模块自动生成，Feign
+调用也会在发送前追加目标服务的前缀。
+
 ## 共享 Feign API
 
 common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务引入 common 依赖后可直接注入使用。
 
-| 接口           | 目标服务         | 方法              | 说明                                   |
-|----------------|------------------|-------------------|----------------------------------------|
-| `MailFeignApi` | service-mail     | `POST /mail/send` | 发送邮件                               |
-| `TestApi`      | service-provider | `GET /port`       | 获取 provider 实例端口，验证链路连通性 |
-| `UserFeignApi` | service-provider | `GET /user/{id}` | 远程查询单个用户，失败时返回空 data    |
-| `UserFeignApi` | service-provider | `GET /user/list` | 远程查询用户列表，失败时返回空列表     |
+| 接口           | 目标服务         | 契约资源路径     | 实际请求路径                     | 说明                                   |
+|----------------|------------------|------------------|----------------------------------|----------------------------------------|
+| `MailFeignApi` | service-mail     | `POST /send`     | `POST /api/v1/mail/send`         | 发送邮件                               |
+| `TestApi`      | service-provider | `GET /port`      | `GET /api/v1/provider/port`      | 获取 provider 实例端口，验证链路连通性 |
+| `UserFeignApi` | service-provider | `GET /user/{id}` | `GET /api/v1/provider/user/{id}` | 远程查询单个用户，失败时返回空 data    |
+| `UserFeignApi` | service-provider | `GET /user/list` | `GET /api/v1/provider/user/list` | 远程查询用户列表，失败时返回空列表     |
 
 ## 依赖说明
 
