@@ -65,16 +65,17 @@ error/   ERROR 日志
 
 ## 异步策略
 
-所有文件输出都包在 `ASYNC_FILE` 中：
+Logback 的 `AsyncAppender` 只允许挂载一个下游 Appender，因此每个级别都有独立的异步包装：
 
 ```xml
 
-<appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+<appender name="ASYNC_INFO_FILE" class="ch.qos.logback.classic.AsyncAppender">
     <queueSize>8192</queueSize>
     <discardingThreshold>0</discardingThreshold>
     <neverBlock>false</neverBlock>
     <includeCallerData>false</includeCallerData>
     <maxFlushTime>3000</maxFlushTime>
+    <appender-ref ref="INFO_FILE"/>
 </appender>
 ```
 
@@ -82,7 +83,7 @@ error/   ERROR 日志
 
 | 参数                      | 说明                                     |
 |---------------------------|------------------------------------------|
-| `queueSize`               | 异步队列容量，当前为 8192 条日志事件     |
+| `queueSize`               | 每个级别的队列容量，当前均为 8192 条事件 |
 | `discardingThreshold=0`   | 队列快满时不自动丢弃 INFO 及以下级别日志 |
 | `neverBlock=false`        | 队列满时阻塞业务线程，优先保证日志完整   |
 | `includeCallerData=false` | 不采集调用者类名和行号，降低异步开销     |

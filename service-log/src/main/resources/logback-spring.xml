@@ -87,16 +87,40 @@
         </filter>
     </appender>
 
-    <!-- 文件输出统一异步，避免磁盘写入阻塞业务线程 -->
-    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <!-- Logback AsyncAppender 只允许挂载一个下游 Appender，因此每个级别单独异步 -->
+    <appender name="ASYNC_DEBUG_FILE" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>8192</queueSize>
         <discardingThreshold>0</discardingThreshold>
         <neverBlock>false</neverBlock>
         <includeCallerData>false</includeCallerData>
         <maxFlushTime>3000</maxFlushTime>
         <appender-ref ref="DEBUG_FILE"/>
+    </appender>
+
+    <appender name="ASYNC_INFO_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>3000</maxFlushTime>
         <appender-ref ref="INFO_FILE"/>
+    </appender>
+
+    <appender name="ASYNC_WARN_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>3000</maxFlushTime>
         <appender-ref ref="WARN_FILE"/>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>3000</maxFlushTime>
         <appender-ref ref="ERROR_FILE"/>
     </appender>
 
@@ -117,14 +141,20 @@
 
         <root level="INFO">
             <appender-ref ref="STDOUT"/>
-            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_DEBUG_FILE"/>
+            <appender-ref ref="ASYNC_INFO_FILE"/>
+            <appender-ref ref="ASYNC_WARN_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
         </root>
     </springProfile>
 
     <!-- 生产环境：仅保留异步文件输出 -->
     <springProfile name="prod">
         <root level="INFO">
-            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_DEBUG_FILE"/>
+            <appender-ref ref="ASYNC_INFO_FILE"/>
+            <appender-ref ref="ASYNC_WARN_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
         </root>
     </springProfile>
 

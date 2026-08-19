@@ -153,7 +153,7 @@ debug/ info/ warn/ error/
 traceId、spanId、服务名、端口、线程、级别、logger、业务消息
 ```
 
-开发/测试环境：控制台同步输出，方便 IDEA 实时查看；文件输出统一异步。生产环境：不输出控制台，只保留异步文件输出。异步参数使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
+开发/测试环境：控制台同步输出，方便 IDEA 实时查看；四个级别的文件输出分别异步。生产环境：不输出控制台，只保留异步文件输出。每个异步 Appender 均使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
 
 更多说明见 [service-log/README.md](service-log/README.md)。
 
