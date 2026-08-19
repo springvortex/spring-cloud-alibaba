@@ -88,7 +88,7 @@ com.zjc.provider
 
 本地仅保留引导配置（端口、profile、Nacos 地址），数据源、MyBatis-Plus 等业务配置在 Nacos。
 
-Nacos 配置位置：dataId=`dev`，group=`service-provider`；当前引导配置地址为 `192.168.100.128:8848`。
+Nacos 配置位置：dataId=`dev`，group=`service-provider`；当前引导配置地址为 `127.0.0.1:8848`。
 
 ## 依赖
 

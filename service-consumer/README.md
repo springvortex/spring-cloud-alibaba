@@ -69,7 +69,7 @@ com.zjc.consumer
 
 ## 配置说明
 
-Nacos 配置位置：dataId=`dev`，group=`service-consumer`；当前引导配置地址为 `192.168.100.128:8848`。
+Nacos 配置位置：dataId=`dev`，group=`service-consumer`；当前引导配置地址为 `127.0.0.1:8848`。
 
 OpenFeign 超时配置（在 Nacos 中）：
 
