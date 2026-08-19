@@ -1,20 +1,73 @@
 # Service Config
 
-统一配置模块，当前承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，避免每个服务复制维护 `logback-spring.xml`。
+统一配置模块，承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，以及本地模式使用的公共配置 Profile，避免每个服务复制维护同类配置。
 
 ## 模块定位
 
 - 普通库模块，不独立启动，也不包含 Java 代码。
-- 只维护 `src/main/resources/logback-spring.xml`。
+- 维护 `src/main/resources/logback-spring.xml` 与 `src/main/resources/config/application*.yaml` 公共配置。
 - Spring Boot 会从依赖 JAR 的 classpath 根路径自动加载 `logback-spring.xml`，各服务仍使用自己的日志上下文和服务名。
 - 不携带 WebMVC、WebFlux 或业务依赖，因此 Gateway 可以安全引入。
 - `spring-boot.repackage.skip=true`，保持普通 JAR 并作为依赖打进各服务 Fat JAR。
+
+## 公共配置 Profile
+
+| Profile  | 内容                         | 使用服务                          |
+|----------|------------------------------|-----------------------------------|
+| `api`    | 统一接口前缀与版本           | Provider、Consumer、Mail          |
+| `jasypt` | 配置加密算法参数             | Provider、Consumer、Mail          |
+| `zipkin` | 链路追踪采样与导出           | Gateway、Provider、Consumer、Mail |
+| `local`  | 关闭 Nacos Config 与导入检查 | 全部服务                          |
+
+模块中的 `config/application.yaml` 提供统一的配置变量默认值：
+
+```yaml
+zjc:
+  config:
+    env: ${app.env:dev}
+    source: ${app.config.source:remote}
+```
+
+各服务根目录 `application.yaml` 中定义了 `local` profile group，并引用上述变量激活环境与来源：
+
+```yaml
+spring:
+  profiles:
+    active: ${zjc.config.env},${zjc.config.source}
+    group:
+      local:
+        - api
+        - jasypt
+        - zipkin
+
+```
+
+Gateway 不加载业务接口前缀和 Jasypt 配置，其 `local` 组只包含 `zipkin`。`local` profile 本身由 `app.config.source=local`
+直接激活，用于关闭 Nacos Config 与导入检查；Nacos 服务发现保持独立开关，local 模式默认仍可注册到注册中心。
+
+注意不要在业务服务中创建 `src/main/resources/config/application.yaml`。classpath 上的同名路径只能加载一个，业务服务的同名文件会遮住 `service-config` 中的公共基础配置。
+
+配置来源切换方式：
+
+```bash
+# remote：从 Nacos 读取服务配置和公共配置
+java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=remote
+
+# local：读取服务本地环境配置与 service-config 公共配置
+java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
+```
+
+`app.env` 只表示环境（`dev/test/prod`），`app.config.source` 只表示配置来源（`remote/local`）。部署时可通过 `APP_ENV`、
+`APP_CONFIG_SOURCE` 环境变量注入；Nacos dataId 使用 `app.env` 拼接，不会混入配置来源。
+
+远程模式下，Nacos 中的公共配置是运行时权威来源；本地公共配置用于 local 模式和基线维护，修改任一侧后应同步另一侧，避免配置漂移。
 
 ## 接入方式
 
 所有可运行服务都添加依赖：
 
 ```xml
+
 <dependency>
     <groupId>com.zjc</groupId>
     <artifactId>service-config</artifactId>

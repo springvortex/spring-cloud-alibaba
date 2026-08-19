@@ -95,7 +95,8 @@ spring:
 - `allow-credentials: false`：不允许携带 Cookie 等凭证；如果改为 `true`，来源不能继续使用 `*`，必须配置明确域名。
 - `max-age: 3600`：浏览器对预检请求结果缓存 1 小时，减少 `OPTIONS` 请求。
 
-当前选择配置中心而不是 Java 配置类，原因是路由和 CORS 都属于会随环境变化的运行配置；放在 Nacos 中可按环境调整，并利用配置动态刷新能力，不需要重新打包网关代码。
+当前选择配置中心而不是 Java 配置类，原因是路由和 CORS 都属于会随环境变化的运行配置；放在 Nacos
+中可按环境调整，并利用配置动态刷新能力，不需要重新打包网关代码。
 
 ### 请求示例
 
@@ -128,13 +129,21 @@ com.zjc.gateway.filter.ServiceGlobalFilter
 
 ```java
 long startTime = System.currentTimeMillis();
-log.info("开始请求{} {}", method, uri);
+log.
 
-return chain.filter(exchange)
-        .doFinally(signalType -> {
-            long endTime = System.currentTimeMillis();
-            log.info("结束请求 {} {}，耗时：{}ms，信号：{}",
-                    method, uri, endTime - startTime, signalType);
+info("开始请求{} {}",method, uri);
+
+return chain.
+
+filter(exchange)
+        .
+
+doFinally(signalType ->{
+long endTime = System.currentTimeMillis();
+            log.
+
+info("结束请求 {} {}，耗时：{}ms，信号：{}",
+     method, uri, endTime -startTime, signalType);
         });
 ```
 
@@ -188,7 +197,8 @@ Gateway 是 WebFlux 异步链路，`ObservabilityConfiguration` 启动时调用�
 Hooks.enableAutomaticContextPropagation();
 ```
 
-这样 Micrometer Tracing 能把 Reactor Context 中的追踪上下文恢复到回调线程的 MDC，`ServiceGlobalFilter` 的开始/结束日志才能稳定输出同一个 `traceId` 和 `spanId`。
+这样 Micrometer Tracing 能把 Reactor Context 中的追踪上下文恢复到回调线程的 MDC，`ServiceGlobalFilter` 的开始/结束日志才能稳定输出同一个
+`traceId` 和 `spanId`。
 
 ## 设计说明
 

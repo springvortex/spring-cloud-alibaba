@@ -1,0 +1,4 @@
+zjc:
+  config:
+    env: ${app.env:dev}
+    source: ${app.config.source:remote}

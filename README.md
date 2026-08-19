@@ -4,28 +4,28 @@
 
 ## 技术栈
 
-| 分类          | 选型                            | 版本       |
-|---------------|---------------------------------|------------|
-| 语言          | Java                            | 21         |
-| 构建工具      | Maven                           | 3.9+       |
-| 基础框架      | Spring Boot                     | 4.1.0      |
-| 微服务框架    | Spring Cloud                    | 2025.1.2   |
-| 注册/配置中心 | Spring Cloud Alibaba Nacos      | 2025.1.0.0 |
-| ORM           | MyBatis-Plus                    | 3.5.17     |
-| 数据库        | MySQL                           | -          |
-| 网关          | Spring Cloud Gateway            | -          |
-| 服务调用      | OpenFeign                       | -          |
-| 客户端负载均衡 | Spring Cloud LoadBalancer + Caffeine | - |
-| 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
-| 配置加密      | Jasypt                          | 4.0.4      |
-| 对象映射      | MapStruct                       | 1.6.3      |
-| 服务容错      | Alibaba Sentinel                | -          |
-| 链路追踪      | Micrometer Tracing + Brave      | -          |
-| 追踪后端      | Zipkin                          | -          |
-| 日志框架      | SLF4J + Logback                 | -          |
-| 工具库        | Hutool                          | 5.8.47     |
-| 测试          | JUnit 5 + Mockito + AssertJ     | -          |
-| 覆盖率        | JaCoCo                          | 0.8.15     |
+| 分类           | 选型                                 | 版本       |
+|----------------|--------------------------------------|------------|
+| 语言           | Java                                 | 21         |
+| 构建工具       | Maven                                | 3.9+       |
+| 基础框架       | Spring Boot                          | 4.1.0      |
+| 微服务框架     | Spring Cloud                         | 2025.1.2   |
+| 注册/配置中心  | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
+| ORM            | MyBatis-Plus                         | 3.5.17     |
+| 数据库         | MySQL                                | -          |
+| 网关           | Spring Cloud Gateway                 | -          |
+| 服务调用       | OpenFeign                            | -          |
+| 客户端负载均衡 | Spring Cloud LoadBalancer + Caffeine | -          |
+| 接口文档       | SpringDoc OpenAPI（Swagger UI）      | 3.1.0      |
+| 配置加密       | Jasypt                               | 4.0.4      |
+| 对象映射       | MapStruct                            | 1.6.3      |
+| 服务容错       | Alibaba Sentinel                     | -          |
+| 链路追踪       | Micrometer Tracing + Brave           | -          |
+| 追踪后端       | Zipkin                               | -          |
+| 日志框架       | SLF4J + Logback                      | -          |
+| 工具库         | Hutool                               | 5.8.47     |
+| 测试           | JUnit 5 + Mockito + AssertJ          | -          |
+| 覆盖率         | JaCoCo                               | 0.8.15     |
 
 ## 模块说明
 
@@ -46,14 +46,14 @@ spring-cloud-alibaba
 
 ### 组件清单
 
-| 组件 | 必需 | 默认端口 | 用途 | 安装建议 |
-|------|------|----------|------|----------|
-| JDK 21+ | 是 | - | 编译与运行 Java 服务 | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
-| Maven 3.9+ | 构建必需 | - | 编译、测试、打包 | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven |
-| MySQL 8+ | 是 | 3306 | 业务数据、Nacos 生产配置存储、邮件记录 | 官方安装包或 Docker；生产环境仅内网访问 |
-| Nacos 3.x | 是 | 8848、9848、9849、7848 | 注册中心、配置中心 | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL |
-| Zipkin | 可选，链路追踪建议安装 | 9411 | 展示 trace/span 调用链 | 官方发行包或 Docker；不安装时可将导出开关设为 false |
-| SMTP 服务 | service-mail 必需 | 视服务商而定 | 发送邮件 | 使用已有邮箱服务商 SMTP，凭据放 Nacos 并用 Jasypt 加密 |
+| 组件       | 必需                   | 默认端口               | 用途                                   | 安装建议                                                                        |
+|------------|------------------------|------------------------|----------------------------------------|---------------------------------------------------------------------------------|
+| JDK 21+    | 是                     | -                      | 编译与运行 Java 服务                   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
+| Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包                       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
+| MySQL 8+   | 是                     | 3306                   | 业务数据、Nacos 生产配置存储、邮件记录 | 官方安装包或 Docker；生产环境仅内网访问                                         |
+| Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 注册中心、配置中心                     | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
+| Zipkin     | 可选，链路追踪建议安装 | 9411                   | 展示 trace/span 调用链                 | 官方发行包或 Docker；不安装时可将导出开关设为 false                             |
+| SMTP 服务  | service-mail 必需      | 视服务商而定           | 发送邮件                               | 使用已有邮箱服务商 SMTP，凭据放 Nacos 并用 Jasypt 加密                          |
 
 ### 组件安装
 
@@ -90,15 +90,31 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 3. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
 4. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
 
-### 本地配置
+### 配置来源
 
-各服务的 Nacos 引导配置位于：
+各服务的远程配置引导位于：
 
 ```text
-service-{module}/src/main/resources/config/application-nacos.yaml
+service-{module}/src/main/resources/config/application-remote.yaml
 ```
 
-该文件包含 Nacos 地址、认证信息和 `spring.config.import`。本地开发时按实际环境修改；不建议把生产账号密码提交到仓库。
+该文件包含 Nacos 地址、认证信息和 `spring.config.import`。根配置通过 `app.env` 和 `app.config.source` 组合激活环境与配置来源：
+
+```bash
+# remote：读取 Nacos
+java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=remote
+
+# local：读取服务本地配置与 service-config 公共配置
+java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
+```
+
+`app.env` 可取 `dev/test/prod`，`app.config.source` 可取 `remote/local`。部署时可通过 `APP_ENV`、`APP_CONFIG_SOURCE`
+环境变量注入；Nacos dataId 使用 `app.env` 拼接，不会混入配置来源。
+
+这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
+
+`local` 模式会加载 `service-config` 中的 `application-local.yaml`，关闭 Nacos Config 与导入检查；Nacos 服务发现仍由
+`spring.cloud.nacos.discovery.enabled` 单独控制。
 
 ### 数据库
 
@@ -153,7 +169,8 @@ debug/ info/ warn/ error/
 traceId、spanId、服务名、端口、线程、级别、logger、业务消息
 ```
 
-开发/测试环境：控制台同步输出，方便 IDEA 实时查看；四个级别的文件输出分别异步。生产环境：不输出控制台，只保留异步文件输出。每个异步 Appender 均使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
+开发/测试环境：控制台同步输出，方便 IDEA 实时查看；四个级别的文件输出分别异步。生产环境：不输出控制台，只保留异步文件输出。每个异步
+Appender 均使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
 
 更多说明见 [service-config/README.md](service-config/README.md)。
 
@@ -166,7 +183,8 @@ spring-boot-starter-actuator
 spring-boot-starter-zipkin
 ```
 
-基于 Micrometer Tracing + Brave 生成 trace/span，并把数据导出到 Zipkin。Gateway 和业务服务都会传播 W3C `traceparent` 请求头，因此一次请求在网关、Provider、Consumer、Mail 中会保持同一个 `traceId`。
+基于 Micrometer Tracing + Brave 生成 trace/span，并把数据导出到 Zipkin。Gateway 和业务服务都会传播 W3C `traceparent`
+请求头，因此一次请求在网关、Provider、Consumer、Mail 中会保持同一个 `traceId`。
 
 基础配置：
 
@@ -184,12 +202,12 @@ management:
 
 环境变量说明：
 
-| 环境变量 | 默认值 | 说明 |
-|----------|--------|------|
-| `TRACING_SAMPLING_PROBABILITY` | `1.0` | 采样比例，`1.0` 表示全采样，`0.1` 表示约 10% 请求生成可导出的追踪数据 |
-| `ZIPKIN_EXPORT_ENABLED` | `true` | 是否导出 Zipkin |
-| `ZIPKIN_ENDPOINT` | `http://127.0.0.1:9411/api/v2/spans` | Zipkin 上报地址 |
-| `TRACING_ENABLED` | `true` | 当前配置在 `management.tracing.export.enabled` 下，只控制导出；若要整体关闭 tracing，应额外配置 `management.tracing.enabled` |
+| 环境变量                       | 默认值                               | 说明                                                                                                                         |
+|--------------------------------|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `TRACING_SAMPLING_PROBABILITY` | `1.0`                                | 采样比例，`1.0` 表示全采样，`0.1` 表示约 10% 请求生成可导出的追踪数据                                                        |
+| `ZIPKIN_EXPORT_ENABLED`        | `true`                               | 是否导出 Zipkin                                                                                                              |
+| `ZIPKIN_ENDPOINT`              | `http://127.0.0.1:9411/api/v2/spans` | Zipkin 上报地址                                                                                                              |
+| `TRACING_ENABLED`              | `true`                               | 当前配置在 `management.tracing.export.enabled` 下，只控制导出；若要整体关闭 tracing，应额外配置 `management.tracing.enabled` |
 
 排查方式：
 
@@ -473,7 +491,8 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一存放在 Nacos 配置中心的公共配置组中，各服务通过 `config.import` 引入：
+Jasypt 加密参数（算法、迭代次数、salt 生成器等）在远程模式下来自 Nacos 配置中心的公共配置组；本地模式下来自 `service-config`
+模块的 `config/application-jasypt.yaml`。
 
 ```yaml
 # 各服务的 config/application-remote.yaml
@@ -483,7 +502,7 @@ spring:
       - nacos:jasypt?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
 ```
 
-Nacos 中 `jasypt` 配置内容（group: `spring-cloud-alibaba-public`）：
+Nacos 与本地公共配置内容保持一致（group: `spring-cloud-alibaba-public`，dataId: `jasypt`）：
 
 ```yaml
 jasypt:
@@ -549,8 +568,9 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置中心
 
-各服务通过 Nacos 管理配置，本地 `application.yaml` 只保留引导信息（端口、Nacos 地址），业务配置（数据源、MyBatis-Plus、SMTP
-等）存放在 Nacos。
+各服务支持 remote/local 两种配置来源。本地 `application.yaml` 保留服务名、端口、默认环境和 profile
+group；服务环境配置（数据源、MyBatis-Plus、SMTP 等）保留在各服务的 `config/application-{env}.yaml`，remote 模式再通过 Nacos
+引入同名环境配置。
 
 配置规则：
 
@@ -559,13 +579,13 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 - **namespace**：`public`
 - **热更新**：`refreshEnabled=true`
 
-公共配置组（group: `spring-cloud-alibaba-public`）存放所有服务共享的配置，如 Jasypt 加密算法参数（dataId: `jasypt`）。各服务通过
-`config.import` 引入。
+公共配置分为两部分：`service-config` 模块维护本地 `api`、`jasypt`、`zipkin` profile；remote 模式通过 `config.import` 读取
+Nacos 公共配置组（group: `spring-cloud-alibaba-public`）。
 
-Nacos 地址：当前引导配置为 `127.0.0.1:8848`
+Nacos 地址：以各服务 `config/application-remote.yaml` 为准。
 
-每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import
-变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
+每个服务本地有 `application.yaml`（端口、profile group）和 `config/application-remote.yaml`（Nacos 地址、config.import
+变量）两个引导文件，运行时通过 `${zjc.config.env}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
 
 ## 接口文档
 

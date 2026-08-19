@@ -5,6 +5,9 @@ spring:
   application:
     name: service-mail
   profiles:
-    active: dev
-    include:
-      - remote
+    active: ${zjc.config.env},${zjc.config.source}
+    group:
+      local:
+        - api
+        - jasypt
+        - zipkin

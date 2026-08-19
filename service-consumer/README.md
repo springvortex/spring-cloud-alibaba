@@ -95,7 +95,8 @@ spring:
 logs/service-consumer/
 ```
 
-日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin；通过 Feign 调用 Provider 时，会继续传播 W3C `traceparent`，Gateway、Consumer、Provider 可以在 Zipkin 中组成同一条调用链：
+日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin；通过 Feign 调用 Provider 时，会继续传播 W3C `traceparent`
+，Gateway、Consumer、Provider 可以在 Zipkin 中组成同一条调用链：
 
 ```yaml
 management:
