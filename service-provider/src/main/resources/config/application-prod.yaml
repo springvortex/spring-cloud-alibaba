@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://129.204.226.206:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    url: jdbc:mysql://${zjc.infrastructure.host}:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
     username: spring_cloud_alibaba
     password: ENC(vStS7aXxtuaitgTfFqkF4DevOB1cYe4pkfNFJCdIWSo=)
 

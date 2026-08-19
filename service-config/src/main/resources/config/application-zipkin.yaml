@@ -5,5 +5,5 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://129.204.226.206:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}

@@ -2,3 +2,5 @@ zjc:
   config:
     env: ${app.env:dev}
     source: ${app.config.source:remote}
+  infrastructure:
+    host: ${INFRASTRUCTURE_HOST:129.204.226.206}

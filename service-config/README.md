@@ -26,7 +26,12 @@ zjc:
   config:
     env: ${app.env:dev}
     source: ${app.config.source:remote}
+  infrastructure:
+    host: ${INFRASTRUCTURE_HOST:129.204.226.206}
 ```
+
+`zjc.infrastructure.host` 是 Nacos、MySQL、Zipkin 共用的基础设施主机变量。业务配置只引用该变量，不再重复写 IP；
+部署环境可通过 `INFRASTRUCTURE_HOST` 覆盖。`ZIPKIN_ENDPOINT` 显式设置时优先于统一主机变量。
 
 各服务根目录 `application.yaml` 中定义了 `local` profile group，并引用上述变量激活环境与来源：
 
@@ -61,6 +66,8 @@ java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 `APP_CONFIG_SOURCE` 环境变量注入；Nacos dataId 使用 `app.env` 拼接，不会混入配置来源。
 
 远程模式下，Nacos 中的公共配置是运行时权威来源；本地公共配置用于 local 模式和基线维护，修改任一侧后应同步另一侧，避免配置漂移。
+
+`MP-Generator/src/main/resources/generator.properties` 是被 Git 忽略的本地生成器配置，不参与 Spring 配置体系，其中的数据库地址仍需单独维护。
 
 ## 接入方式
 

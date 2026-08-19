@@ -113,6 +113,15 @@ java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 
 这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
 
+Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`。该变量默认也维护在 `service-config`
+的公共基础配置中，可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖：
+
+```powershell
+$env:INFRASTRUCTURE_HOST = "10.0.0.10"
+```
+
+`ZIPKIN_ENDPOINT` 仍可单独覆盖 Zipkin 上报地址；未设置时会基于 `zjc.infrastructure.host` 拼接默认值。
+
 `local` 模式会加载 `service-config` 中的 `application-local.yaml`，关闭 Nacos Config 与导入检查；Nacos 服务发现仍由
 `spring.cloud.nacos.discovery.enabled` 单独控制。
 
@@ -196,7 +205,7 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}
 ```
 
@@ -206,7 +215,7 @@ management:
 |--------------------------------|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
 | `TRACING_SAMPLING_PROBABILITY` | `1.0`                                | 采样比例，`1.0` 表示全采样，`0.1` 表示约 10% 请求生成可导出的追踪数据                                                        |
 | `ZIPKIN_EXPORT_ENABLED`        | `true`                               | 是否导出 Zipkin                                                                                                              |
-| `ZIPKIN_ENDPOINT`              | `http://127.0.0.1:9411/api/v2/spans` | Zipkin 上报地址                                                                                                              |
+| `ZIPKIN_ENDPOINT`              | 基于 `INFRASTRUCTURE_HOST` 拼接      | Zipkin 上报地址；显式设置时优先级高于统一主机变量                                                                           |
 | `TRACING_ENABLED`              | `true`                               | 当前配置在 `management.tracing.export.enabled` 下，只控制导出；若要整体关闭 tracing，应额外配置 `management.tracing.enabled` |
 
 排查方式：
