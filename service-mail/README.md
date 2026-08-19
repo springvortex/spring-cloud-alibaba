@@ -83,7 +83,7 @@ com.zjc.mail
 
 - dataId：`dev`
 - group：`service-mail`
-- 当前引导配置地址：`127.0.0.1:8848`
+- 具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为 `127.0.0.1:8848`
 
 Nacos 中至少需要配置：
 
@@ -101,11 +101,36 @@ spring:
 
 SMTP 密码使用 Jasypt 密文，启动时通过 `jasypt.encryptor.password` 或 `JASYPT_ENCRYPTOR_PASSWORD` 注入密钥。
 
+## 日志与链路追踪
+
+本模块通过 `service-log` 统一日志配置，日志输出到：
+
+```text
+logs/service-mail/
+```
+
+日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin，可追踪 Gateway 到 Mail 的调用耗时，也可用于定位 SMTP 发送异常：
+
+```yaml
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
+        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+      enabled: ${TRACING_ENABLED:true}
+```
+
 ## 依赖
 
 - service-common
+- service-log
 - spring-cloud-starter-alibaba-nacos-discovery / config
 - spring-boot-starter-web
+- spring-boot-starter-actuator
+- spring-boot-starter-zipkin
 - spring-boot-starter-mail
 - mybatis-plus-spring-boot4-starter
 - mybatis-plus-jsqlparser

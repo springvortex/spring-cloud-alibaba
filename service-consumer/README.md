@@ -71,7 +71,8 @@ com.zjc.consumer
 
 ## 配置说明
 
-Nacos 配置位置：dataId=`dev`，group=`service-consumer`；当前引导配置地址为 `127.0.0.1:8848`。
+Nacos 配置位置：dataId=`dev`，group=`service-consumer`；具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为
+`127.0.0.1:8848`。
 
 OpenFeign 超时配置（在 Nacos 中）：
 
@@ -86,11 +87,38 @@ spring:
             read-timeout: 10000
 ```
 
+## 日志与链路追踪
+
+本模块通过 `service-log` 统一日志配置，日志输出到：
+
+```text
+logs/service-consumer/
+```
+
+日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin；通过 Feign 调用 Provider 时，会继续传播 W3C `traceparent`，Gateway、Consumer、Provider 可以在 Zipkin 中组成同一条调用链：
+
+```yaml
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
+        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+      enabled: ${TRACING_ENABLED:true}
+```
+
+排查远程调用时，重点查看同一个 `traceId` 下 Consumer 发起请求和 Provider 处理请求的 span 耗时。
+
 ## 依赖
 
 - service-common
+- service-log
 - spring-cloud-starter-alibaba-nacos-discovery / config
 - spring-boot-starter-web
+- spring-boot-starter-actuator
+- spring-boot-starter-zipkin
 - spring-cloud-starter-openfeign
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）

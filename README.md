@@ -7,16 +7,22 @@
 | 分类          | 选型                            | 版本       |
 |---------------|---------------------------------|------------|
 | 语言          | Java                            | 21         |
+| 构建工具      | Maven                           | 3.9+       |
 | 基础框架      | Spring Boot                     | 4.1.0      |
 | 微服务框架    | Spring Cloud                    | 2025.1.2   |
 | 注册/配置中心 | Spring Cloud Alibaba Nacos      | 2025.1.0.0 |
 | ORM           | MyBatis-Plus                    | 3.5.17     |
 | 数据库        | MySQL                           | -          |
 | 网关          | Spring Cloud Gateway            | -          |
+| 服务调用      | OpenFeign                       | -          |
+| 客户端负载均衡 | Spring Cloud LoadBalancer + Caffeine | - |
 | 接口文档      | SpringDoc OpenAPI（Swagger UI） | 3.1.0      |
 | 配置加密      | Jasypt                          | 4.0.4      |
 | 对象映射      | MapStruct                       | 1.6.3      |
 | 服务容错      | Alibaba Sentinel                | -          |
+| 链路追踪      | Micrometer Tracing + Brave      | -          |
+| 追踪后端      | Zipkin                          | -          |
+| 日志框架      | SLF4J + Logback                 | -          |
 | 工具库        | Hutool                          | 5.8.47     |
 | 测试          | JUnit 5 + Mockito + AssertJ     | -          |
 | 覆盖率        | JaCoCo                          | 0.8.15     |
@@ -26,6 +32,7 @@
 ```
 spring-cloud-alibaba
 ├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
+├── service-log         统一日志配置模块，所有可运行服务共用一份 logback-spring.xml
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
@@ -37,13 +44,61 @@ spring-cloud-alibaba
 
 ## 快速开始
 
-### 前置依赖
+### 组件清单
 
-- JDK 21+
-- Maven 3.9+
-- MySQL 8+
-- Nacos 2.x（当前引导配置地址 `127.0.0.1:8848`，账号密码 `username/password`；本地部署时可修改各模块
-  `config/application-nacos.yaml` 或用启动参数覆盖）
+| 组件 | 必需 | 默认端口 | 用途 | 安装建议 |
+|------|------|----------|------|----------|
+| JDK 21+ | 是 | - | 编译与运行 Java 服务 | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
+| Maven 3.9+ | 构建必需 | - | 编译、测试、打包 | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven |
+| MySQL 8+ | 是 | 3306 | 业务数据、Nacos 生产配置存储、邮件记录 | 官方安装包或 Docker；生产环境仅内网访问 |
+| Nacos 3.x | 是 | 8848、9848、9849、7848 | 注册中心、配置中心 | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL |
+| Zipkin | 可选，链路追踪建议安装 | 9411 | 展示 trace/span 调用链 | 官方发行包或 Docker；不安装时可将导出开关设为 false |
+| SMTP 服务 | service-mail 必需 | 视服务商而定 | 发送邮件 | 使用已有邮箱服务商 SMTP，凭据放 Nacos 并用 Jasypt 加密 |
+
+### 组件安装
+
+基础组件只需安装在开发机或内网服务器，不需要部署到每个应用目录。以下命令适合本地开发验证：
+
+```bash
+# MySQL 8
+docker run -d --name mysql \
+  -e MYSQL_ROOT_PASSWORD=your-root-password \
+  -e MYSQL_DATABASE=spring_cloud_alibaba \
+  -p 3306:3306 \
+  mysql:8
+
+# Nacos standalone（开发环境；生产建议配置外置 MySQL 并开启鉴权）
+docker run -d --name nacos \
+  -e MODE=standalone \
+  -p 8848:8848 -p 9848:9848 \
+  nacos/nacos-server:v3.0.0
+
+# Zipkin
+docker run -d --name zipkin \
+  -p 9411:9411 \
+  openzipkin/zipkin:3
+```
+
+Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解压后按官方脚本启动；启动前确认 `java -version` 为 Java 21+。
+
+上面的 Zipkin 容器默认将数据保存在内存中，重启后调用链会丢失；生产环境应配置 Elasticsearch、MySQL 等存储后端，并与应用放在同一内网。
+
+组件启动后：
+
+1. MySQL 创建数据库 `spring_cloud_alibaba` 并导入业务表。
+2. Nacos 创建 `public` 命名空间下的服务配置和公共配置组。
+3. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
+4. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
+
+### 本地配置
+
+各服务的 Nacos 引导配置位于：
+
+```text
+service-{module}/src/main/resources/config/application-nacos.yaml
+```
+
+该文件包含 Nacos 地址、认证信息和 `spring.config.import`。本地开发时按实际环境修改；不建议把生产账号密码提交到仓库。
 
 ### 数据库
 
@@ -59,12 +114,89 @@ spring-cloud-alibaba
 
 ### 启动顺序
 
-1. 启动 Nacos
+1. 启动 MySQL、Nacos；如需查看调用链，同时启动 Zipkin
 2. `service-provider`（业务核心）
-3. `service-gateway`（可选，按需）
+3. `service-gateway`（统一入口，建议启动）
 4. `service-consumer` / `service-mail`（按需）
 
 ---
+
+## 日志与链路追踪
+
+### 统一日志
+
+所有可运行服务都依赖 `service-log`，共享一份：
+
+```text
+service-log/src/main/resources/logback-spring.xml
+```
+
+不要再在各业务模块复制 `logback-spring.xml`。日志目录由 `spring.application.name` 自动区分：
+
+```text
+logs/
+├── service-gateway/
+├── service-provider/
+├── service-consumer/
+└── service-mail/
+```
+
+每个服务目录下按级别拆分：
+
+```text
+debug/ info/ warn/ error/
+```
+
+日志格式包含：
+
+```text
+traceId、spanId、服务名、端口、线程、级别、logger、业务消息
+```
+
+开发/测试环境：控制台同步输出，方便 IDEA 实时查看；文件输出统一异步。生产环境：不输出控制台，只保留异步文件输出。异步参数使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
+
+更多说明见 [service-log/README.md](service-log/README.md)。
+
+### 链路追踪
+
+四个可运行服务均引入：
+
+```text
+spring-boot-starter-actuator
+spring-boot-starter-zipkin
+```
+
+基于 Micrometer Tracing + Brave 生成 trace/span，并把数据导出到 Zipkin。Gateway 和业务服务都会传播 W3C `traceparent` 请求头，因此一次请求在网关、Provider、Consumer、Mail 中会保持同一个 `traceId`。
+
+基础配置：
+
+```yaml
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
+        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+      enabled: ${TRACING_ENABLED:true}
+```
+
+环境变量说明：
+
+| 环境变量 | 默认值 | 说明 |
+|----------|--------|------|
+| `TRACING_SAMPLING_PROBABILITY` | `1.0` | 采样比例，`1.0` 表示全采样，`0.1` 表示约 10% 请求生成可导出的追踪数据 |
+| `ZIPKIN_EXPORT_ENABLED` | `true` | 是否导出 Zipkin |
+| `ZIPKIN_ENDPOINT` | `http://127.0.0.1:9411/api/v2/spans` | Zipkin 上报地址 |
+| `TRACING_ENABLED` | `true` | 当前配置在 `management.tracing.export.enabled` 下，只控制导出；若要整体关闭 tracing，应额外配置 `management.tracing.enabled` |
+
+排查方式：
+
+1. 通过 Gateway 发起请求，例如 `GET /api/v1/provider/user/1`。
+2. 从 Gateway 开始/结束日志中复制 `traceId`。
+3. 在 Zipkin 查询该 `traceId`，查看网关与下游服务的调用树、耗时和异常。
+4. 也可用同一个 `traceId` 聚合各服务本地日志。
 
 ## 打包
 
@@ -84,6 +216,8 @@ mvn clean package
 打包后的输出结构：
 
 ```
+service-log/target/
+└── service-log-1.0.0.jar               # 普通 JAR，统一日志配置，不独立启动
 service-common/target/
 └── service-common-1.0.0.jar             # 普通 JAR，公共库，不独立启动
 service-consumer/target/
@@ -100,9 +234,10 @@ service-provider/target/
 
 - **业务服务模块**：继承父 POM 中的 `spring-boot-maven-plugin`，执行 `repackage` 后生成可执行 Fat JAR
 - **service-common**：通过 `spring-boot.repackage.skip=true` 保持普通库 JAR，供其他模块 Maven 依赖，不独立部署
+- **service-log**：同样保持普通库 JAR，只作为依赖打进各服务 Fat JAR，不独立部署
 - **依赖隔离**：每个业务服务的依赖都打在各自 Fat JAR 内，gateway 的 WebFlux 栈与其他服务的 MVC 栈天然隔离
 
-> **注意**：部署时不需要拷贝 `service-common` JAR，它已经作为依赖打进每个业务服务的 Fat JAR。
+> **注意**：部署时不需要拷贝 `service-common` 和 `service-log` JAR，它们已经作为依赖打进每个业务服务的 Fat JAR。
 
 ### 配置位置
 
@@ -117,6 +252,7 @@ service-provider/target/
 
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
 - 服务器能访问 Nacos（注册中心 + 配置中心）和 MySQL
+- 开启链路追踪时，服务器能访问 Zipkin；Zipkin 本身也应部署在内网
 - 应用配置（`application.yaml`）已打在 JAR 内，Nacos 上的业务配置启动时自动拉取
 
 ### 需要拷贝的文件
@@ -223,6 +359,7 @@ HTTP 端口供 Gateway 和其他内部服务调用，但这些端口必须留在
 | service-mail     | 9004                          | 禁止             | 仅 Gateway / 内部服务访问                   |
 | Nacos            | 8848、9848、9849、7848        | 禁止             | 控制台、客户端通信、Raft 端口都不能公网开放 |
 | MySQL            | 3306                          | 禁止             | 仅业务服务和运维链路访问                    |
+| Zipkin           | 9411                          | 禁止             | 仅应用和运维人员内网访问                    |
 
 推荐的网络拓扑：
 
@@ -236,7 +373,7 @@ service-gateway（唯一暴露入口）
 内网：service-provider / service-consumer / service-mail
     |
     v
-内网：Nacos / MySQL
+内网：Nacos / MySQL / Zipkin
 ```
 
 部署时的具体要求：
@@ -245,6 +382,7 @@ service-gateway（唯一暴露入口）
 - `9001`、`9002`、`9004` 只允许内网访问；Docker 部署时不要把这些端口映射到宿主机公网地址。
 - Nacos 的 `8848` 控制台以及 `9848`、`9849`、`7848` 通信端口都不得暴露公网。
 - MySQL `3306` 不得暴露公网，应用通过内网地址连接。
+- Zipkin `9411` 不得暴露公网；确需远程查看时通过 VPN、堡垒机或内网反向代理接入。
 - 直接访问 `http://host:9001/swagger-ui.html`、`http://host:9002/swagger-ui.html`、
   `http://host:9004/swagger-ui.html` 只适用于本机或内网调试，生产环境不允许绕过 Gateway。
 - Kubernetes 部署时业务服务使用 `ClusterIP` Service，只把 Gateway 暴露为 Ingress 或 LoadBalancer。

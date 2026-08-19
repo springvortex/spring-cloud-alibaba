@@ -92,13 +92,41 @@ com.zjc.provider
 
 本地仅保留引导配置（端口、profile、Nacos 地址），数据源、MyBatis-Plus 等业务配置在 Nacos。
 
-Nacos 配置位置：dataId=`dev`，group=`service-provider`；当前引导配置地址为 `127.0.0.1:8848`。
+Nacos 配置位置：dataId=`dev`，group=`service-provider`；具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为
+`127.0.0.1:8848`。
+
+## 日志与链路追踪
+
+本模块通过 `service-log` 统一日志配置，日志输出到：
+
+```text
+logs/service-provider/
+```
+
+日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin，通过 W3C `traceparent` 与 Gateway、Consumer 保持同一条链路：
+
+```yaml
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
+        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+      enabled: ${TRACING_ENABLED:true}
+```
+
+排查请求时，先用日志中的 `traceId` 聚合本地日志，再到 Zipkin 查看完整调用树和耗时分布。
 
 ## 依赖
 
 - service-common
+- service-log
 - spring-cloud-starter-alibaba-nacos-discovery / config
 - spring-boot-starter-web
+- spring-boot-starter-actuator
+- spring-boot-starter-zipkin
 - mybatis-plus-spring-boot4-starter
 - mybatis-plus-jsqlparser
 - mysql-connector-j
