@@ -15,3 +15,4 @@ spring:
       - nacos:${spring.profiles.active}?group=${spring.application.name}&namespace=public&refreshEnabled=true
       - nacos:jasypt?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
       - nacos:api?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
+      - nacos:zipkin?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
