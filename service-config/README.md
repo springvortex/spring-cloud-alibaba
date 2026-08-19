@@ -1,6 +1,6 @@
-# Service Log
+# Service Config
 
-统一日志配置模块，为 Gateway、Provider、Consumer、Mail 提供同一份 Logback 配置，避免每个服务复制维护 `logback-spring.xml`。
+统一配置模块，当前承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，避免每个服务复制维护 `logback-spring.xml`。
 
 ## 模块定位
 
@@ -17,7 +17,7 @@
 ```xml
 <dependency>
     <groupId>com.zjc</groupId>
-    <artifactId>service-log</artifactId>
+    <artifactId>service-config</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -111,6 +111,6 @@ Logback 的 `AsyncAppender` 只允许挂载一个下游 Appender，因此每个�
 ## 维护约定
 
 - 修改日志格式、目录、异步参数时，只修改本模块。
-- 新增可运行服务时，添加 `service-log` 依赖即可，不需要复制日志文件。
+- 新增可运行服务时，添加 `service-config` 依赖即可，不需要复制日志文件。
 - 保持文件名为 `logback-spring.xml`，因为配置使用了 `springProperty` 和 `springProfile`。
 - 各服务必须设置有效 profile（`dev`、`test` 或 `prod`），否则当前配置不会激活任何 root appender。

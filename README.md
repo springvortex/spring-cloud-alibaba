@@ -32,7 +32,7 @@
 ```
 spring-cloud-alibaba
 ├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
-├── service-log         统一日志配置模块，所有可运行服务共用一份 logback-spring.xml
+├── service-config      统一配置模块，当前维护所有服务共用的 logback-spring.xml
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
@@ -125,10 +125,10 @@ service-{module}/src/main/resources/config/application-nacos.yaml
 
 ### 统一日志
 
-所有可运行服务都依赖 `service-log`，共享一份：
+所有可运行服务都依赖 `service-config`，共享一份：
 
 ```text
-service-log/src/main/resources/logback-spring.xml
+service-config/src/main/resources/logback-spring.xml
 ```
 
 不要再在各业务模块复制 `logback-spring.xml`。日志目录由 `spring.application.name` 自动区分：
@@ -155,7 +155,7 @@ traceId、spanId、服务名、端口、线程、级别、logger、业务消息
 
 开发/测试环境：控制台同步输出，方便 IDEA 实时查看；四个级别的文件输出分别异步。生产环境：不输出控制台，只保留异步文件输出。每个异步 Appender 均使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
 
-更多说明见 [service-log/README.md](service-log/README.md)。
+更多说明见 [service-config/README.md](service-config/README.md)。
 
 ### 链路追踪
 
@@ -216,8 +216,8 @@ mvn clean package
 打包后的输出结构：
 
 ```
-service-log/target/
-└── service-log-1.0.0.jar               # 普通 JAR，统一日志配置，不独立启动
+service-config/target/
+└── service-config-1.0.0.jar            # 普通 JAR，统一配置资源，不独立启动
 service-common/target/
 └── service-common-1.0.0.jar             # 普通 JAR，公共库，不独立启动
 service-consumer/target/
@@ -234,10 +234,10 @@ service-provider/target/
 
 - **业务服务模块**：继承父 POM 中的 `spring-boot-maven-plugin`，执行 `repackage` 后生成可执行 Fat JAR
 - **service-common**：通过 `spring-boot.repackage.skip=true` 保持普通库 JAR，供其他模块 Maven 依赖，不独立部署
-- **service-log**：同样保持普通库 JAR，只作为依赖打进各服务 Fat JAR，不独立部署
+- **service-config**：同样保持普通库 JAR，只作为依赖打进各服务 Fat JAR，不独立部署
 - **依赖隔离**：每个业务服务的依赖都打在各自 Fat JAR 内，gateway 的 WebFlux 栈与其他服务的 MVC 栈天然隔离
 
-> **注意**：部署时不需要拷贝 `service-common` 和 `service-log` JAR，它们已经作为依赖打进每个业务服务的 Fat JAR。
+> **注意**：部署时不需要拷贝 `service-common` 和 `service-config` JAR，它们已经作为依赖打进每个业务服务的 Fat JAR。
 
 ### 配置位置
 

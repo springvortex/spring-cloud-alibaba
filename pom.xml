@@ -20,7 +20,7 @@
     <description>Spring Cloud Alibaba 微服务父项目</description>
 
     <modules>
-        <module>service-log</module>
+        <module>service-config</module>
         <module>service-common</module>
         <module>service-provider</module>
         <module>service-consumer</module>

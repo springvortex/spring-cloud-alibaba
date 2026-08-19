@@ -26,7 +26,7 @@
         <!-- 统一日志配置 -->
         <dependency>
             <groupId>com.zjc</groupId>
-            <artifactId>service-log</artifactId>
+            <artifactId>service-config</artifactId>
             <version>1.0.0</version>
         </dependency>
 

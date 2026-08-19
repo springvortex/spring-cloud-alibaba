@@ -97,7 +97,7 @@ Nacos 配置位置：dataId=`dev`，group=`service-provider`；具体地址以 `
 
 ## 日志与链路追踪
 
-本模块通过 `service-log` 统一日志配置，日志输出到：
+本模块通过 `service-config` 统一日志配置，日志输出到：
 
 ```text
 logs/service-provider/
@@ -122,7 +122,7 @@ management:
 ## 依赖
 
 - service-common
-- service-log
+- service-config
 - spring-cloud-starter-alibaba-nacos-discovery / config
 - spring-boot-starter-web
 - spring-boot-starter-actuator

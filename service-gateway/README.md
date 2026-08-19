@@ -206,7 +206,7 @@ Hooks.enableAutomaticContextPropagation();
 ## 依赖
 
 - spring-cloud-starter-gateway-server-webflux
-- service-log
+- service-config
 - spring-boot-starter-actuator
 - spring-boot-starter-zipkin
 - spring-cloud-starter-loadbalancer
