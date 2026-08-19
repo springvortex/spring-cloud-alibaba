@@ -30,6 +30,11 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     /**
+     * 多条校验错误信息的拼接分隔符。
+     */
+    private static final String ERROR_DELIMITER = "; ";
+
+    /**
      * 业务异常：透传异常自身的错误码与提示信息。
      *
      * @param e 业务异常
@@ -51,7 +56,7 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(this::formatFieldError)
-                .collect(Collectors.joining("; "));
+                .collect(Collectors.joining(ERROR_DELIMITER));
         log.warn("参数校验失败: {}", message);
         return ApiResponse.failure(ApiResponseEnum.PARAM_INVALID.code(), message);
     }
@@ -66,7 +71,7 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleBindException(BindException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(this::formatFieldError)
-                .collect(Collectors.joining("; "));
+                .collect(Collectors.joining(ERROR_DELIMITER));
         log.warn("参数绑定失败: {}", message);
         return ApiResponse.failure(ApiResponseEnum.PARAM_INVALID.code(), message);
     }
@@ -81,7 +86,7 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleConstraintViolation(ConstraintViolationException e) {
         String message = e.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining("; "));
+                .collect(Collectors.joining(ERROR_DELIMITER));
         log.warn("约束校验失败: {}", message);
         return ApiResponse.failure(ApiResponseEnum.PARAM_INVALID.code(), message);
     }

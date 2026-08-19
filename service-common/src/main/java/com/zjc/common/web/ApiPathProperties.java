@@ -22,7 +22,7 @@ public class ApiPathProperties {
     /**
      * 全局 API 根路径，通常为 {@code /api}。
      */
-    private String prefix = "/api";
+    private String prefix = ApiPathConstants.DEFAULT_PREFIX;
 
     /**
      * 当前服务暴露的 API 版本列表。未配置 {@link #defaultVersion} 时，

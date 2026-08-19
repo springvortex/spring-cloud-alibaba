@@ -64,7 +64,7 @@ public final class ApiPathResolver {
      * @return 模块名
      */
     public static String moduleName(String serviceName) {
-        int separator = serviceName.lastIndexOf('-');
+        int separator = serviceName.lastIndexOf(ApiPathConstants.NAME_SEPARATOR);
         return separator < 0 ? serviceName : serviceName.substring(separator + 1);
     }
 
@@ -78,7 +78,7 @@ public final class ApiPathResolver {
         if (!versions.contains(version)) {
             throw new IllegalArgumentException("Unknown API version: " + version);
         }
-        return prefix + "/" + version + "/" + moduleName;
+        return prefix + ApiPathConstants.PATH_SEPARATOR + version + ApiPathConstants.PATH_SEPARATOR + moduleName;
     }
 
     /**
@@ -128,11 +128,11 @@ public final class ApiPathResolver {
     }
 
     private static String normalizePath(String value) {
-        String normalized = StringUtils.hasText(value) ? value.trim() : "/api";
-        if (!normalized.startsWith("/")) {
-            normalized = "/" + normalized;
+        String normalized = StringUtils.hasText(value) ? value.trim() : ApiPathConstants.DEFAULT_PREFIX;
+        if (!normalized.startsWith(ApiPathConstants.PATH_SEPARATOR)) {
+            normalized = ApiPathConstants.PATH_SEPARATOR + normalized;
         }
-        while (normalized.length() > 1 && normalized.endsWith("/")) {
+        while (normalized.length() > 1 && normalized.endsWith(ApiPathConstants.PATH_SEPARATOR)) {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         return normalized.toLowerCase(Locale.ROOT);

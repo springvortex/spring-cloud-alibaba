@@ -36,6 +36,16 @@ public class WebLogAspect {
     private static final int MAX_LOG_LENGTH = 2000;
 
     /**
+     * 上下文信息不可用时的占位符
+     */
+    private static final String NOT_AVAILABLE = "N/A";
+
+    /**
+     * JSON 序列化中的 null 字面量
+     */
+    private static final String NULL_VALUE = "null";
+
+    /**
      * 匹配所有 {@code @RestController} 类的公共方法。
      */
     @Pointcut("@within(org.springframework.web.bind.annotation.RestController)")
@@ -52,8 +62,8 @@ public class WebLogAspect {
     @Around("controllerPointcut()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         HttpServletRequest request = getRequest();
-        String httpMethod = request != null ? request.getMethod() : "N/A";
-        String uri = request != null ? request.getRequestURI() : "N/A";
+        String httpMethod = request != null ? request.getMethod() : NOT_AVAILABLE;
+        String uri = request != null ? request.getRequestURI() : NOT_AVAILABLE;
         String target = joinPoint.getTarget().getClass().getSimpleName()
                 + "." + joinPoint.getSignature().getName() + "()";
 
@@ -113,7 +123,7 @@ public class WebLogAspect {
      */
     private String formatObject(Object obj) {
         if (obj == null) {
-            return "null";
+            return NULL_VALUE;
         }
         if (obj instanceof HttpServletRequest || obj instanceof HttpServletResponse || obj instanceof MultipartFile) {
             return obj.getClass().getSimpleName();
@@ -133,7 +143,7 @@ public class WebLogAspect {
      */
     private String formatResult(Object result) {
         if (result == null) {
-            return "null";
+            return NULL_VALUE;
         }
         String json = formatObject(result);
         if (json.length() > MAX_LOG_LENGTH) {

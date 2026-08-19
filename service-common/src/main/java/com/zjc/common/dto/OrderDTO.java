@@ -15,10 +15,16 @@ import java.util.List;
  * 订单公共DTO，Feign 跨服务调用传输对象。
  * 放在 common 模块，所有微服务可依赖。
  * 必须实现 Serializable，支持序列化。
+ * @author jiancai.zhong
  */
 @Schema(description = "订单信息")
 @Data
 public class OrderDTO implements Serializable {
+
+    /**
+     * 金额字段的非负下限，供校验注解引用
+     */
+    private static final String AMOUNT_MIN = "0";
 
     @Serial
     private static final long serialVersionUID = 7163373472202107281L;
@@ -35,11 +41,11 @@ public class OrderDTO implements Serializable {
 
     @Schema(description = "订单总金额")
     @NotNull(message = "订单总金额不能为空")
-    @DecimalMin(value = "0", message = "订单总金额不能为负数")
+    @DecimalMin(value = AMOUNT_MIN, message = "订单总金额不能为负数")
     private BigDecimal totalAmount;
 
     @Schema(description = "实付金额")
-    @DecimalMin(value = "0", message = "实付金额不能为负数")
+    @DecimalMin(value = AMOUNT_MIN, message = "实付金额不能为负数")
     private BigDecimal payAmount;
 
     @Schema(description = "订单状态 0待支付 1已支付 2已发货 3已完成 4已取消")

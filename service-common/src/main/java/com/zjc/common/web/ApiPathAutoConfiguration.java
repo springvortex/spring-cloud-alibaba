@@ -65,8 +65,8 @@ public class ApiPathAutoConfiguration {
         ApiPathResolver resolver = resolver(properties, environment, beanFactory);
         return resolver.getVersions().stream()
                 .map(version -> GroupedOpenApi.builder()
-                        .group(version + "-" + resolver.getModuleName())
-                        .pathsToMatch(resolver.prefix(version) + "/**")
+                        .group(version + ApiPathConstants.NAME_SEPARATOR + resolver.getModuleName())
+                        .pathsToMatch(resolver.prefix(version) + ApiPathConstants.PATH_WILDCARD)
                         .build())
                 .toList();
     }
@@ -81,17 +81,20 @@ public class ApiPathAutoConfiguration {
     public RequestInterceptor standardApiPathFeignInterceptor(ApiPathProperties properties) {
         return request -> {
             Target<?> target = request.feignTarget();
-            if (target == null || !StringUtils.hasText(target.name()) || !target.name().contains("-")) {
+            if (target == null || !StringUtils.hasText(target.name())
+                    || !target.name().contains(ApiPathConstants.NAME_SEPARATOR)) {
                 return;
             }
             String resourcePath = request.path();
-            if (!StringUtils.hasText(resourcePath) || !resourcePath.startsWith("/")) {
+            if (!StringUtils.hasText(resourcePath)
+                    || !resourcePath.startsWith(ApiPathConstants.PATH_SEPARATOR)) {
                 return;
             }
             ApiPathResolver targetResolver = ApiPathResolver.of(target.name(), properties);
             String version = targetResolver.version(request.methodMetadata().method());
             String apiPrefix = targetResolver.prefix(version);
-            if (!resourcePath.startsWith(apiPrefix + "/") && !resourcePath.equals(apiPrefix)) {
+            if (!resourcePath.startsWith(apiPrefix + ApiPathConstants.PATH_SEPARATOR)
+                    && !resourcePath.equals(apiPrefix)) {
                 request.uri(apiPrefix + resourcePath);
             }
         };
