@@ -6,6 +6,5 @@ spring:
     name: service-gateway
   profiles:
     active: ${zjc.config.env},${zjc.config.source}
-    group:
-      local:
-        - zipkin
+    include:
+      - zipkin

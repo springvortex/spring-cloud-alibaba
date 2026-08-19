@@ -8,5 +8,4 @@ spring:
         password: ${NACOS_PASSWORD:nacos}
   config:
     import:
-      - nacos:${zjc.config.env}?group=${spring.application.name}&namespace=public&refreshEnabled=true
-      - nacos:zipkin?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
+      - nacos:prod?group=${spring.application.name}&namespace=public&refreshEnabled=true

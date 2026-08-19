@@ -34,8 +34,8 @@ com.zjc.gateway
 ## 路由配置
 
 local 模式下路由规则位于 `src/main/resources/config/application-dev.yaml`，作为本地开发基线。remote 模式通过
-`src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，group 为
-`service-gateway`，namespace 为 `public`。
+`src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，group 为 `service-gateway`，
+namespace 为 `public`。
 
 当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀， 网关只按模块转发，不做 `RewritePath`
 剥离前缀：
@@ -168,12 +168,11 @@ return chain.filter(exchange)
 
 ## 配置说明
 
-`application.yaml` 保留端口、服务名和 profile group；local 模式下路由和 CORS 从 `config/application-dev.yaml` 加载。
-remote 模式下 Nacos dataId 为 `${zjc.config.env}`，group 为 `service-gateway`。Nacos 地址统一来自
+`application.yaml` 保留端口、服务名和公共 profile include；local 模式下路由和 CORS 从 `config/application-dev.yaml` 加载。
+remote 模式下 Nacos dataId 固定为 `prod`，group 为 `service-gateway`。Nacos 地址统一来自
 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
 
-链路追踪配置来自 `service-config` 的 `zipkin` profile：local 模式由 profile group 激活，remote 模式由 Nacos
-公共配置 `zipkin` 提供：
+链路追踪配置来自 `service-config` 的 `zipkin` profile，由 `spring.profiles.include` 激活：
 
 ```yaml
 management:

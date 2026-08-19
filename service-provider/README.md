@@ -92,10 +92,9 @@ com.zjc.provider
 
 配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
 
-- **local**：加载 `src/main/resources/config/application-dev.yaml` 或 `application-prod.yaml`，其中维护数据源、
-  MyBatis-Plus 和 Swagger 开关。
-- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，
-  group 为 `service-provider`，namespace 为 `public`。
+- **local**：加载 `src/main/resources/config/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
+- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，
+  group 为 `service-provider`，namespace 为 `public`；公共配置仍来自 `service-config`。
 
 Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。local 模式只关闭 Nacos
 Config，服务发现默认仍会注册到 Nacos。

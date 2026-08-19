@@ -89,7 +89,7 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 组件启动后：
 
 1. MySQL 创建数据库 `spring_cloud_alibaba` 并导入业务表。
-2. Nacos 创建 `public` 命名空间下的服务配置和公共配置组。
+2. Nacos 在 `public` 命名空间下为每个服务创建 `dataId=prod` 的配置。
 3. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
 4. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
 
@@ -106,15 +106,15 @@ service-{module}/src/main/resources/config/application-remote.yaml
 该文件包含 Nacos 地址、认证信息和 `spring.config.import`。根配置通过 `app.env` 和 `app.config.source` 组合激活环境与配置来源：
 
 ```bash
-# remote：读取 Nacos
-java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=remote
+# remote：读取 Nacos 的 prod 配置
+java -jar service-provider-1.0.0.jar --app.env=prod --app.config.source=remote
 
 # local：读取服务本地配置与 service-config 公共配置
 java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 ```
 
 `app.env` 可取 `dev/test/prod`，`app.config.source` 可取 `remote/local`。部署时可通过 `APP_ENV`、`APP_CONFIG_SOURCE`
-环境变量注入；Nacos dataId 使用 `app.env` 拼接，不会混入配置来源。
+环境变量注入。remote 模式固定读取 Nacos 的 `prod` Data ID，应同时设置 `app.env=prod`，保证本地 profile 与远端配置一致。
 
 这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
 
@@ -514,18 +514,7 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数（算法、迭代次数、salt 生成器等）在远程模式下来自 Nacos 配置中心的公共配置组；本地模式下来自 `service-config`
-模块的 `config/application-jasypt.yaml`。
-
-```yaml
-# 各服务的 config/application-remote.yaml
-spring:
-  config:
-    import:
-      - nacos:jasypt?group=spring-cloud-alibaba-public&namespace=public&refreshEnabled=true
-```
-
-Nacos 与本地公共配置内容保持一致（group: `spring-cloud-alibaba-public`，dataId: `jasypt`）：
+Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一来自 `service-config` 模块的 `config/application-jasypt.yaml`。
 
 ```yaml
 jasypt:
@@ -540,7 +529,7 @@ jasypt:
 ```
 
 > **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，并集中放在
-> Nacos 公共配置组中，避免依赖隐式默认值；所有服务共享同一份配置，也便于维护和动态刷新。
+> `service-config` 中，避免依赖隐式默认值；所有服务共享同一份配置。
 
 ### 本地开发（IDEA）
 
@@ -593,9 +582,8 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置中心
 
-各服务支持 remote/local 两种配置来源。本地 `application.yaml` 保留服务名、端口、默认环境和 profile
-group；服务环境配置（数据源、MyBatis-Plus、SMTP 等）保留在各服务的 `config/application-{env}.yaml`，remote 模式再通过 Nacos
-引入同名环境配置。
+各服务支持 remote/local 两种配置来源。本地 `application.yaml` 保留服务名、端口、默认环境和通过 `spring.profiles.include`
+引入的公共 profile；本地开发环境配置保留在各服务的 `config/application-dev.yaml`，生产配置统一由 Nacos 的 `prod` 提供。
 
 配置规则：
 
@@ -604,13 +592,13 @@ group；服务环境配置（数据源、MyBatis-Plus、SMTP 等）保留在各�
 - **namespace**：`public`
 - **热更新**：`refreshEnabled=true`
 
-公共配置分为两部分：`service-config` 模块维护本地 `api`、`jasypt`、`zipkin` profile；remote 模式通过 `config.import` 读取
-Nacos 公共配置组（group: `spring-cloud-alibaba-public`）。
+公共配置统一由 `service-config` 模块维护 `api`、`jasypt`、`zipkin` profile，并通过 `spring.profiles.include` 加载。
+Nacos 只保存各服务 `dataId=prod` 的环境配置。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin`。
 
 Nacos 地址：以各服务 `config/application-remote.yaml` 为准。
 
-每个服务本地有 `application.yaml`（端口、profile group）和 `config/application-remote.yaml`（Nacos 地址、config.import
-变量）两个引导文件，运行时通过 `${zjc.config.env}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
+每个服务本地有 `application.yaml`（端口、公共 profile include）和 `config/application-remote.yaml`（Nacos 地址、config.import
+变量）两个引导文件；remote 模式通过 `${spring.application.name}` 定位服务分组，并固定拉取 `prod` Data ID。
 
 ## 接口文档
 

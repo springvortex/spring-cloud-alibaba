@@ -1,7 +1,6 @@
 # Service Config
 
-统一配置模块，承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，以及 local 模式使用的公共配置 Profile。
-远程模式下的 Nacos 公共配置也应以这些本地文件为基线，避免两套配置漂移。
+统一配置模块，承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，以及 local/remote 模式使用的公共配置 Profile。
 
 ## 模块定位
 
@@ -45,21 +44,19 @@ spring:
 Nacos 认证统一通过 `NACOS_USERNAME`、`NACOS_PASSWORD` 覆盖，默认值为 `nacos/nacos`。公共基础配置中的
 Nacos Discovery 与各服务 `application-remote.yaml` 中的 Nacos Config 使用同一组变量；生产环境必须配置强密码。
 
-各服务根目录 `application.yaml` 中定义了 `local` profile group，并引用上述变量激活环境与来源：
+各服务根目录 `application.yaml` 通过 `spring.profiles.include` 引入公共配置：
 
 ```yaml
 spring:
   profiles:
     active: ${zjc.config.env},${zjc.config.source}
-    group:
-      local:
-        - api
-        - jasypt
-        - zipkin
-
+    include:
+      - api
+      - jasypt
+      - zipkin
 ```
 
-Gateway 不加载业务接口前缀和 Jasypt 配置，其 `local` 组只包含 `zipkin`。`local` profile 本身由 `app.config.source=local`
+Gateway 不加载业务接口前缀和 Jasypt 配置，只 include `zipkin`。`local` profile 本身由 `app.config.source=local`
 直接激活，用于关闭 Nacos Config 与导入检查；Nacos 服务发现保持独立开关，连接地址由公共基础配置统一提供，因此 local
 配置来源下默认仍会注册到 `${zjc.infrastructure.host}:8848`。如需完全脱离 Nacos 运行单个服务，可显式设置
 `spring.cloud.nacos.discovery.enabled=false`。
@@ -69,17 +66,17 @@ Gateway 不加载业务接口前缀和 Jasypt 配置，其 `local` 组只包含 
 配置来源切换方式：
 
 ```bash
-# remote：从 Nacos 读取服务配置和公共配置
-java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=remote
+# remote：从 Nacos 读取 prod 服务配置，公共配置仍来自 service-config
+java -jar service-provider-1.0.0.jar --app.env=prod --app.config.source=remote
 
 # local：读取服务本地环境配置与 service-config 公共配置
 java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 ```
 
 `app.env` 只表示环境（`dev/test/prod`），`app.config.source` 只表示配置来源（`remote/local`）。部署时可通过 `APP_ENV`、
-`APP_CONFIG_SOURCE` 环境变量注入；Nacos dataId 使用 `app.env` 拼接，不会混入配置来源。
+`APP_CONFIG_SOURCE` 环境变量注入；remote 模式固定读取 Nacos 的 `prod` Data ID。
 
-远程模式下，Nacos 中的公共配置是运行时权威来源；本地公共配置用于 local 模式和基线维护，修改任一侧后应同步另一侧，避免配置漂移。
+Nacos 不保存公共配置，只保存各服务 `dataId=prod` 的环境配置；`api`、`jasypt`、`zipkin` 始终以 `service-config` 中的本地文件为准。
 
 `MP-Generator/src/main/resources/generator.properties` 是被 Git 忽略的本地生成器配置，不参与 Spring 配置体系，其中的数据库地址仍需单独维护。
 

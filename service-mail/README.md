@@ -82,8 +82,8 @@ com.zjc.mail
 配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
 
 - **local**：加载 `src/main/resources/config/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
-- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，
-  group 为 `service-mail`，namespace 为 `public`。
+- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，
+  group 为 `service-mail`，namespace 为 `public`；公共配置仍来自 `service-config`。
 
 Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
 

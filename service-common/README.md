@@ -175,8 +175,8 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数在 remote 模式下存放在 Nacos 公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），local
-模式下来自 `service-config` 的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。
+Jasypt 加密参数统一来自 `service-config` 的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest`
+工具完全一致。
 当前使用已适配 Spring Boot 4.x 的
 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值，并便于集中管理。
 
