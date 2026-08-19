@@ -28,8 +28,8 @@ class ApiPathFeignInterceptorTest {
 
     @Test
     @DisplayName("默认调用使用目标服务的 v1 标准前缀")
-    void testDefaultVersionUsesTargetPrefix() throws NoSuchMethodException {
-        RequestTemplate template = requestTemplate(TestApi.class, "one", "service-provider");
+    void testDefaultVersionUsesTargetPrefix() {
+        RequestTemplate template = requestTemplate("one");
 
         interceptor().apply(template);
 
@@ -38,8 +38,8 @@ class ApiPathFeignInterceptorTest {
 
     @Test
     @DisplayName("Feign 方法版本覆盖默认版本")
-    void testMethodVersionOverridesDefault() throws NoSuchMethodException {
-        RequestTemplate template = requestTemplate(TestApi.class, "two", "service-provider");
+    void testMethodVersionOverridesDefault() {
+        RequestTemplate template = requestTemplate("two");
 
         interceptor().apply(template);
 
@@ -48,8 +48,8 @@ class ApiPathFeignInterceptorTest {
 
     @Test
     @DisplayName("已经携带标准前缀的路径不会重复追加")
-    void testExistingPrefixIsNotDuplicated() throws NoSuchMethodException {
-        RequestTemplate template = requestTemplate(TestApi.class, "one", "service-provider");
+    void testExistingPrefixIsNotDuplicated() {
+        RequestTemplate template = requestTemplate("one");
         template.uri("/api/v1/provider/resource");
 
         interceptor().apply(template);
@@ -59,8 +59,8 @@ class ApiPathFeignInterceptorTest {
 
     @Test
     @DisplayName("追加前缀时保留查询参数")
-    void testQueryParametersArePreserved() throws NoSuchMethodException {
-        RequestTemplate template = requestTemplate(TestApi.class, "one", "service-provider");
+    void testQueryParametersArePreserved() {
+        RequestTemplate template = requestTemplate("one");
         template.query("type", "all");
 
         interceptor().apply(template);
@@ -76,19 +76,23 @@ class ApiPathFeignInterceptorTest {
         return configuration.standardApiPathFeignInterceptor(properties);
     }
 
-    private RequestTemplate requestTemplate(Class<?> apiType, String methodName,
-                                            String serviceName) throws NoSuchMethodException {
-        Method method = Arrays.stream(apiType.getMethods())
+    private RequestTemplate requestTemplate(String methodName) {
+        Method method = Arrays.stream(TestApi.class.getMethods())
                 .filter(candidate -> candidate.getName().equals(methodName))
                 .findFirst()
                 .orElseThrow();
-        MethodMetadata metadata = new SpringMvcContract().parseAndValidateMetadata(apiType, method);
+        MethodMetadata metadata = new SpringMvcContract().parseAndValidateMetadata(TestApi.class, method);
         RequestTemplate template = new RequestTemplate().uri("/resource");
         template.methodMetadata(metadata);
-        template.feignTarget(new Target.HardCodedTarget<>(apiType, serviceName));
+        template.feignTarget(new Target.HardCodedTarget<>((Class<?>) TestApi.class, "service-provider"));
         return template;
     }
 
+    /**
+     * 用于解析 Feign 方法路径和版本信息的测试接口。
+     *
+     * @author jiancai.zhong
+     */
     interface TestApi {
 
         @GetMapping("/resource")

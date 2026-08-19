@@ -18,6 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("业务异常")
 class BusinessExceptionTest {
 
+    /**
+     * 基于 {@link com.zjc.common.constant.ErrorCode} 构造异常的测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("ErrorCode 枚举构造")
     class ErrorCodeConstructorTests {

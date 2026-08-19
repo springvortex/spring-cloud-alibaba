@@ -47,10 +47,20 @@ class ApiPathResolverTest {
         assertThat(resolver.appliesTo(String.class)).isFalse();
     }
 
+    /**
+     * 未标注版本的默认版本控制器。
+     *
+     * @author jiancai.zhong
+     */
     @RestController
     static class VersionOneController {
     }
 
+    /**
+     * 标注 v2 版本的控制器。
+     *
+     * @author jiancai.zhong
+     */
     @RestController
     @ApiVersion("v2")
     static class VersionTwoController {

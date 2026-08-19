@@ -42,6 +42,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== BusinessException ====================
 
+    /**
+     * 业务异常处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("业务异常")
     class BusinessExceptionTests {
@@ -72,6 +77,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== MethodArgumentNotValidException ====================
 
+    /**
+     * 请求体参数校验失败处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("@RequestBody 校验失败")
     class MethodArgumentNotValidTests {
@@ -96,6 +106,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== BindException ====================
 
+    /**
+     * 表单参数绑定校验失败处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("表单参数校验失败")
     class BindExceptionTests {
@@ -116,6 +131,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== ConstraintViolationException ====================
 
+    /**
+     * 方法参数约束校验失败处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("约束校验失败")
     class ConstraintViolationTests {
@@ -151,6 +171,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== HttpMessageNotReadableException ====================
 
+    /**
+     * 请求体解析失败处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("请求体解析失败")
     class HttpMessageNotReadableTests {
@@ -170,6 +195,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== NoResourceFoundException ====================
 
+    /**
+     * 资源不存在处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("资源不存在")
     class NoResourceFoundTests {
@@ -212,6 +242,11 @@ class GlobalExceptionHandlerTest {
 
     // ==================== 兜底 Exception ====================
 
+    /**
+     * 兜底异常处理测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("兜底异常")
     class GenericExceptionTests {

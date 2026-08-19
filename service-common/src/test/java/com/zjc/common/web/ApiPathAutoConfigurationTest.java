@@ -72,6 +72,11 @@ class ApiPathAutoConfigurationTest {
         });
     }
 
+    /**
+     * 集成测试使用的控制器和分组消费者配置。
+     *
+     * @author jiancai.zhong
+     */
     @org.springframework.context.annotation.Configuration
     static class TestControllers {
 
@@ -91,9 +96,19 @@ class ApiPathAutoConfigurationTest {
         }
     }
 
+    /**
+     * 用于验证 Springdoc 分组注入结果的消费者。
+     *
+     * @author jiancai.zhong
+     */
     record GroupConsumer(List<GroupedOpenApi> groups) {
     }
 
+    /**
+     * 未标注版本的默认版本控制器。
+     *
+     * @author jiancai.zhong
+     */
     @RestController
     static class VersionOneController {
 
@@ -103,6 +118,11 @@ class ApiPathAutoConfigurationTest {
         }
     }
 
+    /**
+     * 标注 v2 版本的控制器。
+     *
+     * @author jiancai.zhong
+     */
     @RestController
     @ApiVersion("v2")
     static class VersionTwoController {

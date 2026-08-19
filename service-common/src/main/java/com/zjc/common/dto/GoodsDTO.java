@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
  * 商品公共DTO，Feign 跨服务调用传输对象。
  * 放在 common 模块，所有微服务可依赖。
  * 必须实现 Serializable，支持序列化。
+ *
+ * @author jiancai.zhong
  */
 @Schema(description = "商品信息")
 @Data

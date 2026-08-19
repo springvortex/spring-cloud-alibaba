@@ -206,6 +206,11 @@ public class ApiResponse<T> implements Serializable {
         return new Builder<>();
     }
 
+    /**
+     * {@link ApiResponse} 链式构建器。
+     *
+     * @author jiancai.zhong
+     */
     public static final class Builder<T> {
         private boolean success;
         private Integer code;

@@ -18,6 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("ApiResponse 统一响应封装")
 class ApiResponseTest {
 
+    /**
+     * 成功响应工厂方法测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("成功响应")
     class SuccessTests {
@@ -72,6 +77,11 @@ class ApiResponseTest {
         }
     }
 
+    /**
+     * 失败响应工厂方法测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("失败响应")
     class FailureTests {
@@ -135,6 +145,11 @@ class ApiResponseTest {
         }
     }
 
+    /**
+     * Builder 链式构建测试。
+     *
+     * @author jiancai.zhong
+     */
     @Nested
     @DisplayName("Builder 链式构建")
     class BuilderTests {
