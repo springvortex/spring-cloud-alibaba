@@ -42,7 +42,8 @@ spring-cloud-alibaba
 - JDK 21+
 - Maven 3.9+
 - MySQL 8+
-- Nacos 2.x（当前引导配置地址 `127.0.0.1:8848`，账号密码 `username/password`；本地部署时可修改各模块 `config/application-nacos.yaml` 或用启动参数覆盖）
+- Nacos 2.x（当前引导配置地址 `127.0.0.1:8848`，账号密码 `username/password`；本地部署时可修改各模块
+  `config/application-nacos.yaml` 或用启动参数覆盖）
 
 ### 数据库
 
@@ -120,12 +121,12 @@ service-provider/target/
 
 ### 需要拷贝的文件
 
-| 文件                                       | 说明                     |
-|--------------------------------------------|--------------------------|
-| `service-consumer/target/*-1.0.0.jar`      | Consumer 可执行 Fat JAR  |
-| `service-gateway/target/*-1.0.0.jar`       | Gateway 可执行 Fat JAR   |
-| `service-mail/target/*-1.0.0.jar`          | Mail 可执行 Fat JAR      |
-| `service-provider/target/*-1.0.0.jar`      | Provider 可执行 Fat JAR  |
+| 文件                                  | 说明                    |
+|---------------------------------------|-------------------------|
+| `service-consumer/target/*-1.0.0.jar` | Consumer 可执行 Fat JAR |
+| `service-gateway/target/*-1.0.0.jar`  | Gateway 可执行 Fat JAR  |
+| `service-mail/target/*-1.0.0.jar`     | Mail 可执行 Fat JAR     |
+| `service-provider/target/*-1.0.0.jar` | Provider 可执行 Fat JAR |
 
 部署后的目录结构：
 
@@ -396,7 +397,8 @@ Nacos 地址：当前引导配置为 `127.0.0.1:8848`
 | service-consumer | `http://localhost:9002/swagger-ui.html` |
 | service-mail     | `http://localhost:9004/swagger-ui.html` |
 
-各模块 SpringDoc 分组按业务划分，Swagger UI 顶部下拉框可切换。
+所有业务服务统一使用 `/api/{版本}/{模块}` 前缀，模块名由 `service-{module}` 自动解析。 Controller 只编写资源路径；SpringDoc
+按版本自动生成分组，例如 `v1-provider`。
 
 > **注意**：Gateway 作为纯路由网关，不集成接口文档，保持轻量。
 
@@ -426,13 +428,13 @@ mvn test -pl service-provider
 
 以用户接口为例（service-provider，端口 9001）：
 
-| 方法   | 路径                           | 说明                 |
-|--------|--------------------------------|----------------------|
-| GET    | `/user/{id}`                   | 查询单个用户         |
-| GET    | `/user/list`                   | 查询全部用户         |
-| GET    | `/user/page?current=1&size=10` | 分页查询             |
-| POST   | `/user`                        | 新增用户             |
-| PUT    | `/user`                        | 修改用户             |
-| DELETE | `/user/{id}`                   | 删除用户（逻辑删除） |
+| 方法   | 实际请求路径                                   | 说明                 |
+|--------|------------------------------------------------|----------------------|
+| GET    | `/api/v1/provider/user/{id}`                   | 查询单个用户         |
+| GET    | `/api/v1/provider/user/list`                   | 查询全部用户         |
+| GET    | `/api/v1/provider/user/page?current=1&size=10` | 分页查询             |
+| POST   | `/api/v1/provider/user`                        | 新增用户             |
+| PUT    | `/api/v1/provider/user`                        | 修改用户             |
+| DELETE | `/api/v1/provider/user/{id}`                   | 删除用户（逻辑删除） |
 
 所有接口统一返回 `ApiResponse`，结构为 `success + code + message + data + timestamp`。

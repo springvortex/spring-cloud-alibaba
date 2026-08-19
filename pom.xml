@@ -128,46 +128,46 @@
             </dependency>
 
 
-           <!-- MapStruct（编译期 Bean 映射，替代 BeanUtils.copyProperties） -->
-           <dependency>
-               <groupId>org.mapstruct</groupId>
-               <artifactId>mapstruct</artifactId>
-               <version>${mapstruct.version}</version>
-           </dependency>
+            <!-- MapStruct（编译期 Bean 映射，替代 BeanUtils.copyProperties） -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
 
-       </dependencies>
-   </dependencyManagement>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <pluginManagement>
             <plugins>
-               <!-- 编译插件 -->
-               <plugin>
-                   <groupId>org.apache.maven.plugins</groupId>
-                   <artifactId>maven-compiler-plugin</artifactId>
-                   <version>3.15.0</version>
-                   <configuration>
-                       <source>${java.version}</source>
-                       <target>${java.version}</target>
-                       <annotationProcessorPaths>
-                           <path>
-                               <groupId>org.projectlombok</groupId>
-                               <artifactId>lombok</artifactId>
-                               <version>${lombok.version}</version>
-                           </path>
-                           <path>
-                               <groupId>org.projectlombok</groupId>
-                               <artifactId>lombok-mapstruct-binding</artifactId>
-                               <version>0.2.0</version>
-                           </path>
-                           <path>
-                               <groupId>org.mapstruct</groupId>
-                               <artifactId>mapstruct-processor</artifactId>
-                               <version>${mapstruct.version}</version>
-                           </path>
-                       </annotationProcessorPaths>
-                   </configuration>
-               </plugin>
+                <!-- 编译插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.15.0</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>0.2.0</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
 
             </plugins>
         </pluginManagement>
