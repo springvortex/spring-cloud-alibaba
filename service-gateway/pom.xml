@@ -23,6 +23,18 @@
             <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
 
+        <!-- Spring Boot Actuator（链路追踪自动装配与运行观测） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Zipkin 链路追踪（Micrometer Tracing + Brave） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-zipkin</artifactId>
+        </dependency>
+
         <!-- Spring Cloud LoadBalancer（负载均衡） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

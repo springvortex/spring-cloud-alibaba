@@ -9,9 +9,9 @@
     <property name="LOG_HOME" value="logs/${application}"/>
 
     <property name="CONSOLE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [%highlight(%-5level)] [${application}:${port}] [%cyan(%logger{50})] [%msg]%n"/>
+              value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [traceId=%X{traceId:-},spanId=%X{spanId:-}] [%highlight(%-5level)] [${application}:${port}] [%cyan(%logger{50})] [%msg]%n"/>
     <property name="FILE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [%-5level] [${application}:${port}] [%logger{50}] [%msg]%n"/>
+              value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [traceId=%X{traceId:-},spanId=%X{spanId:-}] [%-5level] [${application}:${port}] [%logger{50}] [%msg]%n"/>
 
     <!-- 时间滚动输出 level为 INFO 日志（仅INFO） -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
