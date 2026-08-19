@@ -34,7 +34,7 @@ public class MailController {
      * @return 邮件发送记录，含主键和发送状态
      */
     @Operation(summary = "发送邮件")
-    @PostMapping("/mail/send")
+    @PostMapping("/send")
     public ApiResponse<MailLogDTO> send(@Valid @RequestBody MailSendDTO dto) {
         return ApiResponse.success(mailSendService.send(dto));
     }

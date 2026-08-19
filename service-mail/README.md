@@ -13,9 +13,11 @@
 
 ## 接口
 
-| 方法 | 路径         | 说明                         |
-|------|--------------|------------------------------|
-| POST | `/mail/send` | 发送纯文本或 HTML 邮件并入库 |
+下表是 Controller 资源路径，实际请求路径自动追加 `/api/v1/mail` 前缀。
+
+| 方法 | 路径    | 说明                         |
+|------|---------|------------------------------|
+| POST | `/send` | 发送纯文本或 HTML 邮件并入库 |
 
 请求示例：
 
@@ -45,9 +47,11 @@ SMTP 异常不会抛给调用方，而是写入 `errorMsg` 并返回 `status=2` 
 
 ## SpringDoc 分组
 
-| 分组        | 路径匹配   |
-|-------------|------------|
-| 01-邮件服务 | `/mail/**` |
+版本分组由 `service-common` 自动生成：
+
+| 分组      | 路径匹配          |
+|-----------|-------------------|
+| `v1-mail` | `/api/v1/mail/**` |
 
 ## 包结构
 
@@ -57,7 +61,7 @@ com.zjc.mail
 ├── config
 │   ├── AuditMetaObjectHandler   自动填充 createTime / updateTime
 │   ├── MybatisPlusConfig        分页插件
-│   └── OpenApiConfig            SpringDoc 配置
+│   └── OpenApiConfig            SpringDoc 元信息配置
 ├── controller                   MailController
 ├── converter                    MapStruct Entity/DTO 转换器
 ├── entity                       MailLog，映射 t_mail_log

@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +14,8 @@ import java.util.List;
 /**
  * SpringDoc OpenAPI 文档配置。
  *
- * <p>邮件模块接口单一，统一归为一个分组。
+ * <p>API 版本分组由 {@code service-common} 根据统一路径前缀自动生成，
+ * 本类只维护服务级文档元信息。
  *
  * <p>访问路径：
  * <ul>
@@ -30,19 +30,6 @@ public class OpenApiConfig {
 
     @Value("${server.port}")
     private String port;
-
-    /**
-     * 邮件服务分组。
-     *
-     * @return 邮件服务 API 分组配置
-     */
-    @Bean
-    public GroupedOpenApi mailApi() {
-        return GroupedOpenApi.builder()
-                .group("01-邮件服务")
-                .pathsToMatch("/mail/**")
-                .build();
-    }
 
     /**
      * 文档元信息。
