@@ -42,7 +42,7 @@ public class UserConsumerController {
      * @return 用户信息，降级时 data 为 null
      */
     @Operation(summary = "远程查询用户（Feign + 降级演示）")
-    @GetMapping("/consumer/user/{id}")
+    @GetMapping("/user/{id}")
     public ApiResponse<UserDTO> getUser(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
         return userFeignApi.getUser(id);
@@ -54,7 +54,7 @@ public class UserConsumerController {
      * @return 用户列表，降级时返回空列表
      */
     @Operation(summary = "远程查询用户列表")
-    @GetMapping("/consumer/user/list")
+    @GetMapping("/user/list")
     public ApiResponse<List<UserDTO>> list() {
         return userFeignApi.list();
     }

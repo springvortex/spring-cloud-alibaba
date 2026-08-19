@@ -12,14 +12,16 @@
 
 ## 接口
 
+下表是 Controller 资源路径，实际请求路径自动追加 `/api/v1/consumer` 前缀。
+
 ### 用户消费
 
 通过 Feign 代理调用 provider 的用户接口，provider 不可用时自动降级。
 
-| 方法 | 路径                  | 说明                             |
-|------|-----------------------|----------------------------------|
-| GET  | `/consumer/user/{id}` | 远程查询用户（Feign + 降级演示） |
-| GET  | `/consumer/user/list` | 远程查询用户列表                 |
+| 方法 | 路径         | 说明                             |
+|------|--------------|----------------------------------|
+| GET  | `/user/{id}` | 远程查询用户（Feign + 降级演示） |
+| GET  | `/user/list` | 远程查询用户列表                 |
 
 ### Feign 测试
 
@@ -35,11 +37,11 @@
 
 ## SpringDoc 分组
 
-| 分组         | 路径匹配       |
-|--------------|----------------|
-| 01-用户消费  | `/consumer/**` |
-| 02-Feign测试 | `/feign/**`    |
-| 03-配置测试  | `/config`      |
+版本分组由 `service-common` 自动生成：
+
+| 分组          | 路径匹配              |
+|---------------|-----------------------|
+| `v1-consumer` | `/api/v1/consumer/**` |
 
 ## 包结构
 
@@ -47,7 +49,7 @@
 com.zjc.consumer
 ├── ConsumerApplication              启动类（扫描 com.zjc.common.api 中的 Feign 契约）
 ├── config
-│   └── OpenApiConfig                SpringDoc 分组配置
+│   └── OpenApiConfig                SpringDoc 元信息配置
 ├── controller                       REST 接口（UserConsumer/TestFeign/TestConfig）
 └── service / impl                   FeignService 封装
 ```
