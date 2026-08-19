@@ -42,7 +42,7 @@ spring-cloud-alibaba
 - JDK 21+
 - Maven 3.9+
 - MySQL 8+
-- Nacos 2.x（当前引导配置地址 `192.168.100.128:8848`，账号密码 `nacos/nacos`；本地部署时可修改各模块 `config/application-nacos.yaml` 或用启动参数覆盖）
+- Nacos 2.x（当前引导配置地址 `127.0.0.1:8848`，账号密码 `username/password`；本地部署时可修改各模块 `config/application-nacos.yaml` 或用启动参数覆盖）
 
 ### 数据库
 
@@ -381,7 +381,7 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 公共配置组（group: `spring-cloud-alibaba-public`）存放所有服务共享的配置，如 Jasypt 加密算法参数（dataId: `jasypt`）。各服务通过
 `config.import` 引入。
 
-Nacos 地址：当前引导配置为 `192.168.100.128:8848`
+Nacos 地址：当前引导配置为 `127.0.0.1:8848`
 
 每个服务本地有 `application.yaml`（端口、profile）和 `config/application-nacos.yaml`（Nacos 地址、config.import
 变量）两个引导文件，运行时通过 `${spring.profiles.active}` 和 `${spring.application.name}` 动态拼接拉取 Nacos 上对应环境的配置。
