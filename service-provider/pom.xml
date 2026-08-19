@@ -36,6 +36,13 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- 统一日志配置 -->
+        <dependency>
+            <groupId>com.zjc</groupId>
+            <artifactId>service-log</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
