@@ -10,7 +10,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * <p>基于 Spring Cloud Gateway，作为整个微服务集群的统一流量入口，
  * 负责请求路由转发、跨域处理、鉴权拦截等。
  * 通过 {@code @EnableDiscoveryClient} 从 Nacos 获取下游服务地址，
- * 路由规则在 {@code application.yaml} 中以 {@code spring.cloud.gateway.routes} 配置。
+ * 路由规则由 Nacos 下发，配置前缀为
+ * {@code spring.cloud.gateway.server.webflux.routes}。
  *
  * @author jiancai.zhong
  */

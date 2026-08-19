@@ -30,13 +30,12 @@ public class ServiceGlobalFilter implements GlobalFilter, Ordered {
         String uri = request.getURI().toString();
         long startTime = System.currentTimeMillis();
 
-        log.info("请求【{} {}】开始：时间：{}", method, uri, startTime);
+        log.info("开始请求{} {}", method, uri);
 
         return chain.filter(exchange)
                 .doFinally(signalType -> {
                     long endTime = System.currentTimeMillis();
-                    log.info("请求【{} {}】结束：时间：{}，耗时：{}ms，信号：{}",
-                            method, uri, endTime, endTime - startTime, signalType);
+                    log.info("结束请求 {} {}，耗时：{}ms，信号：{}", method, uri, endTime - startTime, signalType);
                 });
     }
 
