@@ -210,6 +210,48 @@ kill "$(cat provider.pid)"
 Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），或在 Nacos 配置中心修改
 `server.port`。
 
+### 网络边界与端口暴露策略
+
+生产环境的访问入口应收敛到 Gateway：外部客户端只访问 Gateway，Gateway 再通过 Nacos 服务发现调用业务服务。 业务服务虽然需要监听
+HTTP 端口供 Gateway 和其他内部服务调用，但这些端口必须留在内网，不能暴露到公网。
+
+| 服务 / 组件      | 默认端口                      | 是否允许公网暴露 | 说明                                        |
+|------------------|-------------------------------|------------------|---------------------------------------------|
+| service-gateway  | 80（生产可用 80/443 或 9000） | 允许             | 系统唯一 HTTP 入口                          |
+| service-provider | 9001                          | 禁止             | 仅 Gateway / 内部服务访问                   |
+| service-consumer | 9002                          | 禁止             | 仅 Gateway / 内部服务访问                   |
+| service-mail     | 9004                          | 禁止             | 仅 Gateway / 内部服务访问                   |
+| Nacos            | 8848、9848、9849、7848        | 禁止             | 控制台、客户端通信、Raft 端口都不能公网开放 |
+| MySQL            | 3306                          | 禁止             | 仅业务服务和运维链路访问                    |
+
+推荐的网络拓扑：
+
+```text
+公网客户端
+    |
+    v
+service-gateway（唯一暴露入口）
+    |
+    v
+内网：service-provider / service-consumer / service-mail
+    |
+    v
+内网：Nacos / MySQL
+```
+
+部署时的具体要求：
+
+- 云服务器安全组、防火墙或负载均衡只放行 Gateway 的 `80/443`（若 Gateway 改为 9000，则只放行 9000）。
+- `9001`、`9002`、`9004` 只允许内网访问；Docker 部署时不要把这些端口映射到宿主机公网地址。
+- Nacos 的 `8848` 控制台以及 `9848`、`9849`、`7848` 通信端口都不得暴露公网。
+- MySQL `3306` 不得暴露公网，应用通过内网地址连接。
+- 直接访问 `http://host:9001/swagger-ui.html`、`http://host:9002/swagger-ui.html`、
+  `http://host:9004/swagger-ui.html` 只适用于本机或内网调试，生产环境不允许绕过 Gateway。
+- Kubernetes 部署时业务服务使用 `ClusterIP` Service，只把 Gateway 暴露为 Ingress 或 LoadBalancer。
+
+网络边界是“只能通过网关访问”的主要保障。应用层可再增加内部请求头、签名或 mTLS 校验，作为业务端口被误暴露时的兜底，
+但不要用应用层校验替代防火墙和安全组隔离。
+
 ### JVM 参数调整
 
 JVM 参数直接放在 `java` 命令和 `-jar` 之间：

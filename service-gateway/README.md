@@ -30,8 +30,8 @@ com.zjc.gateway
 
 路由规则在 Nacos 上配置，dataId=`dev`，group=`service-gateway`。
 
-当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀，
-网关只按模块转发，不做 `RewritePath` 剥离前缀：
+当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀， 网关只按模块转发，不做 `RewritePath`
+剥离前缀：
 
 ```yaml
 spring:
@@ -59,6 +59,28 @@ spring:
 
 路径中的 `*` 表示版本号，当前 v1 和后续 v2 都可以原样转发，例如：
 `/api/v1/provider/user/1` 会转发到 `service-provider` 的同一路径。
+
+## 入口与端口边界
+
+生产环境只把 Gateway 暴露给公网，其他服务组件均仅内网访问：
+
+| 服务 / 组件      | 端口                        | 公网暴露 |
+|------------------|-----------------------------|----------|
+| service-gateway  | 80 / 443（或生产改用 9000） | 允许     |
+| service-provider | 9001                        | 禁止     |
+| service-consumer | 9002                        | 禁止     |
+| service-mail     | 9004                        | 禁止     |
+| Nacos            | 8848 / 9848 / 9849 / 7848   | 禁止     |
+| MySQL            | 3306                        | 禁止     |
+
+访问链路固定为：
+
+```text
+公网客户端 -> service-gateway -> lb://service-provider / service-consumer / service-mail
+```
+
+不要在安全组、防火墙或 Docker 端口映射中开放业务服务、Nacos 或 MySQL 端口。业务服务的独立地址和 Swagger UI
+只用于本机或内网调试，生产环境统一通过 Gateway 访问 `/api/{版本}/{模块}/**`。
 
 ## 配置说明
 
