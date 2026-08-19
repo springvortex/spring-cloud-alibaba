@@ -7,4 +7,4 @@ spring:
   profiles:
     active: dev
     include:
-      - nacos
+      - remote

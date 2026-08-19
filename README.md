@@ -476,7 +476,7 @@ java -jar service-provider-1.0.0.jar
 Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一存放在 Nacos 配置中心的公共配置组中，各服务通过 `config.import` 引入：
 
 ```yaml
-# 各服务的 config/application-nacos.yaml
+# 各服务的 config/application-remote.yaml
 spring:
   config:
     import:

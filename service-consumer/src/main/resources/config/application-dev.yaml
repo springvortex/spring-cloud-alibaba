@@ -1,0 +1,18 @@
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            logger-level: full
+            connect-timeout: 1000
+            read-timeout: 2000
+
+feign:
+  sentinel:
+    enabled: true
+
+logging:
+  level:
+    com.zjc.consumer.feign: debug
+    com.zjc.common.api: debug
