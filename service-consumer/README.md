@@ -71,10 +71,15 @@ com.zjc.consumer
 
 ## 配置说明
 
-Nacos 配置位置：dataId=`dev`，group=`service-consumer`；具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为
-`127.0.0.1:8848`。
+配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。local 模式加载
+`src/main/resources/config/application-dev.yaml` 或 `application-prod.yaml`；remote 模式通过
+`src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，group 为 `service-consumer`，
+namespace 为 `public`。
 
-OpenFeign 超时配置（在 Nacos 中）：
+Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
+
+OpenFeign 超时配置结构如下。local 基线中 dev 使用 1000/2000 ms，prod 使用 3000/5000 ms；remote 模式下以 Nacos
+中同名配置为准：
 
 ```yaml
 spring:
@@ -83,8 +88,8 @@ spring:
       client:
         config:
           default:
-            connect-timeout: 5000
-            read-timeout: 10000
+            connect-timeout: 3000
+            read-timeout: 5000
 ```
 
 ## 日志与链路追踪
@@ -106,7 +111,7 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}
 ```
 

@@ -90,10 +90,15 @@ com.zjc.provider
 
 ## 配置说明
 
-本地仅保留引导配置（端口、profile、Nacos 地址），数据源、MyBatis-Plus 等业务配置在 Nacos。
+配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
 
-Nacos 配置位置：dataId=`dev`，group=`service-provider`；具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为
-`127.0.0.1:8848`。
+- **local**：加载 `src/main/resources/config/application-dev.yaml` 或 `application-prod.yaml`，其中维护数据源、
+  MyBatis-Plus 和 Swagger 开关。
+- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，
+  group 为 `service-provider`，namespace 为 `public`。
+
+Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。local 模式只关闭 Nacos
+Config，服务发现默认仍会注册到 Nacos。
 
 ## 日志与链路追踪
 
@@ -113,7 +118,7 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}
 ```
 

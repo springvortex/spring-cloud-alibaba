@@ -1,6 +1,7 @@
 # Service Config
 
-统一配置模块，承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，以及本地模式使用的公共配置 Profile，避免每个服务复制维护同类配置。
+统一配置模块，承载 Gateway、Provider、Consumer、Mail 共用的 Logback 配置，以及 local 模式使用的公共配置 Profile。
+远程模式下的 Nacos 公共配置也应以这些本地文件为基线，避免两套配置漂移。
 
 ## 模块定位
 

@@ -7,7 +7,7 @@ Entity、Mapper、Service、ServiceImpl、Mapper XML 等代码。仓库只保留
 ## 环境要求
 
 - JDK 21
-- Maven 3.6+
+- Maven 3.9+
 - 可访问的 MySQL 数据库
 
 ## 目录结构
@@ -48,10 +48,12 @@ Copy-Item src/main/resources/generator.properties.template src/main/resources/ge
 | `generator.tables`      | 需要生成的表，逗号分隔             | `t_user,t_order`                |
 | `generator.tablePrefix` | 表前缀（生成类名时去掉），逗号分隔 | `t_,sys_`                       |
 
-`generator.properties` 已加入 Git 忽略规则，可安全填写本机数据库地址、用户名和密码；不要把真实环境 信息写回
+`generator.properties` 已加入 Git 忽略规则，可安全填写本机数据库地址、用户名和密码；不要把真实环境信息写回
 `generator.properties.template`。
 
 ## 运行方式
+
+本模块没有被父 POM 聚合，父工程根目录的 `mvn package` 不会构建它；以下命令都在 `MP-Generator` 目录内执行。
 
 ### 方式一：IntelliJ IDEA
 
@@ -108,6 +110,6 @@ src/main/resources/mapper/UserMapper.xml
 
 ## 自定义生成规则
 
-如需调整生成策略（如开启 Controller、修改命名规则、添加表填充字段等），编辑 [
-`CodeGenerator.java`](src/main/java/com/zjc/CodeGenerator.java) 中的 `strategyConfig`
-部分。常用配置项参见 [MyBatis-Plus 官方文档](https://baomidou.com/guides/new-code-generator/)。
+如需调整生成策略（如开启 Controller、修改命名规则、添加表填充字段等），编辑
+[`CodeGenerator.java`](src/main/java/com/zjc/CodeGenerator.java) 中的 `strategyConfig` 部分。常用配置项参见
+[MyBatis-Plus 官方文档](https://baomidou.com/guides/new-code-generator/)。

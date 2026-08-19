@@ -79,13 +79,15 @@ com.zjc.mail
 
 ## 配置说明
 
-本地 `application.yaml` 只保留端口、profile 和 Nacos 引导配置。业务配置在 Nacos：
+配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
 
-- dataId：`dev`
-- group：`service-mail`
-- 具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为 `127.0.0.1:8848`
+- **local**：加载 `src/main/resources/config/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
+- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，
+  group 为 `service-mail`，namespace 为 `public`。
 
-Nacos 中至少需要配置：
+Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
+
+remote 模式的 Nacos 配置中至少需要维护：
 
 ```yaml
 spring:
@@ -119,7 +121,7 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}
 ```
 

@@ -32,7 +32,7 @@
 ```
 spring-cloud-alibaba
 ├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
-├── service-config      统一配置模块，当前维护所有服务共用的 logback-spring.xml
+├── service-config      统一配置模块，维护共用 logback-spring.xml 与 local 模式公共配置 Profile
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
@@ -41,6 +41,9 @@ spring-cloud-alibaba
 ```
 
 各模块根目录下均有独立的 README.md，记录该模块的职责、依赖、接口和配置说明。
+
+父 POM 只聚合 `service-config`、`service-common` 和 4 个可运行服务；`MP-Generator` 是独立工具模块，
+需要在 `MP-Generator` 目录单独执行 Maven 命令。
 
 ## 快速开始
 
@@ -90,6 +93,8 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 3. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
 4. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
 
+当前仓库没有维护数据库初始化 SQL 文件，业务表结构需要从现有环境导出，或自行按下方表清单创建后再导入数据。
+
 ### 配置来源
 
 各服务的远程配置引导位于：
@@ -114,7 +119,8 @@ java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
 
 Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`。该变量默认也维护在 `service-config`
-的公共基础配置中，可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖：
+的公共基础配置中，可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖。当前代码默认指向既有开发服务器
+`129.204.226.206`；本地开发或切换部署环境时应显式覆盖，避免误连外部环境：
 
 ```powershell
 $env:INFRASTRUCTURE_HOST = "10.0.0.10"
@@ -238,11 +244,14 @@ management:
 ### 打包命令
 
 ```bash
-# 在项目根目录执行，构建全部模块
+# 在项目根目录执行，构建父 POM 聚合的全部服务模块
 mvn clean package -DskipTests
 
 # 需要同时执行单元测试时
 mvn clean package
+
+# 构建独立代码生成器模块
+cd MP-Generator && mvn package
 ```
 
 打包后的输出结构：
@@ -563,13 +572,15 @@ DTO 相比 Entity 过滤了 `isDeleted`、`updateTime` 等内部字段，避免�
 
 ### 逻辑删除
 
-通过 MyBatis-Plus 的 `logic-delete-field: is_deleted` 配置实现，删除操作将 `is_deleted` 置为 1，查询时自动过滤已删除记录。
+通过 MyBatis-Plus 的 `logic-delete-field: isDeleted` 配置实现。该值对应实体属性名，实体属性再映射到数据库列
+`is_deleted`；删除操作将 `is_deleted` 置为 1，查询时自动过滤已删除记录。
 
 ### 代码生成
 
 `MP-Generator` 模块连接数据库读取表结构，生成 Entity/Mapper/Service/ServiceImpl/XML。
 
-配置文件：`MP-Generator/src/main/resources/generator.properties`
+配置模板：`MP-Generator/src/main/resources/generator.properties.template`。首次使用时先复制为本地
+`generator.properties`，后者被 Git 忽略，不会提交真实数据库凭据。
 
 ```properties
 # 要生成的表
@@ -614,11 +625,14 @@ Nacos 地址：以各服务 `config/application-remote.yaml` 为准。
 所有业务服务统一使用 `/api/{版本}/{模块}` 前缀，模块名由 `service-{module}` 自动解析。 Controller 只编写资源路径；SpringDoc
 按版本自动生成分组，例如 `v1-provider`。
 
+Provider 的本地 `prod` 配置会关闭 API 文档和 Swagger UI；生产环境也不建议把业务服务文档端口暴露到公网。
+
 > **注意**：Gateway 作为纯路由网关，不集成接口文档，保持轻量。
 
 ## 单元测试
 
-项目使用 JUnit 5 + Mockito + AssertJ 编写纯单元测试（不启动 Spring 上下文、不依赖 Nacos/MySQL），通过 JaCoCo 自动生成覆盖率报告。
+项目使用 JUnit 5 + Mockito + AssertJ 编写单元测试。绝大多数测试不启动完整应用、不依赖 Nacos/MySQL；
+`service-common` 中与自动装配相关的测试会使用轻量级 `WebApplicationContextRunner`。JaCoCo 会在测试执行后生成覆盖率报告。
 
 ### 命名规范
 

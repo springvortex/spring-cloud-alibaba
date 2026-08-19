@@ -14,7 +14,7 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 ## 职责
 
 - 统一路由入口，将请求分发到下游各服务
-- 通过 Nacos 进行动态路由配置
+- 维护 local 路由基线，并在 remote 模式通过 Nacos 维护动态路由
 - 统一配置 CORS 跨域策略
 - 负载均衡（LoadBalancer + Caffeine 缓存）
 - 输出请求开始、结束、耗时与结束信号日志
@@ -33,7 +33,9 @@ com.zjc.gateway
 
 ## 路由配置
 
-路由规则在 Nacos 上配置，dataId=`dev`，group=`service-gateway`。
+local 模式下路由规则位于 `src/main/resources/config/application-dev.yaml`，作为本地开发基线。remote 模式通过
+`src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 为 `${zjc.config.env}`，group 为
+`service-gateway`，namespace 为 `public`。
 
 当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀， 网关只按模块转发，不做 `RewritePath`
 剥离前缀：
@@ -67,7 +69,7 @@ spring:
 
 ### 跨域配置
 
-CORS 也在 Nacos 的 `dev` 配置中集中维护：
+CORS 与路由相同：local 模式使用 `config/application-dev.yaml` 中的基线，remote 模式使用 Nacos 中对应环境的配置：
 
 ```yaml
 spring:
@@ -95,8 +97,8 @@ spring:
 - `allow-credentials: false`：不允许携带 Cookie 等凭证；如果改为 `true`，来源不能继续使用 `*`，必须配置明确域名。
 - `max-age: 3600`：浏览器对预检请求结果缓存 1 小时，减少 `OPTIONS` 请求。
 
-当前选择配置中心而不是 Java 配置类，原因是路由和 CORS 都属于会随环境变化的运行配置；放在 Nacos
-中可按环境调整，并利用配置动态刷新能力，不需要重新打包网关代码。
+路由和 CORS 都属于会随环境变化的运行配置。当前没有写在 Java 配置类中：local 模式保留 YAML 基线便于离线开发，
+remote 模式交给 Nacos 按环境调整，并利用配置动态刷新能力，不需要重新打包网关代码。
 
 ### 请求示例
 
@@ -129,21 +131,13 @@ com.zjc.gateway.filter.ServiceGlobalFilter
 
 ```java
 long startTime = System.currentTimeMillis();
-log.
+log.info("开始请求{} {}", method, uri);
 
-info("开始请求{} {}",method, uri);
-
-return chain.
-
-filter(exchange)
-        .
-
-doFinally(signalType ->{
-long endTime = System.currentTimeMillis();
-            log.
-
-info("结束请求 {} {}，耗时：{}ms，信号：{}",
-     method, uri, endTime -startTime, signalType);
+return chain.filter(exchange)
+        .doFinally(signalType -> {
+            long endTime = System.currentTimeMillis();
+            log.info("结束请求 {} {}，耗时：{}ms，信号：{}",
+                    method, uri, endTime - startTime, signalType);
         });
 ```
 
@@ -174,10 +168,12 @@ info("结束请求 {} {}，耗时：{}ms，信号：{}",
 
 ## 配置说明
 
-本地仅保留引导配置（端口、Nacos 地址），路由规则在 Nacos 中动态配置。Nacos 配置位置：dataId=`dev`， group=`service-gateway`
-；具体地址以 `config/application-nacos.yaml` 为准，本地部署可改为 `127.0.0.1:8848`。
+`application.yaml` 保留端口、服务名和 profile group；local 模式下路由和 CORS 从 `config/application-dev.yaml` 加载。
+remote 模式下 Nacos dataId 为 `${zjc.config.env}`，group 为 `service-gateway`。Nacos 地址统一来自
+`${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
 
-本地 `application.yaml` 保留链路追踪引导配置：
+链路追踪配置来自 `service-config` 的 `zipkin` profile：local 模式由 profile group 激活，remote 模式由 Nacos
+公共配置 `zipkin` 提供：
 
 ```yaml
 management:
@@ -187,7 +183,7 @@ management:
     export:
       zipkin:
         enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://127.0.0.1:9411/api/v2/spans}"
+        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
       enabled: ${TRACING_ENABLED:true}
 ```
 

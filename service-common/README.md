@@ -35,6 +35,10 @@ com.zjc.common
 │   ├── BusinessException          业务异常（供 Service / Controller 抛出）
 │   └── GlobalExceptionHandler     全局异常处理器（@RestControllerAdvice）
 └── web
+    ├── annotation                 ApiVersion - Controller 版本标注
+    ├── ApiPathAutoConfiguration   API 前缀、SpringDoc 分组与 Feign 拦截器自动装配
+    ├── ApiPathProperties          zjc.api 配置属性
+    ├── ApiPathResolver            服务名 / 版本到 API 前缀的解析逻辑
     └── ApiResponse                统一响应封装
 ```
 
@@ -44,11 +48,13 @@ common 模块通过 `META-INF/spring/org.springframework.boot.autoconfigure.Auto
 
 ```
 com.zjc.common.exception.GlobalExceptionHandler
+com.zjc.common.web.ApiPathAutoConfiguration
 com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.user.factory.UserFeignFallbackFactory
 ```
 
-任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、接口日志切面和用户 Feign 降级工厂，无需手动
+任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、统一 API 路径能力、SpringDoc 版本分组、
+Feign 前缀拦截器和用户 Feign 降级工厂，无需手动
 `@Import` 或
 `@ComponentScan`。
 
@@ -169,8 +175,9 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数集中存放在 Nacos 配置中心的公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），各服务通过
-`config.import` 引入。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。当前使用已适配 Spring Boot 4.x 的
+Jasypt 加密参数在 remote 模式下存放在 Nacos 公共配置组（group: `spring-cloud-alibaba-public`，dataId: `jasypt`），local
+模式下来自 `service-config` 的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest` 工具完全一致。
+当前使用已适配 Spring Boot 4.x 的
 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值，并便于集中管理。
 
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
@@ -187,11 +194,10 @@ zjc:
     prefix: /api
     versions:
       - v1
-      - v2
-    default-version: v1
 ```
 
-未标注版本的 Controller 使用 `default-version`；v2 Controller 标注 `@ApiVersion("v2")`。 SpringDoc 分组由本模块自动生成，Feign
+当前配置只启用 `v1`，未标注 `@ApiVersion` 的 Controller 使用版本列表中的第一个版本。如需 v1/v2 共存，可在
+`zjc.api.versions` 中追加 `v2`，并显式配置 `default-version`；v2 Controller 标注 `@ApiVersion("v2")`。 SpringDoc 分组由本模块自动生成，Feign
 调用也会在发送前追加目标服务的前缀。
 
 ## 共享 Feign API
