@@ -1,6 +1,7 @@
 package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.GoodsDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.GoodsConverter;
@@ -186,6 +187,23 @@ class GoodsControllerTest {
         verify(goodsService).updateById(any(Goods.class));
     }
 
+    @Test
+    @DisplayName("update: 商品不存在返回资源不存在")
+    void testUpdateNotFound() {
+        GoodsDTO dto = new GoodsDTO();
+        dto.setGoodsId(999L);
+        Goods entity = new Goods();
+        entity.setGoodsId(999L);
+        when(goodsConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(goodsService.updateById(entity)).thenReturn(false);
+
+        ApiResponse<Void> resp = goodsController.update(dto);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
+        assertThat(resp.getMessage()).isEqualTo(ApiResponseEnum.NOT_FOUND.message());
+    }
+
     /**
      * 验证删除商品时调用 removeById。
      */
@@ -198,5 +216,16 @@ class GoodsControllerTest {
 
         assertThat(resp.isSuccess()).isTrue();
         verify(goodsService).removeById(1L);
+    }
+
+    @Test
+    @DisplayName("delete: 商品不存在返回资源不存在")
+    void testDeleteNotFound() {
+        when(goodsService.removeById(999L)).thenReturn(false);
+
+        ApiResponse<Void> resp = goodsController.delete(999L);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
     }
 }

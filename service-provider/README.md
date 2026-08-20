@@ -15,6 +15,12 @@
 下表是 Controller 内编写的资源路径；服务启动时会根据 `spring.application.name=service-provider`
 自动追加全局前缀，实际请求路径为 `/api/v1/provider + 资源路径`。
 
+### 通用约定
+
+- 分页参数 `current` 从 `1` 开始，`size` 取值范围为 `1-100`。
+- 更新和删除接口以实际影响行数判断结果；记录不存在或未命中时返回业务失败 `code=102`、
+  `message=资源不存在`，HTTP 状态仍保持统一响应封装的 `200`。
+
 ### 用户管理
 
 | 方法   | 路径                           | 说明                 |
@@ -44,9 +50,9 @@
 | GET    | `/order/{id}` | 查询单个订单（含明细聚合）   |
 | GET    | `/order/list` | 查询全部有效订单（不含明细） |
 | GET    | `/order/page` | 分页查询订单                 |
-| POST   | `/order`      | 新增订单（仅主表）           |
+| POST   | `/order`      | 新增订单（主表与明细同事务） |
 | PUT    | `/order`      | 修改订单                     |
-| DELETE | `/order/{id}` | 删除订单（逻辑删除）         |
+| DELETE | `/order/{id}` | 删除订单及明细（同事务逻辑删除） |
 
 ### 连通性测试
 

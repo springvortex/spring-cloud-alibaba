@@ -50,6 +50,28 @@ public interface OrderConverter {
     Order dtoToEntity(OrderDTO dto);
 
     /**
+     * 订单明细 DTO 转 Entity，忽略由订单保存流程管理的字段。
+     *
+     * @param dto 订单明细 DTO
+     * @return 订单明细实体
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "orderId", ignore = true)
+    @Mapping(target = "orderNo", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
+    @Mapping(target = "updateTime", ignore = true)
+    @Mapping(target = "createTime", ignore = true)
+    OrderDetail detailDtoToEntity(OrderDetailDTO dto);
+
+    /**
+     * 订单明细 DTO 列表批量转 Entity 列表。
+     *
+     * @param details 订单明细 DTO 列表
+     * @return 订单明细实体列表
+     */
+    List<OrderDetail> detailDtoListToEntityList(List<OrderDetailDTO> details);
+
+    /**
      * 订单 Entity 列表批量转 DTO 列表。
      *
      * @param orders 订单实体列表，为 {@code null} 时返回 {@code null}

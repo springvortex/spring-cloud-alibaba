@@ -1,6 +1,7 @@
 package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.GoodsDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.GoodsConverter;
@@ -11,6 +12,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +41,7 @@ import java.util.List;
  */
 @Tag(name = "商品管理", description = "商品的增删改查")
 @RestController
+@Validated
 public class GoodsController {
 
     @Resource
@@ -61,8 +66,13 @@ public class GoodsController {
     @Operation(summary = "分页查询有效商品")
     @GetMapping("/goods/page")
     public ApiResponse<Page<GoodsDTO>> page(
-            @Parameter(description = "当前页码，从1开始") @RequestParam(value = "current", defaultValue = "1") long current,
-            @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
+            @Parameter(description = "当前页码，从1开始")
+            @Min(value = 1, message = "当前页码必须从1开始")
+            @RequestParam(value = "current", defaultValue = "1") long current,
+            @Parameter(description = "每页条数，范围1-100")
+            @Min(value = 1, message = "每页条数不能小于1")
+            @Max(value = 100, message = "每页条数不能超过100")
+            @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<Goods> page = goodsService.page(new Page<>(current, size));
         Page<GoodsDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(goodsConverter.entityListToDtoList(page.getRecords()));
@@ -80,15 +90,15 @@ public class GoodsController {
     @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
     public ApiResponse<Void> update(@Valid @RequestBody GoodsDTO dto) {
-        goodsService.updateById(goodsConverter.dtoToEntity(dto));
-        return ApiResponse.success();
+        boolean updated = goodsService.updateById(goodsConverter.dtoToEntity(dto));
+        return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
     @Operation(summary = "根据ID删除商品（逻辑删除）")
     @DeleteMapping("/goods/{id}")
     public ApiResponse<Void> delete(
             @Parameter(description = "商品主键") @PathVariable("id") Long id) {
-        goodsService.removeById(id);
-        return ApiResponse.success();
+        boolean removed = goodsService.removeById(id);
+        return removed ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 }

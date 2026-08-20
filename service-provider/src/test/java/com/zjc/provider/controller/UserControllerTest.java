@@ -1,6 +1,7 @@
 package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.UserConverter;
@@ -163,6 +164,23 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("update: 用户不存在返回资源不存在")
+    void testUpdateNotFound() {
+        UserDTO dto = new UserDTO();
+        dto.setUserId(999L);
+        User entity = new User();
+        entity.setUserId(999L);
+        when(userConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(userService.updateById(entity)).thenReturn(false);
+
+        ApiResponse<Void> resp = userController.update(dto);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
+        assertThat(resp.getMessage()).isEqualTo(ApiResponseEnum.NOT_FOUND.message());
+    }
+
+    @Test
     @DisplayName("delete: 逻辑删除用户")
     void testDeleteSuccess() {
         when(userService.removeById(1L)).thenReturn(true);
@@ -171,5 +189,16 @@ class UserControllerTest {
 
         assertThat(resp.isSuccess()).isTrue();
         verify(userService).removeById(1L);
+    }
+
+    @Test
+    @DisplayName("delete: 用户不存在返回资源不存在")
+    void testDeleteNotFound() {
+        when(userService.removeById(999L)).thenReturn(false);
+
+        ApiResponse<Void> resp = userController.delete(999L);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
     }
 }

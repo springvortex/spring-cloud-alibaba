@@ -2,6 +2,7 @@ package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.OrderDTO;
 import com.zjc.common.dto.OrderDetailDTO;
 import com.zjc.common.web.ApiResponse;
@@ -15,6 +16,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,8 +37,8 @@ import java.util.List;
  * 避免数据库结构（逻辑删除字段、更新时间等）泄露到接口契约中。
  * 所有方法返回值包装在 {@link ApiResponse} 里，保证响应结构一致。
  *
- * <p>CRUD 直接复用 {@link OrderService}（继承 MyBatis-Plus 的 IService）
- * 自带的能力，无需在 service 层重复定义通用方法。
+ * <p>查询与修改复用 {@link OrderService}（继承 MyBatis-Plus 的 IService）
+ * 自带的通用能力；新增和删除通过服务层事务方法维护主表与明细的一致性。
  * 订单详情查询（getById）会聚合明细表，一次性返回主表 + 明细列表。
  * Entity <-> DTO 转换使用 {@link OrderConverter}（MapStruct 编译期生成，零反射）。
  *
@@ -42,6 +46,7 @@ import java.util.List;
  */
 @Tag(name = "订单管理", description = "订单的增删改查，含明细聚合")
 @RestController
+@Validated
 public class OrderController {
 
     @Resource
@@ -78,34 +83,44 @@ public class OrderController {
     @Operation(summary = "分页查询有效订单（不含明细）")
     @GetMapping("/order/page")
     public ApiResponse<Page<OrderDTO>> page(
-            @Parameter(description = "当前页码，从1开始") @RequestParam(value = "current", defaultValue = "1") long current,
-            @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
+            @Parameter(description = "当前页码，从1开始")
+            @Min(value = 1, message = "当前页码必须从1开始")
+            @RequestParam(value = "current", defaultValue = "1") long current,
+            @Parameter(description = "每页条数，范围1-100")
+            @Min(value = 1, message = "每页条数不能小于1")
+            @Max(value = 100, message = "每页条数不能超过100")
+            @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<Order> page = orderService.page(new Page<>(current, size));
         Page<OrderDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(orderConverter.entityListToDtoList(page.getRecords()));
         return ApiResponse.success(result);
     }
 
-    @Operation(summary = "新增订单（仅主表）")
+    @Operation(summary = "新增订单（主表与明细在同一事务保存）")
     @PostMapping("/order")
     public ApiResponse<OrderDTO> add(@Valid @RequestBody OrderDTO dto) {
         Order order = orderConverter.dtoToEntity(dto);
-        orderService.save(order);
-        return ApiResponse.success(orderConverter.entityToDto(order));
+        List<OrderDetail> details = orderConverter.detailDtoListToEntityList(
+                dto.getOrderDetails() == null ? List.of() : dto.getOrderDetails());
+        orderService.saveWithDetails(order, details);
+
+        OrderDTO result = orderConverter.entityToDto(order);
+        result.setOrderDetails(details.stream().map(orderConverter::entityToDto).toList());
+        return ApiResponse.success(result);
     }
 
     @Operation(summary = "根据ID修改订单")
     @PutMapping("/order")
     public ApiResponse<Void> update(@Valid @RequestBody OrderDTO dto) {
-        orderService.updateById(orderConverter.dtoToEntity(dto));
-        return ApiResponse.success();
+        boolean updated = orderService.updateById(orderConverter.dtoToEntity(dto));
+        return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
-    @Operation(summary = "根据ID删除订单（逻辑删除）")
+    @Operation(summary = "根据ID删除订单及明细（同一事务逻辑删除）")
     @DeleteMapping("/order/{id}")
     public ApiResponse<Void> delete(
             @Parameter(description = "订单主键") @PathVariable("id") Long id) {
-        orderService.removeById(id);
-        return ApiResponse.success();
+        boolean removed = orderService.removeWithDetails(id);
+        return removed ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 }

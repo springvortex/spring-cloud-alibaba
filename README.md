@@ -261,6 +261,59 @@ mvn clean package
 cd MP-Generator && mvn package
 ```
 
+### 构建踩坑点
+
+如果 IDEA 启动时报类似 `A component required a bean of type 'xxxConverter' could not be found`，
+通常不是 Converter 接口忘了加 `@Mapper(componentModel = "spring")`，也不是 Nacos 或数据库问题，
+而是 IDEA 增量编译把带 `Unresolved compilation problems` 的错误占位类写入了 `target/classes`。
+这类 class 的方法签名可能变成 `(LGoods;)...`、`(LMailLog;)...`，启动时 Spring 解析 bean 会失败。
+
+遇到该问题时，在项目根目录执行全模块 clean 构建，不要只指定 `service-provider`、`service-mail`
+等单个模块：
+
+```bash
+# 清理并重建父 POM 聚合的全部模块，保证公共模块和各服务的编译产物一致
+mvn clean package -DskipTests
+```
+
+本机已把 IDEA 的 Spring Boot 启动项改为 **Before launch: Run Maven Goal `clean compile`**，
+并移除了默认的 `Build`/`Make` 前置任务。这样启动 provider、mail、consumer、gateway 时，
+都先由 Maven 重新生成 MapStruct 实现类，避免 IDEA 增量编译把这些类写成错误占位类。
+
+如果外部修改过 IDEA 配置，先完全退出并重新打开 IDEA，让 `.idea/workspace.xml` 中的启动配置
+真正生效；只关闭项目再打开不一定足够。执行下面的恢复流程时也建议先完全退出 IDEA，
+再在外部 PowerShell 中构建：
+
+- 修改父 POM 或子模块 POM；
+- 新增或修改 MapStruct Converter、DTO、Entity 字段；
+- 切换分支或合并代码后出现无法解释的 Bean 注入失败；
+- Maven 构建和 IDEA Build 交替使用后，`target` 目录状态可疑。
+
+构建完成后可先检查是否还有错误占位类：
+
+```powershell
+rg -a -l "Unresolved compilation problems" `
+  service-config/target/classes `
+  service-common/target/classes `
+  service-consumer/target/classes `
+  service-gateway/target/classes `
+  service-mail/target/classes `
+  service-provider/target/classes
+```
+
+命令没有输出表示产物正常。也可以检查关键 class 的方法签名，正常值应包含完整包名，例如
+`(Lcom/zjc/provider/entity/Goods;)`，而不是 `(LGoods;)`：
+
+```powershell
+javap -classpath "service-provider/target/classes;service-common/target/classes" `
+  -p -s com.zjc.provider.converter.GoodsConverterImpl
+```
+
+如果修改了 POM，先在 IDEA Maven 面板执行 **Reload All Maven Projects**，再做全模块 clean 构建。
+构建过程中不要同时点击 IDEA Build 或启动服务，避免双方并发读写同一个 `target` 目录；
+IDEA 保持打开时，即使命令行 Maven 已经生成了正确源码，构建过程中的 `target` 变化仍可能触发
+IDEA 编译并覆盖出错误占位类。
+
 打包后的输出结构：
 
 ```
@@ -676,3 +729,6 @@ mvn test -pl service-provider
 | DELETE | `/api/v1/provider/user/{id}`                   | 删除用户（逻辑删除） |
 
 所有接口统一返回 `ApiResponse`，结构为 `success + code + message + data + timestamp`。
+
+分页参数 `current >= 1`、`size` 为 `1-100`；更新/删除未命中记录时返回业务失败
+`code=102`（资源不存在）。

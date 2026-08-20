@@ -2,6 +2,7 @@ package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.OrderDTO;
 import com.zjc.common.dto.OrderDetailDTO;
 import com.zjc.common.web.ApiResponse;
@@ -23,6 +24,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -142,8 +145,42 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("add: 新增订单(仅主表)")
-    void testAddReturnsDto() {
+    @DisplayName("add: 主表与明细同事务保存")
+    void testAddWithDetailsReturnsDto() {
+        OrderDTO dto = new OrderDTO();
+        dto.setOrderNo("NEW001");
+        dto.setTotalAmount(new BigDecimal("200"));
+        OrderDetailDTO detailDto = new OrderDetailDTO();
+        detailDto.setGoodsName("iPhone");
+        dto.setOrderDetails(List.of(detailDto));
+        Order entity = new Order();
+        entity.setOrderNo("NEW001");
+        OrderDetail detail = new OrderDetail();
+        detail.setGoodsName("iPhone");
+        OrderDTO resultDto = new OrderDTO();
+        resultDto.setOrderNo("NEW001");
+        OrderDetailDTO resultDetailDto = new OrderDetailDTO();
+        resultDetailDto.setGoodsName("iPhone");
+        when(orderConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(orderConverter.detailDtoListToEntityList(List.of(detailDto))).thenReturn(List.of(detail));
+        when(orderConverter.entityToDto(entity)).thenReturn(resultDto);
+        when(orderConverter.entityToDto(detail)).thenReturn(resultDetailDto);
+        doAnswer(invocation -> {
+            invocation.getArgument(0, Order.class).setOrderId(1L);
+            return null;
+        }).when(orderService).saveWithDetails(entity, List.of(detail));
+
+        ApiResponse<OrderDTO> resp = orderController.add(dto);
+
+        assertThat(resp.isSuccess()).isTrue();
+        assertThat(resp.getData().getOrderNo()).isEqualTo("NEW001");
+        assertThat(resp.getData().getOrderDetails()).containsExactly(resultDetailDto);
+        verify(orderService).saveWithDetails(entity, List.of(detail));
+    }
+
+    @Test
+    @DisplayName("add: 未传明细时保存空明细列表")
+    void testAddWithoutDetailsReturnsDto() {
         OrderDTO dto = new OrderDTO();
         dto.setOrderNo("NEW001");
         dto.setTotalAmount(new BigDecimal("200"));
@@ -152,14 +189,14 @@ class OrderControllerTest {
         OrderDTO resultDto = new OrderDTO();
         resultDto.setOrderNo("NEW001");
         when(orderConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(orderConverter.detailDtoListToEntityList(List.of())).thenReturn(List.of());
         when(orderConverter.entityToDto(entity)).thenReturn(resultDto);
-        when(orderService.save(any(Order.class))).thenReturn(true);
 
         ApiResponse<OrderDTO> resp = orderController.add(dto);
 
         assertThat(resp.isSuccess()).isTrue();
-        assertThat(resp.getData().getOrderNo()).isEqualTo("NEW001");
-        verify(orderService).save(any(Order.class));
+        assertThat(resp.getData().getOrderDetails()).isEmpty();
+        verify(orderService).saveWithDetails(entity, List.of());
     }
 
     @Test
@@ -180,13 +217,41 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("delete: 逻辑删除订单")
+    @DisplayName("update: 订单不存在返回资源不存在")
+    void testUpdateNotFound() {
+        OrderDTO dto = new OrderDTO();
+        dto.setOrderId(999L);
+        Order entity = new Order();
+        entity.setOrderId(999L);
+        when(orderConverter.dtoToEntity(dto)).thenReturn(entity);
+        when(orderService.updateById(entity)).thenReturn(false);
+
+        ApiResponse<Void> resp = orderController.update(dto);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
+        assertThat(resp.getMessage()).isEqualTo(ApiResponseEnum.NOT_FOUND.message());
+    }
+
+    @Test
+    @DisplayName("delete: 逻辑删除订单及明细")
     void testDeleteSuccess() {
-        when(orderService.removeById(1L)).thenReturn(true);
+        when(orderService.removeWithDetails(1L)).thenReturn(true);
 
         ApiResponse<Void> resp = orderController.delete(1L);
 
         assertThat(resp.isSuccess()).isTrue();
-        verify(orderService).removeById(1L);
+        verify(orderService).removeWithDetails(1L);
+    }
+
+    @Test
+    @DisplayName("delete: 订单不存在返回资源不存在")
+    void testDeleteNotFound() {
+        when(orderService.removeWithDetails(999L)).thenReturn(false);
+
+        ApiResponse<Void> resp = orderController.delete(999L);
+
+        assertThat(resp.isSuccess()).isFalse();
+        assertThat(resp.getCode()).isEqualTo(ApiResponseEnum.NOT_FOUND.code());
     }
 }

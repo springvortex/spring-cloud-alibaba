@@ -1,6 +1,7 @@
 package com.zjc.provider.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.UserConverter;
@@ -11,6 +12,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +41,7 @@ import java.util.List;
  */
 @Tag(name = "用户管理", description = "用户的增删改查")
 @RestController
+@Validated
 public class UserController {
 
     @Resource
@@ -61,8 +66,13 @@ public class UserController {
     @Operation(summary = "分页查询有效用户")
     @GetMapping("/user/page")
     public ApiResponse<Page<UserDTO>> page(
-            @Parameter(description = "当前页码，从1开始") @RequestParam(value = "current", defaultValue = "1") long current,
-            @Parameter(description = "每页条数") @RequestParam(value = "size", defaultValue = "10") long size) {
+            @Parameter(description = "当前页码，从1开始")
+            @Min(value = 1, message = "当前页码必须从1开始")
+            @RequestParam(value = "current", defaultValue = "1") long current,
+            @Parameter(description = "每页条数，范围1-100")
+            @Min(value = 1, message = "每页条数不能小于1")
+            @Max(value = 100, message = "每页条数不能超过100")
+            @RequestParam(value = "size", defaultValue = "10") long size) {
         Page<User> page = userService.page(new Page<>(current, size));
         Page<UserDTO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(userConverter.entityListToDtoList(page.getRecords()));
@@ -80,15 +90,15 @@ public class UserController {
     @Operation(summary = "根据ID修改用户")
     @PutMapping("/user")
     public ApiResponse<Void> update(@Valid @RequestBody UserDTO dto) {
-        userService.updateById(userConverter.dtoToEntity(dto));
-        return ApiResponse.success();
+        boolean updated = userService.updateById(userConverter.dtoToEntity(dto));
+        return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
     @Operation(summary = "根据ID删除用户（逻辑删除）")
     @DeleteMapping("/user/{id}")
     public ApiResponse<Void> delete(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
-        userService.removeById(id);
-        return ApiResponse.success();
+        boolean removed = userService.removeById(id);
+        return removed ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 }
