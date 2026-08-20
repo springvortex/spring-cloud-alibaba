@@ -1,0 +1,43 @@
+spring:
+  cloud:
+    sentinel:
+      filter:
+        enabled: false
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: CircuitBreaker
+              args:
+                statusCodes:
+                  - INTERNAL_SERVER_ERROR
+                  - BAD_GATEWAY
+                  - SERVICE_UNAVAILABLE
+                  - GATEWAY_TIMEOUT
+
+zjc:
+  gateway:
+    sentinel:
+      enabled: true
+      trusted-proxies:
+        - 127.0.0.1
+        - ::1
+        - 0:0:0:0:0:0:0:1
+      interfaces:
+        - name: provider-user-detail
+          pattern: /api/[^/]+/provider/user/\d+
+          total-qps: 100
+          per-ip-qps: 10
+          interval-sec: 1
+        - name: mail-send
+          pattern: /api/[^/]+/mail/send
+          total-qps: 20
+          per-ip-qps: 2
+          interval-sec: 1
+      circuit:
+        min-request-amount: 5
+        exception-ratio: 0.5
+        slow-request-rt-threshold-ms: 2000
+        slow-request-ratio: 0.8
+        stat-interval-ms: 60000
+        recovery-seconds: 10

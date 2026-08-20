@@ -8,3 +8,4 @@ spring:
     active: ${zjc.config.env},${zjc.config.source}
     include:
       - zipkin
+      - sentinel
