@@ -41,10 +41,16 @@
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <!-- Jackson 2 兼容链安全版本覆盖 -->
         <jackson-2-bom.version>2.21.5</jackson-2-bom.version>
+        <!-- Jackson 3 安全版本覆盖 -->
+        <jackson-bom.version>3.1.5</jackson-bom.version>
         <!-- Netty 安全版本覆盖 -->
-        <netty.version>4.2.16.Final</netty.version>
+        <netty.version>4.2.17.Final</netty.version>
         <!-- Apache HttpCore 5 安全版本覆盖 -->
         <httpcore5.version>5.4.3</httpcore5.version>
+        <!-- Apache HttpClient 5 安全版本覆盖 -->
+        <httpclient5.version>5.6.3</httpclient5.version>
+        <!-- Log4j 2 API 安全版本覆盖 -->
+        <log4j2.version>2.25.5</log4j2.version>
         <!-- 其他依赖 -->
         <hutool.version>5.8.47</hutool.version>
         <bouncycastle.version>1.85.2</bouncycastle.version>

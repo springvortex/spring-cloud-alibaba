@@ -531,6 +531,10 @@ jasypt:
 > **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，并集中放在
 > `service-config` 中，避免依赖隐式默认值；所有服务共享同一份配置。
 
+> **安全跟踪**：`CVE-2026-9370 / GHSA-jgj7-c8vj-w563` 标记 Jasypt 4.0.4 的 GCM 密钥派生存在可预测 salt 风险，
+> 上游暂未发布 fixed 版本。当前项目未使用 GCM 默认配置，并显式配置 `RandomSaltGenerator`；生产环境仍应确保
+> `JASYPT_ENCRYPTOR_PASSWORD` 只通过环境变量或启动参数注入，并关注上游新版本，发布后立即升级验证。
+
 ### 本地开发（IDEA）
 
 在 IDEA 中运行时，需在 **Run Configuration -> VM Options** 中填入：
