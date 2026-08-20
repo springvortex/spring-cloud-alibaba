@@ -23,6 +23,12 @@
             <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
 
+        <!-- SpringDoc OpenAPI（聚合各微服务接口文档） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+        </dependency>
+
         <!-- 统一日志配置 -->
         <dependency>
             <groupId>com.zjc</groupId>

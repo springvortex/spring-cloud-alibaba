@@ -203,6 +203,9 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 remote 模式下 Nacos dataId 固定为 `prod`，group 为 `service-gateway`。Nacos 地址统一来自
 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
 
+本地 `dev,local` 组合通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
+`prod,remote` 组合保持公共配置中的 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。
+
 链路追踪配置来自 `service-config` 的 `zipkin` profile，由 `spring.profiles.include` 激活：
 
 ```yaml
@@ -228,10 +231,10 @@ Hooks.enableAutomaticContextPropagation();
 
 ## 设计说明
 
-网关作为纯路由转发层，保持轻量，不集成以下功能：
+网关作为纯路由转发层，保持轻量，除本地 OpenAPI 聚合入口外不集成以下功能：
 
 - 不依赖 service-common（避免 WebMVC 与 WebFlux 冲突）
-- 不集成 SpringDoc / Swagger UI
+- 不为业务接口生成 OpenAPI 文档
 - 不包含测试模块
 - 不提供业务接口
 - 不自动继承 GlobalExceptionHandler 和 WebLogAspect（WebFlux 不支持 `@RestControllerAdvice`）
@@ -245,6 +248,7 @@ Hooks.enableAutomaticContextPropagation();
 - service-config
 - spring-boot-starter-actuator
 - spring-boot-starter-zipkin
+- springdoc-openapi-starter-webflux-ui（仅本地聚合 Swagger UI）
 - spring-cloud-starter-loadbalancer
 - caffeine（LoadBalancer 缓存）
 - spring-cloud-starter-alibaba-nacos-discovery / config

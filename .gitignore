@@ -34,7 +34,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/logs/
+logs/
 
 ### Generator local config ###
 MP-Generator/src/main/resources/generator.properties

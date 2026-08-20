@@ -56,6 +56,7 @@
         <bouncycastle.version>1.85.2</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.53</swagger.version>
+        <springdoc.version>3.1.0</springdoc.version>
         <!-- JaCoCo 版本（支持 Java 21 字节码） -->
         <jacoco.version>0.8.15</jacoco.version>
 
@@ -116,7 +117,14 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.1.0</version>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- SpringDoc OpenAPI（Gateway WebFlux Swagger UI 聚合） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
 
             <!-- Swagger 注解（供 common 模块 DTO 字段文档描述使用） -->

@@ -116,6 +116,13 @@ java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
 `app.env` 可取 `dev/test/prod`，`app.config.source` 可取 `remote/local`。部署时可通过 `APP_ENV`、`APP_CONFIG_SOURCE`
 环境变量注入。remote 模式固定读取 Nacos 的 `prod` Data ID，应同时设置 `app.env=prod`，保证本地 profile 与远端配置一致。
 
+项目当前主要使用两组配置组合：
+
+| 组合 | 说明 |
+|------|------|
+| `dev,local` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
+| `prod,remote` | 生产配置；公共基础配置默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由 |
+
 这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
 
 Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`。该变量默认也维护在 `service-config`
@@ -606,20 +613,31 @@ Nacos 地址：以各服务 `config/application-remote.yaml` 为准。
 
 ## 接口文档
 
-以下业务模块集成了 SpringDoc OpenAPI，启动后访问各模块的 Swagger UI：
+本地开发使用 `dev,local` 组合时，公共 `local` profile 会开启 SpringDoc，前端只需要访问网关聚合页：
 
-| 模块             | 地址                                    |
-|------------------|-----------------------------------------|
-| service-provider | `http://localhost:9001/swagger-ui.html` |
-| service-consumer | `http://localhost:9002/swagger-ui.html` |
-| service-mail     | `http://localhost:9004/swagger-ui.html` |
+```text
+http://localhost/swagger-ui.html
+```
+
+页面中可在 `Provider v1`、`Consumer v1`、`Mail v1` 之间切换。聚合地址由网关的 `application-dev.yaml`
+维护，例如 Provider 的 OpenAPI JSON 为：
+
+```text
+/api/v1/provider/v3/api-docs/v1-provider
+```
 
 所有业务服务统一使用 `/api/{版本}/{模块}` 前缀，模块名由 `service-{module}` 自动解析。 Controller 只编写资源路径；SpringDoc
 按版本自动生成分组，例如 `v1-provider`。
 
-Provider 的本地 `prod` 配置会关闭 API 文档和 Swagger UI；生产环境也不建议把业务服务文档端口暴露到公网。
+生产使用 `prod,remote` 组合时，`service-config` 的公共基础配置保持
+`springdoc.api-docs.enabled=false` 和 `springdoc.swagger-ui.enabled=false`，网关也不会加载 OpenAPI 转发路由。因此生产环境
+不能通过 `/swagger-ui.html`、`/v3/api-docs` 或网关聚合地址查看接口文档。
 
-> **注意**：Gateway 作为纯路由网关，不集成接口文档，保持轻量。
+验证时不要只看业务服务的 HTTP 状态码：WebMVC 服务的全局异常处理会把不存在的路径包装成 HTTP 200，
+响应体为 `code=102`、`message=资源不存在`。SpringDoc 关闭后业务接口文档地址返回该响应；Gateway 自身则返回 404。
+
+> **注意**：Nacos 中 `dataId=prod` 的配置不要重新设置 `springdoc.*.enabled=true`，否则远端配置可能覆盖本地
+> `remote` 引导配置，导致生产文档被重新打开。
 
 ## 单元测试
 

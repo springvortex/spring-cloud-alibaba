@@ -17,7 +17,8 @@
 | `api`    | 统一接口前缀与版本           | Provider、Consumer、Mail          |
 | `jasypt` | 配置加密算法参数             | Provider、Consumer、Mail          |
 | `zipkin` | 链路追踪采样与导出           | Gateway、Provider、Consumer、Mail |
-| `local`  | 关闭 Nacos Config 与导入检查 | 全部服务                          |
+| `local`  | 关闭 Nacos Config 与导入检查，开启 SpringDoc | 全部服务 |
+| `remote` | 各服务模块定义，用于 Nacos Config 配置导入     | 全部服务 |
 
 模块中的 `config/application.yaml` 提供统一的配置变量默认值：
 
@@ -60,6 +61,11 @@ Gateway 不加载业务接口前缀和 Jasypt 配置，只 include `zipkin`。`l
 直接激活，用于关闭 Nacos Config 与导入检查；Nacos 服务发现保持独立开关，连接地址由公共基础配置统一提供，因此 local
 配置来源下默认仍会注册到 `${zjc.infrastructure.host}:8848`。如需完全脱离 Nacos 运行单个服务，可显式设置
 `spring.cloud.nacos.discovery.enabled=false`。
+
+SpringDoc 默认在 `config/application.yaml` 中关闭，只在 `local` profile 中开启
+`springdoc.api-docs.enabled` 与 `springdoc.swagger-ui.enabled`。`remote` profile 文件由各服务模块维护，
+`service-config` 不提供同名的 `application-remote.yaml`，避免被服务模块的同名文件遮住。Nacos 中各服务的
+`dataId=prod` 不应把这两个开关重新设置为 `true`。
 
 注意不要在业务服务中创建 `src/main/resources/config/application.yaml`。classpath 上的同名路径只能加载一个，业务服务的同名文件会遮住 `service-config` 中的公共基础配置。
 

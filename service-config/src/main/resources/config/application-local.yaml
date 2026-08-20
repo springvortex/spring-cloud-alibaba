@@ -5,3 +5,9 @@ spring:
         enabled: false
         import-check:
           enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -15,6 +15,30 @@ spring:
                 allow-credentials: false
                 max-age: 3600
           routes:
+            - id: provider-openapi-route
+              uri: lb://service-provider
+              predicates:
+                - Path=/api/*/provider/v3/api-docs/**
+              filters:
+                - RewritePath=/api/[^/]+/provider/(?<segment>.*), /$\{segment}
+              order: 0
+
+            - id: consumer-openapi-route
+              uri: lb://service-consumer
+              predicates:
+                - Path=/api/*/consumer/v3/api-docs/**
+              filters:
+                - RewritePath=/api/[^/]+/consumer/(?<segment>.*), /$\{segment}
+              order: 0
+
+            - id: mail-openapi-route
+              uri: lb://service-mail
+              predicates:
+                - Path=/api/*/mail/v3/api-docs/**
+              filters:
+                - RewritePath=/api/[^/]+/mail/(?<segment>.*), /$\{segment}
+              order: 0
+
             - id: provider-route
               uri: lb://service-provider
               predicates:
@@ -32,3 +56,18 @@ spring:
               predicates:
                 - Path=/api/*/mail/**
               order: 3
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls-primary-name: Provider v1
+    urls:
+      - name: Provider v1
+        url: /api/v1/provider/v3/api-docs/v1-provider
+      - name: Consumer v1
+        url: /api/v1/consumer/v3/api-docs/v1-consumer
+      - name: Mail v1
+        url: /api/v1/mail/v3/api-docs/v1-mail

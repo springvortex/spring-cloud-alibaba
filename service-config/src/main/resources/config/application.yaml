@@ -12,3 +12,9 @@ spring:
         server-addr: ${zjc.infrastructure.host}:8848
         username: ${NACOS_USERNAME:nacos}
         password: ${NACOS_PASSWORD:nacos}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
