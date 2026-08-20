@@ -27,6 +27,8 @@ com.zjc.gateway
 ├── GatewayApplication              启动类（@EnableDiscoveryClient）
 ├── config
 │   └── ObservabilityConfiguration  开启 Reactor 自动上下文传播
+├── exception
+│   └── GatewayErrorWebExceptionHandler 统一 JSON 错误响应
 └── filter
     └── ServiceGlobalFilter         全局请求日志过滤器
 ```
@@ -142,6 +144,35 @@ return chain.filter(exchange)
 ```
 
 使用 `doFinally` 而不是 `doOnSuccess` 的原因是：它同时覆盖正常完成、错误终止和取消，网关日志不会因为下游异常而缺失结束记录。
+
+## 统一错误响应
+
+Gateway 基于 WebFlux，不能复用业务服务的 WebMVC `GlobalExceptionHandler`。网关使用：
+
+```text
+com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
+```
+
+它实现 Spring Boot 的 `ErrorWebExceptionHandler`，优先级高于默认 Whitelabel Error Page。当访问不存在的路由（如 `/`）、
+下游服务不可用或网关处理链抛出其他异常时，会返回与业务服务一致的 JSON 结构：
+
+```json
+{
+  "success": false,
+  "code": 102,
+  "message": "请求路径不存在，请检查接口地址或网关路由",
+  "data": null,
+  "timestamp": 1787191865837
+}
+```
+
+错误处理策略：
+
+- HTTP 404 映射业务码 `102`，提示请求路径或路由不存在。
+- HTTP 503 映射业务码 `503`，用于下游服务不存在、不可用或负载均衡找不到实例。
+- 其他 HTTP 状态码按 `ApiResponseEnum` 的码段规则映射，未识别状态使用通用失败码 `-1`。
+- 4xx 记录 warn 日志，5xx 记录 error 日志；响应体只输出稳定提示，不暴露内部异常细节。
+- 不会拦截已经成功转发的业务响应；业务服务返回的 JSON 会原样透传。
 
 ## 入口与端口边界
 
