@@ -57,6 +57,8 @@
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.53</swagger.version>
         <springdoc.version>3.1.0</springdoc.version>
+        <jasypt-spring-boot.version>4.0.4</jasypt-spring-boot.version>
+        <jasypt.version>1.9.3</jasypt.version>
         <!-- JaCoCo 版本（支持 Java 21 字节码） -->
         <jacoco.version>0.8.15</jacoco.version>
 
@@ -127,6 +129,13 @@
                 <version>${springdoc.version}</version>
             </dependency>
 
+            <!-- SpringDoc 公共模型（service-common 只依赖 API，不携带 Swagger UI） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-common</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
             <!-- Swagger 注解（供 common 模块 DTO 字段文档描述使用） -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
@@ -145,7 +154,14 @@
             <dependency>
                 <groupId>com.github.ulisesbocchio</groupId>
                 <artifactId>jasypt-spring-boot-starter</artifactId>
-                <version>4.0.4</version>
+                <version>${jasypt-spring-boot.version}</version>
+            </dependency>
+
+            <!-- Jasypt 加密核心（service-common 测试工具显式使用） -->
+            <dependency>
+                <groupId>org.jasypt</groupId>
+                <artifactId>jasypt</artifactId>
+                <version>${jasypt.version}</version>
             </dependency>
 
 

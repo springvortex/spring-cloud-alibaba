@@ -263,9 +263,12 @@ cd MP-Generator && mvn package
 
 ### 构建踩坑点
 
-如果 IDEA 启动时报类似 `A component required a bean of type 'xxxConverter' could not be found`，
+如果启动时报类似 `A component required a bean of type 'xxxConverter' could not be found`，
 通常不是 Converter 接口忘了加 `@Mapper(componentModel = "spring")`，也不是 Nacos 或数据库问题，
-而是 IDEA 增量编译把带 `Unresolved compilation problems` 的错误占位类写入了 `target/classes`。
+而是某个 IDE/语言服务把带 `Unresolved compilation problems` 的错误占位类写入了 `target/classes`。
+这个字符串是 Eclipse JDT 编译器的典型产物；本项目实际遇到的主要来源是 VS Code 的
+Red Hat Java Language Server，它在 Maven 生成 `target/generated-sources` 时并发编译，
+并用错误占位类覆盖 Maven 产物。IDEA 的 JPS 构建与 Maven 并发读写 `target` 时也要避免。
 这类 class 的方法签名可能变成 `(LGoods;)...`、`(LMailLog;)...`，启动时 Spring 解析 bean 会失败。
 
 遇到该问题时，在项目根目录执行全模块 clean 构建，不要只指定 `service-provider`、`service-mail`
@@ -276,18 +279,23 @@ cd MP-Generator && mvn package
 mvn clean package -DskipTests
 ```
 
-本机已把 IDEA 的 Spring Boot 启动项改为 **Before launch: Run Maven Goal `clean compile`**，
-并移除了默认的 `Build`/`Make` 前置任务。这样启动 provider、mail、consumer、gateway 时，
-都先由 Maven 重新生成 MapStruct 实现类，避免 IDEA 增量编译把这些类写成错误占位类。
+本机已做三层防并发配置：
+
+- `.vscode/settings.json` 设置 `java.autobuild.enabled=false`，避免 VS Code Java 语言服务自动重写
+  `target/classes`；
+- IDEA 设置 **Delegate IDE build/run actions to Maven**，并让 Maven 导入时忽略 generated sources；
+- 所有 Spring Boot 启动项都使用 **Before launch: Run Maven Goal `clean compile`**，包括
+  `ProviderApplication2`，不再使用 IDEA 默认的 `Build`/`Make`。
 
 如果外部修改过 IDEA 配置，先完全退出并重新打开 IDEA，让 `.idea/workspace.xml` 中的启动配置
-真正生效；只关闭项目再打开不一定足够。执行下面的恢复流程时也建议先完全退出 IDEA，
-再在外部 PowerShell 中构建：
+真正生效；只关闭项目再打开不一定足够。执行下面的恢复流程时，建议先关闭 VS Code 中本项目
+的 Java 语言服务（或执行 **Java: Clean Java Language Server Workspace**），可疑时同时完全退出
+IDEA，再在外部 PowerShell 中构建：
 
 - 修改父 POM 或子模块 POM；
 - 新增或修改 MapStruct Converter、DTO、Entity 字段；
 - 切换分支或合并代码后出现无法解释的 Bean 注入失败；
-- Maven 构建和 IDEA Build 交替使用后，`target` 目录状态可疑。
+- Maven 构建和 IDEA/VS Code Java Build 交替使用后，`target` 目录状态可疑。
 
 构建完成后可先检查是否还有错误占位类：
 
@@ -310,9 +318,8 @@ javap -classpath "service-provider/target/classes;service-common/target/classes"
 ```
 
 如果修改了 POM，先在 IDEA Maven 面板执行 **Reload All Maven Projects**，再做全模块 clean 构建。
-构建过程中不要同时点击 IDEA Build 或启动服务，避免双方并发读写同一个 `target` 目录；
-IDEA 保持打开时，即使命令行 Maven 已经生成了正确源码，构建过程中的 `target` 变化仍可能触发
-IDEA 编译并覆盖出错误占位类。
+构建过程中不要同时点击 IDEA Build、VS Code Java Build 或启动服务，避免多个编译器并发读写同一个
+`target` 目录；即使 Maven 已经生成了正确源码，VS Code/IDEA 仍可能在构建过程中把产物覆盖成错误占位类。
 
 打包后的输出结构：
 

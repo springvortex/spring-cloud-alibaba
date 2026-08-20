@@ -11,7 +11,7 @@
 - 跨服务传输 DTO
 - 跨服务共享的 Feign API 契约
 - 配置加密（Jasypt，引入后自动生效）
-- Sentinel / OpenFeign 相关服务容错依赖
+- OpenFeign / SpringDoc / Web MVC 相关的公共编译 API
 
 ## 包结构
 
@@ -213,6 +213,19 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 
 ## 依赖说明
 
-该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。模块包含 Web MVC、AOP、
-OpenFeign、Sentinel、Jasypt、Hutool 和 Swagger 注解等公共依赖。源码通过
-`maven-source-plugin` 一并打包，方便其他模块引用时查看源码。
+该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。模块只显式声明源码直接使用的
+Spring MVC、Spring Boot AutoConfigure、AspectJ、OpenFeign、SpringDoc common、Jasypt、Hutool 和 Swagger 注解等 API；Servlet API
+声明为 `provided`，由目标服务的 Web 运行时提供。源码通过 `maven-source-plugin` 一并打包，方便其他模块引用时查看源码。
+
+`service-common` 不再替业务服务决定运行时技术栈：
+
+| 运行能力 | 声明位置 |
+|----------|----------|
+| Web 容器 / Spring MVC | `service-provider`、`service-consumer`、`service-mail` |
+| Swagger UI | `service-provider`、`service-consumer`、`service-mail`、`service-gateway` |
+| OpenFeign starter | `service-consumer` |
+| Sentinel Feign 熔断 | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`） |
+| Nacos / 配置中心 / 数据库 / 邮件 | 对应业务模块 |
+
+这样公共库不会把 Tomcat、Swagger UI、Sentinel 等完整 starter 传递给所有下游模块，后续升级 Spring Boot / Spring Cloud
+时影响面更清晰。新增公共代码如果直接 import 了新的第三方包，应同步在 `service-common/pom.xml` 显式声明，而不是继续依赖传递依赖。

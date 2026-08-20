@@ -22,28 +22,71 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web（提供 HTTP 相关注解和工具） -->
+        <!-- Spring Core：注解解析与基础工具 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
         </dependency>
 
-        <!-- AOP 切面支持（Spring Boot 4 中由 spring-boot-starter-aspectj 提供） -->
+        <!-- Spring Context：应用上下文与环境配置 API -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aspectj</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
 
-        <!-- OpenFeign 声明式调用（共享 Feign API 契约） -->
+        <!-- Spring Beans：BeanFactory 相关 API -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+
+        <!-- Spring Web：REST 注解与请求上下文 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- Spring WebMvc：统一 API 路径前缀配置 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- Spring Boot：配置属性绑定基础 API -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+
+        <!-- Spring Boot AutoConfigure：公共自动装配支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Servlet API 由服务的 Web starter 在运行时提供 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- AOP 切面实现 -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+        </dependency>
+
+        <!-- Feign Core：请求拦截器与请求模板 API -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud OpenFeign：共享 Feign 契约与降级工厂 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
-        <!-- Alibaba Sentinel（熔断限流） -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+            <artifactId>spring-cloud-openfeign-core</artifactId>
         </dependency>
 
         <!-- 糊涂工具类（Hutool） -->
@@ -71,10 +114,10 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
-        <!-- SpringDoc OpenAPI（自动生成 API 版本分组） -->
+        <!-- SpringDoc 公共模型（自动生成 API 版本分组，不携带 Swagger UI） -->
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-common</artifactId>
         </dependency>
 
         <!-- 配置元数据处理器（@ConfigurationProperties 自动补全） -->
@@ -88,9 +131,36 @@
         <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
             <artifactId>jasypt-spring-boot-starter</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
-        <!-- 测试依赖 -->
+        <!-- JSpecify：空值语义注解 -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
+        <!-- SLF4J：日志门面 API -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- MVC 自动配置测试需要的 Web 运行时 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jasypt Core：配置加密测试工具 -->
+        <dependency>
+            <groupId>org.jasypt</groupId>
+            <artifactId>jasypt</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot Test：单元测试与切片测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
