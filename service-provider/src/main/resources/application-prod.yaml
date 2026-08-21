@@ -1,14 +1,10 @@
-server:
-  port: 9001
-
 spring:
-  application:
-    name: service-provider
   cloud:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
     username: spring_cloud_alibaba
     password: ENC(vStS7aXxtuaitgTfFqkF4DevOB1cYe4pkfNFJCdIWSo=)

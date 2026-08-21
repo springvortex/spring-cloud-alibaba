@@ -10,10 +10,4 @@ spring:
       - api
       - jasypt
       - zipkin
-  cloud:
-    nacos:
-      discovery:
-        username: nacos
-        password: nacos
-      config:
-        enabled: false
+      - nacos

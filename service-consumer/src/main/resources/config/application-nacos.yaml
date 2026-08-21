@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        username: nacos
+        password: nacos
+      config:
+        enabled: false
