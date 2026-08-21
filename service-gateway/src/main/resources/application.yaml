@@ -1,11 +1,23 @@
 server:
   port: 80
 
+zjc:
+  infrastructure:
+    host: ${INFRASTRUCTURE_HOST:129.204.226.206}
+
 spring:
   application:
     name: service-gateway
   profiles:
-    active: ${zjc.config.env}
+    active: dev
     include:
       - zipkin
       - sentinel
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${zjc.infrastructure.host}:8848
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      config:
+        enabled: false

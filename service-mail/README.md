@@ -32,7 +32,7 @@
 }
 ```
 
-`toEmails`、`subject`、`content` 必填；抄送和密送可选。多个邮箱用英文逗号分隔。发件人来自 Nacos 中的
+`toEmails`、`subject`、`content` 必填；抄送和密送可选。多个邮箱用英文逗号分隔。发件人来自本地 Profile 中的
 `spring.mail.username`，调用方不能指定。
 
 发送记录状态：
@@ -79,15 +79,15 @@ com.zjc.mail
 
 ## 配置说明
 
-配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
+配置由本地 Profile 控制，默认激活 `dev`。
 
-- **local**：加载 `src/main/resources/config/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
-- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，
-  group 为 `service-mail`，namespace 为 `public`；公共配置仍来自 `service-config`。
+- **dev**：加载 `src/main/resources/config/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
+- **prod**：加载 `src/main/resources/config/application-prod.yaml`，其中维护生产 SMTP 与数据源配置。
 
-Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
+Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+`spring.cloud.nacos.config.enabled` 保持为 `false`。
 
-remote 模式的 Nacos 配置中至少需要维护：
+生产 Profile 中至少需要维护：
 
 ```yaml
 spring:
@@ -105,11 +105,7 @@ SMTP 密码使用 Jasypt 密文，启动时通过 `jasypt.encryptor.password` �
 
 ## 日志与链路追踪
 
-本模块通过 `service-config` 统一日志配置，日志输出到：
-
-```text
-logs/service-mail/
-```
+本模块使用 Spring Boot 默认日志配置，日志输出到服务进程标准输出。
 
 日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin，可追踪 Gateway 到 Mail 的调用耗时，也可用于定位 SMTP 发送异常：
 
@@ -128,8 +124,7 @@ management:
 ## 依赖
 
 - service-common
-- service-config
-- spring-cloud-starter-alibaba-nacos-discovery / config
+- spring-cloud-starter-alibaba-nacos-discovery
 - spring-boot-starter-web
 - spring-boot-starter-actuator
 - spring-boot-starter-zipkin

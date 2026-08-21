@@ -37,3 +37,9 @@ spring:
               predicates:
                 - Path=/api/*/mail/**
               order: 3
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

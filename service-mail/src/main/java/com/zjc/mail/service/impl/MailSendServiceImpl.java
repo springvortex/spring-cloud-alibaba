@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * 邮件发送服务实现。
  *
  * <p>发件人地址从配置 {@code spring.mail.username} 读取，
- * SMTP 连接参数也在邮件模块 Nacos 配置中统一管理。
+ * SMTP 连接参数也在邮件模块环境 Profile 中统一管理。
  * 发送流程：先入库一条待发送记录 -> 发送邮件 -> 更新状态为成功/失败。
  *
  * @author jiancai.zhong
@@ -62,7 +62,7 @@ public class MailSendServiceImpl implements MailSendService {
     private MailLogConverter mailLogConverter;
 
     /**
-     * 发件人邮箱，来自 Nacos 配置 spring.mail.username
+     * 发件人邮箱，来自环境 Profile 的 spring.mail.username
      */
     @Value("${spring.mail.username}")
     private String fromEmail;

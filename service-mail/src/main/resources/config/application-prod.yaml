@@ -33,3 +33,9 @@ mybatis-plus:
     db-config:
       id-type: assign_id
       logic-delete-field: isDeleted
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

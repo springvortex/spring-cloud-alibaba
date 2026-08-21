@@ -47,13 +47,6 @@
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
         </dependency>
 
-        <!-- 统一日志配置 -->
-        <dependency>
-            <groupId>com.zjc</groupId>
-            <artifactId>service-config</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
         <!-- Spring Boot Actuator（链路追踪自动装配与运行观测） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -82,12 +75,6 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos 配置中心 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
         <!-- Lombok（简化代码） -->

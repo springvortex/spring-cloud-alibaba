@@ -19,7 +19,7 @@ import java.util.Scanner;
  * <ol>
  *   <li>通过命令行或环境变量传入密钥后运行 main 方法</li>
  *   <li>输入需要加密的明文（如数据库密码、SMTP 密码等）</li>
- *   <li>将输出的 {@code ENC(xxx)} 字符串粘贴到 Nacos 配置文件中</li>
+ *   <li>将输出的 {@code ENC(xxx)} 字符串粘贴到业务服务的环境 Profile 中</li>
  * </ol>
  *
  * <p>IDEA 运行：在 Run Configuration 的 VM Options 中添加
@@ -125,6 +125,6 @@ public class JasyptTest {
         System.out.println("验证解密: " + decrypted);
         System.out.println("匹配: " + plainText.equals(decrypted));
         System.out.println();
-        System.out.println("将上面的 ENC(xxx) 复制到 Nacos 配置文件中即可。");
+        System.out.println("将上面的 ENC(xxx) 复制到业务服务的环境 Profile 中即可。");
     }
 }

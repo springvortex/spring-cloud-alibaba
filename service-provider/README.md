@@ -78,7 +78,6 @@ com.zjc.provider
 ├── config
 │   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime（时区 Asia/Shanghai）
 │   ├── MybatisPlusConfig           分页插件
-│   ├── NacosConfigListenerConfig   Nacos 配置变更监听
 │   └── OpenApiConfig               SpringDoc 元信息配置
 ├── controller                      REST 接口（User/Goods/Order/Test）
 ├── converter                       MapStruct Entity/DTO 转换器
@@ -96,22 +95,17 @@ com.zjc.provider
 
 ## 配置说明
 
-配置来源由 `app.env` 与 `app.config.source` 组合控制，默认值为 `dev,local`。
+配置由本地 Profile 控制，默认激活 `dev`。
 
-- **local**：加载 `src/main/resources/config/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
-- **remote**：通过 `src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，
-  group 为 `service-provider`，namespace 为 `public`；公共配置仍来自 `service-config`。
+- **dev**：加载 `src/main/resources/config/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
+- **prod**：加载 `src/main/resources/config/application-prod.yaml`，其中维护生产数据源与文档开关。
 
-Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。local 模式只关闭 Nacos
-Config，服务发现默认仍会注册到 Nacos。
+Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+`spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 ## 日志与链路追踪
 
-本模块通过 `service-config` 统一日志配置，日志输出到：
-
-```text
-logs/service-provider/
-```
+本模块使用 Spring Boot 默认日志配置，日志输出到服务进程标准输出。
 
 日志包含 `traceId` 和 `spanId`。模块同时引入 Actuator 与 Zipkin，通过 W3C `traceparent` 与 Gateway、Consumer 保持同一条链路：
 
@@ -132,8 +126,7 @@ management:
 ## 依赖
 
 - service-common
-- service-config
-- spring-cloud-starter-alibaba-nacos-discovery / config
+- spring-cloud-starter-alibaba-nacos-discovery
 - spring-boot-starter-web
 - spring-boot-starter-actuator
 - spring-boot-starter-zipkin

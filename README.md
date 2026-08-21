@@ -10,7 +10,7 @@
 | 构建工具       | Maven                                | 3.9+       |
 | 基础框架       | Spring Boot                          | 4.1.0      |
 | 微服务框架     | Spring Cloud                         | 2025.1.2   |
-| 注册/配置中心  | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
+| 注册中心       | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
 | ORM            | MyBatis-Plus                         | 3.5.17     |
 | 数据库         | MySQL                                | -          |
 | 网关           | Spring Cloud Gateway                 | -          |
@@ -32,7 +32,6 @@
 ```
 spring-cloud-alibaba
 ├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
-├── service-config      统一配置模块，维护共用 logback-spring.xml 与 local 模式公共配置 Profile
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
@@ -42,7 +41,7 @@ spring-cloud-alibaba
 
 各模块根目录下均有独立的 README.md，记录该模块的职责、依赖、接口和配置说明。
 
-父 POM 只聚合 `service-config`、`service-common` 和 4 个可运行服务；`MP-Generator` 是独立工具模块，
+父 POM 只聚合 `service-common` 和 4 个可运行服务；`MP-Generator` 是独立工具模块，
 需要在 `MP-Generator` 目录单独执行 Maven 命令。
 
 ## 快速开始
@@ -53,10 +52,10 @@ spring-cloud-alibaba
 |------------|------------------------|------------------------|----------------------------------------|---------------------------------------------------------------------------------|
 | JDK 21+    | 是                     | -                      | 编译与运行 Java 服务                   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
 | Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包                       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
-| MySQL 8+   | 是                     | 3306                   | 业务数据、Nacos 生产配置存储、邮件记录 | 官方安装包或 Docker；生产环境仅内网访问                                         |
-| Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 注册中心、配置中心                     | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
+| MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录                     | 官方安装包或 Docker；生产环境仅内网访问                                         |
+| Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现                         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
 | Zipkin     | 可选，链路追踪建议安装 | 9411                   | 展示 trace/span 调用链                 | 官方发行包或 Docker；不安装时可将导出开关设为 false                             |
-| SMTP 服务  | service-mail 必需      | 视服务商而定           | 发送邮件                               | 使用已有邮箱服务商 SMTP，凭据放 Nacos 并用 Jasypt 加密                          |
+| SMTP 服务  | service-mail 必需      | 视服务商而定           | 发送邮件                               | 使用已有邮箱服务商 SMTP，凭据放本地 Profile 并用 Jasypt 加密                    |
 
 ### 组件安装
 
@@ -89,44 +88,36 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 组件启动后：
 
 1. MySQL 创建数据库 `spring_cloud_alibaba` 并导入业务表。
-2. Nacos 在 `public` 命名空间下为每个服务创建 `dataId=prod` 的配置。
-3. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
-4. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
+2. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
+3. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
 
 当前仓库没有维护数据库初始化 SQL 文件，业务表结构需要从现有环境导出，或自行按下方表清单创建后再导入数据。
 
 ### 配置来源
 
-各服务的远程配置引导位于：
-
-```text
-service-{module}/src/main/resources/config/application-remote.yaml
-```
-
-该文件包含 Nacos 地址、认证信息和 `spring.config.import`。根配置通过 `app.env` 和 `app.config.source` 组合激活环境与配置来源：
+各服务使用本地配置文件，`app.env` 控制激活的环境 Profile：
 
 ```bash
-# remote：读取 Nacos 的 prod 配置
-java -jar service-provider-1.0.0.jar --app.env=prod --app.config.source=remote
+# dev：本地开发配置
+java -jar service-provider-1.0.0.jar --app.env=dev
 
-# local：读取服务本地配置与 service-config 公共配置
-java -jar service-provider-1.0.0.jar --app.env=dev --app.config.source=local
+# prod：生产配置
+java -jar service-provider-1.0.0.jar --app.env=prod
 ```
 
-`app.env` 可取 `dev/test/prod`，`app.config.source` 可取 `remote/local`。部署时可通过 `APP_ENV`、`APP_CONFIG_SOURCE`
-环境变量注入。remote 模式固定读取 Nacos 的 `prod` Data ID，应同时设置 `app.env=prod`，保证本地 profile 与远端配置一致。
+`app.env` 当前可取 `dev/prod`，部署时可通过 `APP_ENV` 环境变量注入。服务包内的
+`application.yaml` 提供服务名、端口、Nacos Discovery 连接和公共 Profile；`config/application-{env}.yaml`
+提供各环境差异配置。
 
-项目当前主要使用两组配置组合：
+项目当前主要使用两组环境 Profile：
 
-| 组合 | 说明 |
-|------|------|
-| `dev,local` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
-| `prod,remote` | 生产配置；公共基础配置默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由 |
+| Profile | 说明 |
+|---------|------|
+| `dev` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
+| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由 |
 
-这两个变量的默认值统一维护在 `service-config/src/main/resources/config/application.yaml` 中，业务服务不需要重复配置。
-
-Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`。该变量默认也维护在 `service-config`
-的公共基础配置中，可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖。当前代码默认指向既有开发服务器
+Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`，维护在各服务的 `application.yaml` 中，
+可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖。当前代码默认指向既有开发服务器
 `129.204.226.206`；本地开发或切换部署环境时应显式覆盖，避免误连外部环境：
 
 ```powershell
@@ -135,12 +126,11 @@ $env:INFRASTRUCTURE_HOST = "10.0.0.10"
 
 `ZIPKIN_ENDPOINT` 仍可单独覆盖 Zipkin 上报地址；未设置时会基于 `zjc.infrastructure.host` 拼接默认值。
 
-Nacos 认证统一使用 `NACOS_USERNAME`、`NACOS_PASSWORD` 环境变量，默认值为 `nacos/nacos`。这两个变量同时作用于
-Nacos Config 与 Nacos Discovery；生产环境必须改为强密码，不要依赖默认账号。
+Nacos 认证统一使用 `NACOS_USERNAME`、`NACOS_PASSWORD` 环境变量，默认值为 `nacos/nacos`，只作用于服务发现与注册；
+生产环境必须改为强密码，不要依赖默认账号。
 
-`local` 模式会加载 `service-config` 中的 `application-local.yaml`，关闭 Nacos Config 与导入检查；Nacos 服务发现仍由
-`spring.cloud.nacos.discovery.enabled` 单独控制。服务发现连接地址由公共基础配置统一提供，local 配置来源下也会注册到
-`${zjc.infrastructure.host}:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
+各服务已移除 Nacos Config 依赖，并显式设置 `spring.cloud.nacos.config.enabled=false`。Nacos 仅提供服务发现与注册，
+连接地址为 `${zjc.infrastructure.host}:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
 `spring.cloud.nacos.discovery.enabled=false`。
 
 ### 数据库
@@ -168,38 +158,8 @@ Nacos Config 与 Nacos Discovery；生产环境必须改为强密码，不要依
 
 ### 统一日志
 
-所有可运行服务都依赖 `service-config`，共享一份：
-
-```text
-service-config/src/main/resources/logback-spring.xml
-```
-
-不要再在各业务模块复制 `logback-spring.xml`。日志目录由 `spring.application.name` 自动区分：
-
-```text
-logs/
-├── service-gateway/
-├── service-provider/
-├── service-consumer/
-└── service-mail/
-```
-
-每个服务目录下按级别拆分：
-
-```text
-debug/ info/ warn/ error/
-```
-
-日志格式包含：
-
-```text
-traceId、spanId、服务名、端口、线程、级别、logger、业务消息
-```
-
-开发/测试环境：控制台同步输出，方便 IDEA 实时查看；四个级别的文件输出分别异步。生产环境：不输出控制台，只保留异步文件输出。每个异步
-Appender 均使用 `queueSize=8192`、`discardingThreshold=0`、`neverBlock=false`，队列满时优先保证日志不丢失。
-
-更多说明见 [service-config/README.md](service-config/README.md)。
+各服务使用 Spring Boot 默认日志配置，日志输出到服务进程标准输出，并包含 Micrometer Tracing 注入的
+`traceId` 与 `spanId`。生产环境建议由容器运行时或进程管理器统一收集与轮转。
 
 ### 链路追踪
 
@@ -264,8 +224,6 @@ cd MP-Generator && mvn package
 ### 打包后的输出结构
 
 ```
-service-config/target/
-└── service-config-1.0.0.jar            # 普通 JAR，统一配置资源，不独立启动
 service-common/target/
 └── service-common-1.0.0.jar             # 普通 JAR，公共库，不独立启动
 service-consumer/target/
@@ -282,10 +240,9 @@ service-provider/target/
 
 - **业务服务模块**：继承父 POM 中的 `spring-boot-maven-plugin`，执行 `repackage` 后生成可执行 Fat JAR
 - **service-common**：通过 `spring-boot.repackage.skip=true` 保持普通库 JAR，供其他模块 Maven 依赖，不独立部署
-- **service-config**：同样保持普通库 JAR，只作为依赖打进各服务 Fat JAR，不独立部署
 - **依赖隔离**：每个业务服务的依赖都打在各自 Fat JAR 内，gateway 的 WebFlux 栈与其他服务的 MVC 栈天然隔离
 
-> **注意**：部署时不需要拷贝 `service-common` 和 `service-config` JAR，它们已经作为依赖打进每个业务服务的 Fat JAR。
+> **注意**：部署时不需要拷贝 `service-common` JAR，它已经作为依赖打进每个业务服务的 Fat JAR。
 
 ### 配置位置
 
@@ -299,9 +256,9 @@ service-provider/target/
 ### 前提条件
 
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
-- 服务器能访问 Nacos（注册中心 + 配置中心）和 MySQL
+- 服务器能访问 Nacos（服务注册与发现）和 MySQL
 - 开启链路追踪时，服务器能访问 Zipkin；Zipkin 本身也应部署在内网
-- 应用配置（`application.yaml`）已打在 JAR 内，Nacos 上的业务配置启动时自动拉取
+- 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，环境差异通过 `APP_ENV` 和环境变量注入
 
 ### 需要拷贝的文件
 
@@ -391,8 +348,8 @@ kill "$(cat provider.pid)"
 
 ### Linux 端口注意事项
 
-Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），或在 Nacos 配置中心修改
-`server.port`。
+Linux 上非 root 用户不能绑定 1024 以下端口。Gateway 默认端口 80，需要改为高位端口（如 9000），可通过
+`SERVER_PORT` 环境变量或启动参数覆盖 `server.port`。
 
 ### 网络边界与端口暴露策略
 
@@ -450,7 +407,7 @@ java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
 
 ## 配置加密（Jasypt）
 
-项目集成 Jasypt 对敏感配置（数据库密码、SMTP 密码等）进行加密，密文以 `ENC(xxx)` 格式存储在 Nacos 配置中。
+项目集成 Jasypt 对敏感配置（数据库密码、SMTP 密码等）进行加密，密文以 `ENC(xxx)` 格式存储在本地环境 Profile 中。
 **密钥不写入任何配置文件**，通过命令行参数或环境变量注入。
 
 ### 加密明文
@@ -476,12 +433,12 @@ java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
 验证解密: my-db-password
 匹配: true
 
-将上面的 ENC(xxx) 复制到 Nacos 配置文件中即可。
+将上面的 ENC(xxx) 复制到对应服务的环境 Profile 中即可。
 ```
 
-### 在 Nacos 中使用加密
+### 在本地 Profile 中使用加密
 
-将密文粘贴到 Nacos 配置中替换明文，例如：
+将密文粘贴到对应服务的 `application-dev.yaml` 或 `application-prod.yaml` 中替换明文，例如：
 
 ```yaml
 spring:
@@ -521,7 +478,7 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一来自 `service-config` 模块的 `config/application-jasypt.yaml`。
+Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一来自各业务服务的 `config/application-jasypt.yaml`。
 
 ```yaml
 jasypt:
@@ -535,8 +492,7 @@ jasypt:
     string-output-type: base64
 ```
 
-> **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，并集中放在
-> `service-config` 中，避免依赖隐式默认值；所有服务共享同一份配置。
+> **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，避免依赖隐式默认值。
 
 > **安全跟踪**：`CVE-2026-9370 / GHSA-jgj7-c8vj-w563` 标记 Jasypt 4.0.4 的 GCM 密钥派生存在可预测 salt 风险，
 > 上游暂未发布 fixed 版本。当前项目未使用 GCM 默认配置，并显式配置 `RandomSaltGenerator`；生产环境仍应确保
@@ -591,29 +547,18 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 `MP-Generator/src/main/java` 与 `MP-Generator/src/main/resources/mapper`，需要再迁移到实际业务模块；当前配置的父包是
 `com.zjc.provider`，对应迁移目标为 `service-provider`。
 
-## 配置中心
+## 配置管理
 
-各服务支持 remote/local 两种配置来源。本地 `application.yaml` 保留服务名、端口、默认环境和通过 `spring.profiles.include`
-引入的公共 profile；本地开发环境配置保留在各服务的 `config/application-dev.yaml`，生产配置统一由 Nacos 的 `prod` 提供。
+所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境、Nacos Discovery 连接，并通过
+`spring.profiles.include` 引入 `api`、`jasypt`、`zipkin` 等公共 profile；`config/application-dev.yaml` 与
+`config/application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin` 和 `sentinel`。
 
-配置规则：
-
-- **dataId**：激活环境名（如 `dev`、`test`、`prod`）
-- **group**：服务名（如 `service-provider`、`service-mail`）
-- **namespace**：`public`
-- **热更新**：`refreshEnabled=true`
-
-公共配置统一由 `service-config` 模块维护 `api`、`jasypt`、`zipkin` profile，并通过 `spring.profiles.include` 加载。
-Nacos 只保存各服务 `dataId=prod` 的环境配置。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin`。
-
-Nacos 地址：以各服务 `config/application-remote.yaml` 为准。
-
-每个服务本地有 `application.yaml`（端口、公共 profile include）和 `config/application-remote.yaml`（Nacos 地址、config.import
-变量）两个引导文件；remote 模式通过 `${spring.application.name}` 定位服务分组，并固定拉取 `prod` Data ID。
+Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
+需要重新打包并重启对应服务。
 
 ## 接口文档
 
-本地开发使用 `dev,local` 组合时，公共 `local` profile 会开启 SpringDoc，前端只需要访问网关聚合页：
+本地开发使用 `dev` profile 时，各服务的开发配置会开启 SpringDoc，前端只需要访问网关聚合页：
 
 ```text
 http://localhost/swagger-ui.html
@@ -629,15 +574,14 @@ http://localhost/swagger-ui.html
 所有业务服务统一使用 `/api/{版本}/{模块}` 前缀，模块名由 `service-{module}` 自动解析。 Controller 只编写资源路径；SpringDoc
 按版本自动生成分组，例如 `v1-provider`。
 
-生产使用 `prod,remote` 组合时，`service-config` 的公共基础配置保持
-`springdoc.api-docs.enabled=false` 和 `springdoc.swagger-ui.enabled=false`，网关也不会加载 OpenAPI 转发路由。因此生产环境
+生产使用 `prod` profile 时，生产配置保持 `springdoc.api-docs.enabled=false` 和
+`springdoc.swagger-ui.enabled=false`，网关也不会加载 OpenAPI 转发路由。因此生产环境
 不能通过 `/swagger-ui.html`、`/v3/api-docs` 或网关聚合地址查看接口文档。
 
 验证时不要只看业务服务的 HTTP 状态码：WebMVC 服务的全局异常处理会把不存在的路径包装成 HTTP 200，
 响应体为 `code=102`、`message=资源不存在`。SpringDoc 关闭后业务接口文档地址返回该响应；Gateway 自身则返回 404。
 
-> **注意**：Nacos 中 `dataId=prod` 的配置不要重新设置 `springdoc.*.enabled=true`，否则远端配置可能覆盖本地
-> `remote` 引导配置，导致生产文档被重新打开。
+> **注意**：生产 Profile 不应重新设置 `springdoc.*.enabled=true`，避免生产文档被重新打开。
 
 ## 单元测试
 

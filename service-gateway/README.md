@@ -14,7 +14,7 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 ## 职责
 
 - 统一路由入口，将请求分发到下游各服务
-- 维护 local 路由基线，并在 remote 模式通过 Nacos 维护动态路由
+- 在本地 dev/prod Profile 中维护路由基线
 - 统一配置 CORS 跨域策略
 - 负载均衡（LoadBalancer + Caffeine 缓存）
 - Sentinel 接口限流、单 IP 限流与路由熔断
@@ -42,9 +42,8 @@ com.zjc.gateway
 
 ## 路由配置
 
-local 模式下路由规则位于 `src/main/resources/config/application-dev.yaml`，作为本地开发基线。remote 模式通过
-`src/main/resources/config/application-remote.yaml` 拉取 Nacos，dataId 固定为 `prod`，group 为 `service-gateway`，
-namespace 为 `public`。
+开发环境路由规则位于 `src/main/resources/config/application-dev.yaml`，生产环境路由规则位于
+`src/main/resources/config/application-prod.yaml`。修改路由后需要重新打包并重启网关。
 
 当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀， 网关只按模块转发，不做 `RewritePath`
 剥离前缀：
@@ -197,15 +196,13 @@ Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源�
 - `stat-interval-ms`：熔断统计窗口。
 - `recovery-seconds`：熔断后的半开放恢复等待时间。
 
-`prod,remote` 模式下，Nacos 中的 `service-gateway` 分组、dataId 为 `prod` 配置只需要维护路由、CORS 等
-环境差异；Sentinel 公共配置会随 `sentinel` profile 从应用包内加载，不需要在 Nacos 重复维护。注意不要在
-Nacos 中重复定义 `spring.cloud.gateway.server.webflux.default-filters`，列表配置会被远端配置整体覆盖。
+`prod` Profile 会加载路由、CORS 等环境差异；Sentinel 公共配置随 `sentinel` profile 从应用包内加载。
 规则在应用启动时加载，调整阈值后需要重启网关。当前实现是应用内规则基线，尚未接入 Sentinel Dashboard
 或 Nacos Sentinel datasource，规则调整后如需动态推送，可在此基础上继续扩展 datasource。
 
 ### 跨域配置
 
-CORS 与路由相同：local 模式使用 `config/application-dev.yaml` 中的基线，remote 模式使用 Nacos 中对应环境的配置：
+CORS 与路由相同：开发环境使用 `config/application-dev.yaml`，生产环境使用 `config/application-prod.yaml`：
 
 ```yaml
 spring:
@@ -233,8 +230,8 @@ spring:
 - `allow-credentials: false`：不允许携带 Cookie 等凭证；如果改为 `true`，来源不能继续使用 `*`，必须配置明确域名。
 - `max-age: 3600`：浏览器对预检请求结果缓存 1 小时，减少 `OPTIONS` 请求。
 
-路由和 CORS 都属于会随环境变化的运行配置。当前没有写在 Java 配置类中：local 模式保留 YAML 基线便于离线开发，
-remote 模式交给 Nacos 按环境调整，并利用配置动态刷新能力，不需要重新打包网关代码。
+路由和 CORS 都属于会随环境变化的运行配置。当前没有写在 Java 配置类中，而是保留在 YAML Profile 中；
+调整后需要重新打包并重启网关。
 
 ### 请求示例
 
@@ -333,14 +330,15 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 
 ## 配置说明
 
-`application.yaml` 保留端口、服务名和公共 profile include；local 模式下路由和 CORS 从 `config/application-dev.yaml` 加载。
-remote 模式下 Nacos dataId 固定为 `prod`，group 为 `service-gateway`。Nacos 地址统一来自
-`${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。
+`application.yaml` 保留端口、服务名和公共 profile include；路由和 CORS 分别从
+`config/application-dev.yaml` 与 `config/application-prod.yaml` 加载。Nacos 地址统一来自
+`${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+`spring.cloud.nacos.config.enabled` 保持为 `false`。
 
-本地 `dev,local` 组合通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
-`prod,remote` 组合保持公共配置中的 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。
+本地 `dev` profile 通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
+`prod` profile 保持 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。
 
-链路追踪配置来自 `service-config` 的 `zipkin` profile，由 `spring.profiles.include` 激活：
+链路追踪配置来自本模块的 `zipkin` profile，由 `spring.profiles.include` 激活：
 
 ```yaml
 management:
@@ -379,7 +377,6 @@ Hooks.enableAutomaticContextPropagation();
 ## 依赖
 
 - spring-cloud-starter-gateway-server-webflux
-- service-config
 - spring-boot-starter-actuator
 - spring-boot-starter-zipkin
 - springdoc-openapi-starter-webflux-ui（仅本地聚合 Swagger UI）
@@ -387,7 +384,7 @@ Hooks.enableAutomaticContextPropagation();
 - caffeine（LoadBalancer 缓存）
 - spring-cloud-starter-alibaba-sentinel / spring-cloud-alibaba-sentinel-gateway
 - spring-cloud-circuitbreaker-sentinel
-- spring-cloud-starter-alibaba-nacos-discovery / config
+- spring-cloud-starter-alibaba-nacos-discovery
 
 ## WebFlux 约束
 

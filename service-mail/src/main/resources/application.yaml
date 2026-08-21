@@ -1,12 +1,24 @@
 server:
   port: 9004
 
+zjc:
+  infrastructure:
+    host: ${INFRASTRUCTURE_HOST:129.204.226.206}
+
 spring:
   application:
     name: service-mail
   profiles:
-    active: ${zjc.config.env}
+    active: dev
     include:
       - api
       - jasypt
       - zipkin
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${zjc.infrastructure.host}:8848
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      config:
+        enabled: false

@@ -152,7 +152,7 @@ common 模块集成 `jasypt-spring-boot-starter`，所有引入 common 的模块
 
 ### 使用方式
 
-在 Nacos 配置中用 `ENC(xxx)` 替换明文：
+在业务服务的本地环境 Profile 中用 `ENC(xxx)` 替换明文：
 
 ```yaml
 spring:
@@ -175,10 +175,9 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数统一来自 `service-config` 的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest`
-工具完全一致。
-当前使用已适配 Spring Boot 4.x 的
-jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值，并便于集中管理。
+Jasypt 加密参数统一来自各业务服务的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest`
+工具完全一致。当前使用已适配 Spring Boot 4.x 的 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，
+避免依赖隐式默认值。
 
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
 > 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
@@ -225,7 +224,7 @@ Spring MVC、Spring Boot AutoConfigure、AspectJ、OpenFeign、SpringDoc common�
 | Swagger UI | `service-provider`、`service-consumer`、`service-mail`、`service-gateway` |
 | OpenFeign starter | `service-consumer` |
 | Sentinel Feign 熔断 | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`） |
-| Nacos / 配置中心 / 数据库 / 邮件 | 对应业务模块 |
+| Nacos Discovery / 数据库 / 邮件 | 对应业务模块 |
 
 这样公共库不会把 Tomcat、Swagger UI、Sentinel 等完整 starter 传递给所有下游模块，后续升级 Spring Boot / Spring Cloud
 时影响面更清晰。新增公共代码如果直接 import 了新的第三方包，应同步在 `service-common/pom.xml` 显式声明，而不是继续依赖传递依赖。

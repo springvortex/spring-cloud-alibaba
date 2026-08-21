@@ -41,7 +41,7 @@ public class OpenApiConfig {
                 .servers(List.of(server))
                 .info(new Info()
                         .title("Service Consumer API")
-                        .description("服务消费者接口文档：Feign 远程调用、Nacos 配置动态刷新")
+                        .description("服务消费者接口文档：Feign 远程调用与服务发现")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("jiancai.zhong"))

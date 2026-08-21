@@ -23,23 +23,10 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- Nacos 配置中心 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
         <!-- 公共模块（DTO、统一响应、全局异常处理、接口日志切面等） -->
         <dependency>
             <groupId>com.zjc</groupId>
             <artifactId>service-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-        <!-- 统一日志配置 -->
-        <dependency>
-            <groupId>com.zjc</groupId>
-            <artifactId>service-config</artifactId>
             <version>1.0.0</version>
         </dependency>
 
