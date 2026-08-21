@@ -1,0 +1,39 @@
+server:
+  port: 80
+
+spring:
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns:
+                  - '*'
+                allowed-headers:
+                  - '*'
+                allowed-methods:
+                  - '*'
+                allow-credentials: false
+                max-age: 3600
+          routes:
+            - id: provider-route
+              uri: lb://service-provider
+              predicates:
+                - Path=/api/*/provider/**
+              order: 1
+
+            - id: consumer-route
+              uri: lb://service-consumer
+              predicates:
+                - Path=/api/*/consumer/**
+              order: 2
+
+            - id: mail-route
+              uri: lb://service-mail
+              predicates:
+                - Path=/api/*/mail/**
+              order: 3

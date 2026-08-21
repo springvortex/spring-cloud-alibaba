@@ -5,7 +5,7 @@ spring:
   application:
     name: service-gateway
   profiles:
-    active: ${zjc.config.env},${zjc.config.source}
+    active: ${zjc.config.env}
     include:
       - zipkin
       - sentinel

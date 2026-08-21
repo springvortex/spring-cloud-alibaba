@@ -1,5 +1,10 @@
 spring:
   cloud:
+    nacos:
+      config:
+        enabled: false
+        import-check:
+          enabled: false
     openfeign:
       client:
         config:
@@ -16,3 +21,9 @@ logging:
   level:
     com.zjc.consumer.feign: debug
     com.zjc.common.api: debug
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -1,10 +1,9 @@
+server:
+  port: 9004
+
 spring:
-  cloud:
-    nacos:
-      config:
-        enabled: false
-        import-check:
-          enabled: false
+  application:
+    name: service-mail
   mail:
     host: smtp.email.cn
     port: 465
@@ -34,9 +33,3 @@ mybatis-plus:
     db-config:
       id-type: assign_id
       logic-delete-field: isDeleted
-
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true

@@ -1,0 +1,5 @@
+zjc:
+  api:
+    prefix: /api
+    versions:
+      - v1

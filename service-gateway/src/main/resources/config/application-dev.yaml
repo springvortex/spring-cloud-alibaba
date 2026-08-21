@@ -1,5 +1,10 @@
 spring:
   cloud:
+    nacos:
+      config:
+        enabled: false
+        import-check:
+          enabled: false
     gateway:
       server:
         webflux:
