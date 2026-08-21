@@ -5,12 +5,21 @@ spring:
   application:
     name: service-consumer
   cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
     openfeign:
       client:
         config:
           default:
             connect-timeout: 3000
             read-timeout: 5000
+
+management:
+  tracing:
+    export:
+      zipkin:
+        endpoint: http://127.0.0.1:9411/api/v2/spans
 
 feign:
   sentinel:

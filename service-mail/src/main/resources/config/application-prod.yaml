@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: service-mail
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
   mail:
     host: smtp.email.cn
     port: 465
@@ -19,9 +23,15 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${zjc.infrastructure.host}:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
+    url: jdbc:mysql://127.0.0.1:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
     username: spring_cloud_alibaba
     password: ENC(+JelvFJgFGin7M1gETrpUDP+uVrbI2Fc6IXDewsY6Zw=)
+
+management:
+  tracing:
+    export:
+      zipkin:
+        endpoint: http://127.0.0.1:9411/api/v2/spans
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**.xml

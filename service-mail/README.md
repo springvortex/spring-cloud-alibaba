@@ -84,7 +84,7 @@ com.zjc.mail
 - **dev**：加载 `src/main/resources/config/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
 - **prod**：加载 `src/main/resources/config/application-prod.yaml`，其中维护生产 SMTP 与数据源配置。
 
-Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+Nacos、MySQL 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 生产 Profile 中至少需要维护：
@@ -113,12 +113,12 @@ SMTP 密码使用 Jasypt 密文，启动时通过 `jasypt.encryptor.password` �
 management:
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+      probability: 1.0
     export:
       zipkin:
-        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
-      enabled: ${TRACING_ENABLED:true}
+        enabled: true
+        endpoint: http://129.204.226.206:9411/api/v2/spans
+      enabled: true
 ```
 
 ## 依赖

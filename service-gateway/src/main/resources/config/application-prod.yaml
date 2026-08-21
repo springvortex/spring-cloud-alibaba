@@ -5,6 +5,9 @@ spring:
   application:
     name: service-gateway
   cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
     gateway:
       server:
         webflux:
@@ -35,8 +38,14 @@ spring:
             - id: mail-route
               uri: lb://service-mail
               predicates:
-                - Path=/api/*/mail/**
+            - Path=/api/*/mail/**
               order: 3
+
+management:
+  tracing:
+    export:
+      zipkin:
+        endpoint: http://127.0.0.1:9411/api/v2/spans
 
 springdoc:
   api-docs:

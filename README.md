@@ -95,17 +95,17 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 
 ### 配置来源
 
-各服务使用本地配置文件，`app.env` 控制激活的环境 Profile：
+各服务使用本地配置文件，`application.yaml` 中默认激活 `dev` Profile：
 
 ```bash
 # dev：本地开发配置
-java -jar service-provider-1.0.0.jar --app.env=dev
+java -jar service-provider-1.0.0.jar
 
 # prod：生产配置
-java -jar service-provider-1.0.0.jar --app.env=prod
+java -jar service-provider-1.0.0.jar --spring.profiles.active=prod
 ```
 
-`app.env` 当前可取 `dev/prod`，部署时可通过 `APP_ENV` 环境变量注入。服务包内的
+当前支持 `dev/prod` 两个环境。服务包内的
 `application.yaml` 提供服务名、端口、Nacos Discovery 连接和公共 Profile；`config/application-{env}.yaml`
 提供各环境差异配置。
 
@@ -116,21 +116,13 @@ java -jar service-provider-1.0.0.jar --app.env=prod
 | `dev` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
 | `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由 |
 
-Nacos、MySQL、Zipkin 的主机地址统一引用 `${zjc.infrastructure.host}`，维护在各服务的 `application.yaml` 中，
-可通过 `INFRASTRUCTURE_HOST` 环境变量覆盖。当前代码默认指向既有开发服务器
-`129.204.226.206`；本地开发或切换部署环境时应显式覆盖，避免误连外部环境：
+Nacos、MySQL、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
+`prod` 使用 `127.0.0.1`。
 
-```powershell
-$env:INFRASTRUCTURE_HOST = "10.0.0.10"
-```
-
-`ZIPKIN_ENDPOINT` 仍可单独覆盖 Zipkin 上报地址；未设置时会基于 `zjc.infrastructure.host` 拼接默认值。
-
-Nacos 认证统一使用 `NACOS_USERNAME`、`NACOS_PASSWORD` 环境变量，默认值为 `nacos/nacos`，只作用于服务发现与注册；
-生产环境必须改为强密码，不要依赖默认账号。
+Nacos 认证固定为 `nacos/nacos`，只作用于服务发现与注册；如需更换账号，修改配置值后重新构建部署。
 
 各服务已移除 Nacos Config 依赖，并显式设置 `spring.cloud.nacos.config.enabled=false`。Nacos 仅提供服务发现与注册，
-连接地址为 `${zjc.infrastructure.host}:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
+连接地址按环境分别为 `129.204.226.206:8848` 与 `127.0.0.1:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
 `spring.cloud.nacos.discovery.enabled=false`。
 
 ### 数据库
@@ -179,22 +171,16 @@ spring-boot-starter-zipkin
 management:
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+      probability: 1.0
     export:
       zipkin:
-        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
-      enabled: ${TRACING_ENABLED:true}
+        enabled: true
+        endpoint: http://129.204.226.206:9411/api/v2/spans
+      enabled: true
 ```
 
-环境变量说明：
-
-| 环境变量                       | 默认值                               | 说明                                                                                                                         |
-|--------------------------------|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| `TRACING_SAMPLING_PROBABILITY` | `1.0`                                | 采样比例，`1.0` 表示全采样，`0.1` 表示约 10% 请求生成可导出的追踪数据                                                        |
-| `ZIPKIN_EXPORT_ENABLED`        | `true`                               | 是否导出 Zipkin                                                                                                              |
-| `ZIPKIN_ENDPOINT`              | 基于 `INFRASTRUCTURE_HOST` 拼接      | Zipkin 上报地址；显式设置时优先级高于统一主机变量                                                                           |
-| `TRACING_ENABLED`              | `true`                               | 当前配置在 `management.tracing.export.enabled` 下，只控制导出；若要整体关闭 tracing，应额外配置 `management.tracing.enabled` |
+上述配置固定开启链路导出并使用全采样；`prod` Profile 会将 Zipkin 地址覆盖为
+`http://127.0.0.1:9411/api/v2/spans`。
 
 排查方式：
 
@@ -258,7 +244,7 @@ service-provider/target/
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
 - 服务器能访问 Nacos（服务注册与发现）和 MySQL
 - 开启链路追踪时，服务器能访问 Zipkin；Zipkin 本身也应部署在内网
-- 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，环境差异通过 `APP_ENV` 和环境变量注入
+- 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，默认激活 `dev`，生产部署时切换到 `prod`
 
 ### 需要拷贝的文件
 

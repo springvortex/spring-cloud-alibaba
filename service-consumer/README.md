@@ -68,7 +68,7 @@ com.zjc.consumer
 配置由本地 Profile 控制，默认激活 `dev`。`application-dev.yaml` 维护开发环境 OpenFeign 与 Swagger 配置，
 `application-prod.yaml` 维护生产环境 OpenFeign 超时配置。
 
-Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+Nacos 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 生产环境 OpenFeign 超时配置结构如下，开发环境基线为 1000/2000 ms：
@@ -95,12 +95,12 @@ spring:
 management:
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+      probability: 1.0
     export:
       zipkin:
-        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
-      enabled: ${TRACING_ENABLED:true}
+        enabled: true
+        endpoint: http://129.204.226.206:9411/api/v2/spans
+      enabled: true
 ```
 
 排查远程调用时，重点查看同一个 `traceId` 下 Consumer 发起请求和 Provider 处理请求的 span 耗时。

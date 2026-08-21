@@ -100,7 +100,7 @@ com.zjc.provider
 - **dev**：加载 `src/main/resources/config/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
 - **prod**：加载 `src/main/resources/config/application-prod.yaml`，其中维护生产数据源与文档开关。
 
-Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 ## 日志与链路追踪
@@ -113,12 +113,12 @@ Nacos 地址统一来自 `${zjc.infrastructure.host}:8848`，可通过 `INFRASTR
 management:
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+      probability: 1.0
     export:
       zipkin:
-        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
-      enabled: ${TRACING_ENABLED:true}
+        enabled: true
+        endpoint: http://129.204.226.206:9411/api/v2/spans
+      enabled: true
 ```
 
 排查请求时，先用日志中的 `traceId` 聚合本地日志，再到 Zipkin 查看完整调用树和耗时分布。

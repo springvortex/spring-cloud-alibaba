@@ -331,8 +331,8 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 ## 配置说明
 
 `application.yaml` 保留端口、服务名和公共 profile include；路由和 CORS 分别从
-`config/application-dev.yaml` 与 `config/application-prod.yaml` 加载。Nacos 地址统一来自
-`${zjc.infrastructure.host}:8848`，可通过 `INFRASTRUCTURE_HOST` 覆盖。Nacos 仅用于服务注册与发现，
+`config/application-dev.yaml` 与 `config/application-prod.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
+dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 本地 `dev` profile 通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
@@ -344,12 +344,12 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 management:
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+      probability: 1.0
     export:
       zipkin:
-        enabled: ${ZIPKIN_EXPORT_ENABLED:true}
-        endpoint: "${ZIPKIN_ENDPOINT:http://${zjc.infrastructure.host}:9411/api/v2/spans}"
-      enabled: ${TRACING_ENABLED:true}
+        enabled: true
+        endpoint: http://129.204.226.206:9411/api/v2/spans
+      enabled: true
 ```
 
 Gateway 是 WebFlux 异步链路，`ObservabilityConfiguration` 启动时调用：

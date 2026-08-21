@@ -1,5 +1,8 @@
 spring:
   cloud:
+    nacos:
+      discovery:
+        server-addr: 129.204.226.206:8848
     gateway:
       server:
         webflux:
@@ -71,3 +74,9 @@ springdoc:
         url: /api/v1/consumer/v3/api-docs/v1-consumer
       - name: Mail v1
         url: /api/v1/mail/v3/api-docs/v1-mail
+
+management:
+  tracing:
+    export:
+      zipkin:
+        endpoint: http://129.204.226.206:9411/api/v2/spans

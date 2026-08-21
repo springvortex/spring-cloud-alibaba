@@ -1,5 +1,8 @@
 spring:
   cloud:
+    nacos:
+      discovery:
+        server-addr: 129.204.226.206:8848
     openfeign:
       client:
         config:
@@ -16,6 +19,12 @@ logging:
   level:
     com.zjc.consumer.feign: debug
     com.zjc.common.api: debug
+
+management:
+  tracing:
+    export:
+      zipkin:
+        endpoint: http://129.204.226.206:9411/api/v2/spans
 
 springdoc:
   api-docs:
