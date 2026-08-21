@@ -77,6 +77,8 @@ springdoc:
 
 management:
   tracing:
+    sampling:
+      probability: 1.0
     export:
       zipkin:
         endpoint: http://129.204.226.206:9411/api/v2/spans

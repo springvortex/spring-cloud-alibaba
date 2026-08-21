@@ -105,20 +105,21 @@ java -jar service-provider-1.0.0.jar
 java -jar service-provider-1.0.0.jar --spring.profiles.active=prod
 ```
 
-当前支持 `dev/prod` 两个环境。服务包内的 `application.yaml` 提供服务名、端口、默认环境、
-Nacos 认证和公共 Profile；`application-{env}.yaml` 提供各环境差异配置。
+当前支持 `dev/prod` 两个环境。服务包内的 `application.yaml` 提供服务名、端口、默认环境和公共 Profile；
+Nacos 公共认证来自 `config/application-nacos.yaml`，`application-{env}.yaml` 提供各环境差异配置。
 
 项目当前主要使用两组环境 Profile：
 
 | Profile | 说明 |
 |---------|------|
 | `dev` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
-| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由 |
+| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由，也不开放通配 CORS |
 
 Nacos、MySQL、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
 `prod` 使用 `127.0.0.1`。
 
-Nacos 认证固定为 `nacos/nacos`，只作用于服务发现与注册；如需更换账号，修改配置值后重新构建部署。
+Nacos 认证只作用于服务发现与注册。`dev` 与 `prod` 均使用 `config/application-nacos.yaml`
+中的同一组账号密码；`application-{env}.yaml` 只维护各环境的服务器地址差异。
 
 各服务已移除 Nacos Config 依赖，并显式设置 `spring.cloud.nacos.config.enabled=false`。Nacos 仅提供服务发现与注册，
 连接地址按环境分别为 `129.204.226.206:8848` 与 `127.0.0.1:8848`；如需完全脱离 Nacos 运行单个服务，可显式设置
@@ -178,8 +179,8 @@ management:
       enabled: true
 ```
 
-上述配置固定开启链路导出并使用全采样；`prod` Profile 会将 Zipkin 地址覆盖为
-`http://127.0.0.1:9411/api/v2/spans`。
+上述配置固定开启链路导出；`dev` Profile 使用全采样，`prod` Profile 使用 `0.1` 采样率，
+并将 Zipkin 地址覆盖为 `http://127.0.0.1:9411/api/v2/spans`。
 
 排查方式：
 
@@ -408,7 +409,7 @@ java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
 ```
 ======================================
   Jasypt 加密工具
-  算法: PBEWithMD5AndDES
+  算法: PBEWithHMACSHA512AndAES_256
 ======================================
 请输入要加密的明文: my-db-password
 
@@ -468,19 +469,19 @@ Jasypt 加密参数（算法、迭代次数、salt 生成器等）统一来自�
 ```yaml
 jasypt:
   encryptor:
-    algorithm: PBEWithMD5AndDES
-    key-obtention-iterations: 1000
+    algorithm: PBEWithHMACSHA512AndAES_256
+    key-obtention-iterations: 100000
     pool-size: 1
     provider-name: SunJCE
     salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
-    iv-generator-classname: org.jasypt.iv.NoIvGenerator
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
     string-output-type: base64
 ```
 
 > **注意**：jasypt-spring-boot-starter 4.0.4 已适配 Spring Boot 4.x。项目仍显式声明这些参数，避免依赖隐式默认值。
 
 > **安全跟踪**：`CVE-2026-9370 / GHSA-jgj7-c8vj-w563` 标记 Jasypt 4.0.4 的 GCM 密钥派生存在可预测 salt 风险，
-> 上游暂未发布 fixed 版本。当前项目未使用 GCM 默认配置，并显式配置 `RandomSaltGenerator`；生产环境仍应确保
+> 上游暂未发布 fixed 版本。当前项目显式配置 `RandomSaltGenerator` 与 `RandomIvGenerator`，不依赖默认派生参数；生产环境仍应确保
 > `JASYPT_ENCRYPTOR_PASSWORD` 只通过环境变量或启动参数注入，并关注上游新版本，发布后立即升级验证。
 
 ### 本地开发（IDEA）
@@ -534,9 +535,9 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置管理
 
-所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境和 Nacos 认证，并通过
-`spring.profiles.include` 引入 `api`、`jasypt`、`zipkin` 等公共 profile；根目录 `application-dev.yaml`
-与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin` 和 `sentinel`。
+所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境和稳定公共配置，并通过
+`spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin` 等公共 profile；根目录 `application-dev.yaml`
+与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `nacos`、`zipkin` 和 `sentinel`。
 
 Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
 需要重新打包并重启对应服务。

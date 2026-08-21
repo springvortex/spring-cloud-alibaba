@@ -196,13 +196,13 @@ Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源�
 - `stat-interval-ms`：熔断统计窗口。
 - `recovery-seconds`：熔断后的半开放恢复等待时间。
 
-`prod` Profile 会加载路由、CORS 等环境差异；Sentinel 公共配置随 `sentinel` profile 从应用包内加载。
+`prod` Profile 会加载地址、追踪与文档开关等环境差异；Sentinel 公共配置随 `sentinel` profile 从应用包内加载。
 规则在应用启动时加载，调整阈值后需要重启网关。当前实现是应用内规则基线，尚未接入 Sentinel Dashboard
 或 Nacos Sentinel datasource，规则调整后如需动态推送，可在此基础上继续扩展 datasource。
 
 ### 跨域配置
 
-CORS 与路由相同：开发环境使用 `application-dev.yaml`，生产环境使用 `application-prod.yaml`：
+CORS 仅在开发环境使用 `application-dev.yaml` 开启：
 
 ```yaml
 spring:
@@ -225,13 +225,14 @@ spring:
 
 配置说明：
 
-- `allowed-origin-patterns`：允许的来源，当前开发环境使用通配符。
+- `allowed-origin-patterns`：允许的来源，仅开发环境使用通配符。
 - `allowed-methods` / `allowed-headers`：允许全部常用方法和请求头。
 - `allow-credentials: false`：不允许携带 Cookie 等凭证；如果改为 `true`，来源不能继续使用 `*`，必须配置明确域名。
 - `max-age: 3600`：浏览器对预检请求结果缓存 1 小时，减少 `OPTIONS` 请求。
 
-路由和 CORS 都属于会随环境变化的运行配置。当前没有写在 Java 配置类中，而是保留在 YAML Profile 中；
-调整后需要重新打包并重启网关。
+路由是列表配置，dev 的 OpenAPI 路由会和业务路由一起完整声明，避免 profile 覆盖基础列表索引。生产环境默认不配置
+`globalcors`，即不开放浏览器跨域访问；如果前端独立域名上线，应在 `application-prod.yaml` 中加入明确的
+真实来源，而不是恢复通配符。调整路由或 CORS 后需要重新打包并重启网关。
 
 ### 请求示例
 
@@ -330,10 +331,11 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 
 ## 配置说明
 
-`application.yaml` 保留端口、服务名和公共 profile include；路由和 CORS 分别从
-根目录 `application-dev.yaml` 与 `application-prod.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
+`application.yaml` 保留端口、服务名、公共业务路由和公共 profile include；OpenAPI 路由与开发环境 CORS 从
+根目录 `application-dev.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
 dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
+生产环境不配置 `globalcors`，只适合同域部署或由反向代理统一收口；追踪采样率在 `prod` 中覆盖为 `0.1`。
 
 本地 `dev` profile 通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
 `prod` profile 保持 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。

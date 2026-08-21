@@ -7,7 +7,7 @@ spring:
     host: smtp.email.cn
     port: 465
     username: jiancai.zhong@email.cn
-    password: ENC(rgWg9f0/hLk7WCJq8pCJcQEvK0Cb5+Er0CDXL1kBGZE=)
+    password: ENC(33JaNAVEeFRjVMIDxm7u1GJoJ5Xf3W8P5lbTVq5yKIz9leOhlPlEee0SHdn8ggBXeWk/8bae/M0iYdG3rA2CAg==)
     default-encoding: UTF-8
     properties:
       mail:
@@ -20,10 +20,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
     username: spring_cloud_alibaba
-    password: ENC(+JelvFJgFGin7M1gETrpUDP+uVrbI2Fc6IXDewsY6Zw=)
+    password: ENC(QY7YyNKFugvdiuwl1peaCI8l82z0C+b3gSxKjn6zxCFgDIAn1briCreYQ5IbxxLU7wUexj667XkQE6CJj2+x3g==)
 
 management:
   tracing:
+    sampling:
+      probability: 0.1
     export:
       zipkin:
         endpoint: http://127.0.0.1:9411/api/v2/spans
@@ -32,7 +34,6 @@ mybatis-plus:
   mapper-locations: classpath:/mapper/**.xml
   type-aliases-package: com.zjc.mail
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
   global-config:
     db-config:

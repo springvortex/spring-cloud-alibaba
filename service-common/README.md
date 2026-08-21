@@ -175,9 +175,9 @@ java -jar service-provider-1.0.0.jar
 
 ### 加密算法配置
 
-Jasypt 加密参数统一来自各业务服务的 `config/application-jasypt.yaml`。算法为 `PBEWithMD5AndDES`，与 `JasyptTest`
-工具完全一致。当前使用已适配 Spring Boot 4.x 的 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，
-避免依赖隐式默认值。
+Jasypt 加密参数统一来自各业务服务的 `config/application-jasypt.yaml`。算法为
+`PBEWithHMACSHA512AndAES_256`，并使用 100000 次密钥派生迭代、随机盐和随机 IV，与 `JasyptTest` 工具完全一致。
+当前使用已适配 Spring Boot 4.x 的 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值。
 
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
 > 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。

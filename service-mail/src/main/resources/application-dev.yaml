@@ -4,26 +4,30 @@ spring:
       discovery:
         server-addr: 129.204.226.206:8848
   mail:
-    host: smtp.email.cn
-    port: 465
-    username: jiancai.zhong@email.cn
-    password: ENC(rgWg9f0/hLk7WCJq8pCJcQEvK0Cb5+Er0CDXL1kBGZE=)
+    host: 129.204.226.206
+    port: 1025
+    username: dev@localhost
+    password: ""
     default-encoding: UTF-8
     properties:
       mail:
         smtp:
-          auth: true
+          auth: false
           ssl:
-            enable: true
+            enable: false
+          starttls:
+            enable: false
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://129.204.226.206:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
     username: spring_cloud_alibaba
-    password: ENC(+JelvFJgFGin7M1gETrpUDP+uVrbI2Fc6IXDewsY6Zw=)
+    password: ENC(MWH6hl4MZQrWG5AAAlOz6GEckzQiscn7JS4PGjb22oAGgkIo2bRsX2yBTebFOKP9T2gCra9uooBZN/SetNnnaQ==)
 
 management:
   tracing:
+    sampling:
+      probability: 1.0
     export:
       zipkin:
         endpoint: http://129.204.226.206:9411/api/v2/spans

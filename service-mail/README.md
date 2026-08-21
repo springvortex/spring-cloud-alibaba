@@ -81,7 +81,7 @@ com.zjc.mail
 
 配置由本地 Profile 控制，默认激活 `dev`。
 
-- **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护 SMTP、数据源和 MyBatis-Plus 配置。
+- **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护本地测试 SMTP、数据源和 MyBatis-Plus 配置。
 - **prod**：加载 `src/main/resources/application-prod.yaml`，其中维护生产 SMTP 与数据源配置。
 
 Nacos、MySQL 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
@@ -103,6 +103,8 @@ spring:
 
 SMTP 密码使用 Jasypt 密文，启动时通过 `jasypt.encryptor.password` 或 `JASYPT_ENCRYPTOR_PASSWORD` 注入密钥。
 
+开发环境连接共享 MailHog `129.204.226.206:1025`，不认证、不启用 SSL，避免调试时发送真实邮件。
+
 ## 日志与链路追踪
 
 本模块使用 Spring Boot 默认日志配置，日志输出到服务进程标准输出。
@@ -120,6 +122,8 @@ management:
         endpoint: http://129.204.226.206:9411/api/v2/spans
       enabled: true
 ```
+
+`prod` Profile 会将采样率覆盖为 `0.1`，并关闭 MyBatis-Plus SQL 标准输出。
 
 ## 依赖
 

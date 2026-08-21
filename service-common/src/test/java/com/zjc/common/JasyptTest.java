@@ -30,9 +30,9 @@ import java.util.Scanner;
 public class JasyptTest {
 
     /**
-     * 加密算法，与 jasypt-spring-boot-starter 默认值保持一致。
+     * 加密算法，与各服务的 config/application-jasypt.yaml 保持一致。
      */
-    private static final String ALGORITHM = "PBEWithMD5AndDES";
+    private static final String ALGORITHM = "PBEWithHMACSHA512AndAES_256";
 
     /**
      * 输出前缀，与 Jasypt 默认 {@code ENC(} 格式一致。
@@ -77,11 +77,11 @@ public class JasyptTest {
         SimpleStringPBEConfig config = new SimpleStringPBEConfig();
         config.setPassword(password);
         config.setAlgorithm(ALGORITHM);
-        config.setKeyObtentionIterations("1000");
+        config.setKeyObtentionIterations("100000");
         config.setPoolSize("1");
         config.setProviderName("SunJCE");
         config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
-        config.setIvGeneratorClassName("org.jasypt.iv.NoIvGenerator");
+        config.setIvGeneratorClassName("org.jasypt.iv.RandomIvGenerator");
         config.setStringOutputType("base64");
         encryptor.setConfig(config);
         return encryptor;
