@@ -65,8 +65,8 @@ com.zjc.consumer
 
 ## 配置说明
 
-配置由本地 Profile 控制，默认激活 `dev`。`application-dev.yaml` 维护开发环境 OpenFeign 与 Swagger 配置，
-`application-prod.yaml` 维护生产环境 OpenFeign 超时配置。
+配置由本地 Profile 控制，默认激活 `dev`。`src/main/resources/application-dev.yaml` 维护开发环境
+OpenFeign 与 Swagger 配置，`src/main/resources/application-prod.yaml` 维护生产环境 OpenFeign 超时配置。
 
 Nacos 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。

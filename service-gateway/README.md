@@ -42,8 +42,8 @@ com.zjc.gateway
 
 ## 路由配置
 
-开发环境路由规则位于 `src/main/resources/config/application-dev.yaml`，生产环境路由规则位于
-`src/main/resources/config/application-prod.yaml`。修改路由后需要重新打包并重启网关。
+开发环境路由规则位于 `src/main/resources/application-dev.yaml`，生产环境路由规则位于
+`src/main/resources/application-prod.yaml`。修改路由后需要重新打包并重启网关。
 
 当前业务服务统一使用 `/api/{版本}/{模块}` 路径。由于下游服务本身已经接收完整前缀， 网关只按模块转发，不做 `RewritePath`
 剥离前缀：
@@ -202,7 +202,7 @@ Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源�
 
 ### 跨域配置
 
-CORS 与路由相同：开发环境使用 `config/application-dev.yaml`，生产环境使用 `config/application-prod.yaml`：
+CORS 与路由相同：开发环境使用 `application-dev.yaml`，生产环境使用 `application-prod.yaml`：
 
 ```yaml
 spring:
@@ -331,7 +331,7 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 ## 配置说明
 
 `application.yaml` 保留端口、服务名和公共 profile include；路由和 CORS 分别从
-`config/application-dev.yaml` 与 `config/application-prod.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
+根目录 `application-dev.yaml` 与 `application-prod.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
 dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 

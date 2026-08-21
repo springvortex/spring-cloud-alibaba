@@ -97,8 +97,8 @@ com.zjc.provider
 
 配置由本地 Profile 控制，默认激活 `dev`。
 
-- **dev**：加载 `src/main/resources/config/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
-- **prod**：加载 `src/main/resources/config/application-prod.yaml`，其中维护生产数据源与文档开关。
+- **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
+- **prod**：加载 `src/main/resources/application-prod.yaml`，其中维护生产数据源与文档开关。
 
 基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。

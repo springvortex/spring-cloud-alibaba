@@ -105,9 +105,8 @@ java -jar service-provider-1.0.0.jar
 java -jar service-provider-1.0.0.jar --spring.profiles.active=prod
 ```
 
-当前支持 `dev/prod` 两个环境。服务包内的
-`application.yaml` 提供服务名、端口、Nacos Discovery 连接和公共 Profile；`config/application-{env}.yaml`
-提供各环境差异配置。
+当前支持 `dev/prod` 两个环境。服务包内的 `application.yaml` 提供服务名、端口、默认环境、
+Nacos 认证和公共 Profile；`application-{env}.yaml` 提供各环境差异配置。
 
 项目当前主要使用两组环境 Profile：
 
@@ -535,9 +534,9 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置管理
 
-所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境、Nacos Discovery 连接，并通过
-`spring.profiles.include` 引入 `api`、`jasypt`、`zipkin` 等公共 profile；`config/application-dev.yaml` 与
-`config/application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin` 和 `sentinel`。
+所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境和 Nacos 认证，并通过
+`spring.profiles.include` 引入 `api`、`jasypt`、`zipkin` 等公共 profile；根目录 `application-dev.yaml`
+与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `zipkin` 和 `sentinel`。
 
 Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
 需要重新打包并重启对应服务。
