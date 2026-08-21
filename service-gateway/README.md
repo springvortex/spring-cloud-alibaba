@@ -15,7 +15,7 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 
 - 统一路由入口，将请求分发到下游各服务
 - 在本地 dev/prod Profile 中维护路由基线
-- 统一配置 CORS 跨域策略
+- 仅在开发环境启用 CORS 跨域策略
 - 负载均衡（LoadBalancer + Caffeine 缓存）
 - Sentinel 接口限流、单 IP 限流与路由熔断
 - 输出请求开始、结束、耗时与结束信号日志
@@ -331,8 +331,9 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 
 ## 配置说明
 
-`application.yaml` 保留端口、服务名、公共业务路由和公共 profile include；OpenAPI 路由与开发环境 CORS 从
-根目录 `application-dev.yaml` 加载。Nacos 与 Zipkin 地址按环境固定：
+`application.yaml` 保留端口、服务名和公共 profile include。业务路由在 `application-dev.yaml` 和
+`application-prod.yaml` 中完整声明：dev 额外包含 OpenAPI 路由和 CORS，prod 只保留业务路由。
+Nacos 与 Zipkin 地址按环境固定：
 dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 生产环境不配置 `globalcors`，只适合同域部署或由反向代理统一收口；追踪采样率在 `prod` 中覆盖为 `0.1`。

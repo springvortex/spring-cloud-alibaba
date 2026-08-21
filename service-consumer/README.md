@@ -66,7 +66,8 @@ com.zjc.consumer
 ## 配置说明
 
 配置由本地 Profile 控制，默认激活 `dev`。`src/main/resources/application-dev.yaml` 维护开发环境
-OpenFeign 与 Swagger 配置，`src/main/resources/application-prod.yaml` 维护生产环境 OpenFeign 超时配置。
+Nacos、Zipkin、OpenFeign 与 Swagger 配置，`src/main/resources/application-prod.yaml` 维护生产环境
+Nacos、Zipkin、OpenFeign 超时与文档开关。
 
 Nacos 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
@@ -104,6 +105,7 @@ management:
 ```
 
 排查远程调用时，重点查看同一个 `traceId` 下 Consumer 发起请求和 Provider 处理请求的 span 耗时。
+`prod` Profile 会将采样率覆盖为 `0.1`，并关闭接口文档。
 
 ## 依赖
 

@@ -97,10 +97,10 @@ com.zjc.provider
 
 配置由本地 Profile 控制，默认激活 `dev`。
 
-- **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护本地开发数据源、MyBatis-Plus 和 Swagger 开关。
+- **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护共享开发环境数据源、MyBatis-Plus 和 Swagger 开关。
 - **prod**：加载 `src/main/resources/application-prod.yaml`，其中维护生产数据源与文档开关。
 
-基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
+基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`；MySQL 均要求 SSL。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 ## 日志与链路追踪
@@ -122,6 +122,7 @@ management:
 ```
 
 排查请求时，先用日志中的 `traceId` 聚合本地日志，再到 Zipkin 查看完整调用树和耗时分布。
+`prod` Profile 会将采样率覆盖为 `0.1`，并关闭接口文档。
 
 ## 依赖
 

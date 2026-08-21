@@ -157,7 +157,7 @@ common 模块集成 `jasypt-spring-boot-starter`，所有引入 common 的模块
 ```yaml
 spring:
   datasource:
-    password: ENC(g48ZFqzM2yvuAMjOMw7z77DB7jTw9JjTkcJcuvo+Zkc=)
+    password: ENC(your-encrypted-password)
 ```
 
 启动服务时传入密钥（不写入配置文件）：

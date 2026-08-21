@@ -54,12 +54,18 @@ spring-cloud-alibaba
 | Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包                       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
 | MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录                     | 官方安装包或 Docker；生产环境仅内网访问                                         |
 | Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现                         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
-| Zipkin     | 可选，链路追踪建议安装 | 9411                   | 展示 trace/span 调用链                 | 官方发行包或 Docker；不安装时可将导出开关设为 false                             |
-| SMTP 服务  | service-mail 必需      | 视服务商而定           | 发送邮件                               | 使用已有邮箱服务商 SMTP，凭据放本地 Profile 并用 Jasypt 加密                    |
+| Zipkin     | 是，当前配置已启用导出 | 9411                   | 展示 trace/span 调用链                 | dev 使用共享环境；prod 与应用部署在同一台服务器并通过内网访问                    |
+| MailHog    | service-mail dev 必需 | 1025                   | 接收开发环境测试邮件                   | dev 使用共享 MailHog，不向真实邮箱发信                                            |
+| SMTP 服务  | service-mail prod 必需 | 视服务商而定           | 发送生产邮件                           | 使用已有邮箱服务商 SMTP，凭据放本地 Profile 并用 Jasypt 加密                      |
 
 ### 组件安装
 
-基础组件只需安装在开发机或内网服务器，不需要部署到每个应用目录。以下命令适合本地开发验证：
+当前 `dev` Profile 直接连接共享开发环境：Nacos `129.204.226.206:8848`、MySQL
+`129.204.226.206:3306`、Zipkin `129.204.226.206:9411`、MailHog `129.204.226.206:1025`。
+本地开发一般不需要再启动这些组件，只需确认网络可达并准备数据库结构。
+
+如需搭建一套完全隔离的本地组件，可参考以下命令；由于项目配置使用固定地址，搭建后需要把对应服务的
+`application-dev.yaml` 地址改为 `127.0.0.1`：
 
 ```bash
 # MySQL 8
@@ -79,17 +85,23 @@ docker run -d --name nacos \
 docker run -d --name zipkin \
   -p 9411:9411 \
   openzipkin/zipkin:3
+
+# MailHog（service-mail dev 使用）
+docker run -d --name mailhog \
+  -p 1025:1025 -p 8025:8025 \
+  mailhog/mailhog
 ```
 
 Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解压后按官方脚本启动；启动前确认 `java -version` 为 Java 21+。
 
 上面的 Zipkin 容器默认将数据保存在内存中，重启后调用链会丢失；生产环境应配置 Elasticsearch、MySQL 等存储后端，并与应用放在同一内网。
 
-组件启动后：
+使用共享开发环境时确认：
 
-1. MySQL 创建数据库 `spring_cloud_alibaba` 并导入业务表。
-2. Zipkin 打开 `http://127.0.0.1:9411` 确认可访问。
-3. 需要访问公网组件时，只放行必要入口；Nacos、MySQL、Zipkin 不建议直接暴露公网。
+1. MySQL `spring_cloud_alibaba` 数据库和业务表已初始化。
+2. Zipkin 打开 `http://129.204.226.206:9411` 确认可访问。
+3. Nacos、MySQL、Zipkin、MailHog 端口从开发机可访问。
+4. Nacos、MySQL、Zipkin、MailHog 不建议作为生产入口暴露公网。
 
 当前仓库没有维护数据库初始化 SQL 文件，业务表结构需要从现有环境导出，或自行按下方表清单创建后再导入数据。
 
@@ -98,7 +110,7 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 各服务使用本地配置文件，`application.yaml` 中默认激活 `dev` Profile：
 
 ```bash
-# dev：本地开发配置
+# dev：共享开发环境配置
 java -jar service-provider-1.0.0.jar
 
 # prod：生产配置
@@ -112,7 +124,7 @@ Nacos 公共认证来自 `config/application-nacos.yaml`，`application-{env}.ya
 
 | Profile | 说明 |
 |---------|------|
-| `dev` | 本地开发配置；开启 SpringDoc 与网关聚合 Swagger UI |
+| `dev` | 共享开发环境配置；开启 SpringDoc 与网关聚合 Swagger UI |
 | `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由，也不开放通配 CORS |
 
 Nacos、MySQL、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
@@ -139,7 +151,7 @@ Nacos 认证只作用于服务发现与注册。`dev` 与 `prod` 均使用 `conf
 
 ### 启动顺序
 
-1. 启动 MySQL、Nacos；如需查看调用链，同时启动 Zipkin
+1. 确认 Nacos、MySQL、Zipkin 可用；dev 使用共享环境，Mail 服务还需共享 MailHog
 2. `service-provider`（业务核心）
 3. `service-gateway`（统一入口，建议启动）
 4. `service-consumer` / `service-mail`（按需）
@@ -242,8 +254,8 @@ service-provider/target/
 ### 前提条件
 
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
-- 服务器能访问 Nacos（服务注册与发现）和 MySQL
-- 开启链路追踪时，服务器能访问 Zipkin；Zipkin 本身也应部署在内网
+- 生产服务器已运行 Nacos、MySQL 和 Zipkin，服务通过 `127.0.0.1` 访问
+- 生产 SMTP 账号与 Jasypt 密钥已准备完成
 - 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，默认激活 `dev`，生产部署时切换到 `prod`
 
 ### 需要拷贝的文件
@@ -414,7 +426,7 @@ java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
 请输入要加密的明文: my-db-password
 
 明文: my-db-password
-密文: ENC(g48ZFqzM2yvuAMjOMw7z77DB7jTw9JjTkcJcuvo+Zkc=)
+密文: ENC(your-encrypted-password)
 
 验证解密: my-db-password
 匹配: true
@@ -429,7 +441,7 @@ java -Xms512m -Xmx1024m -jar service-provider-1.0.0.jar
 ```yaml
 spring:
   datasource:
-    password: ENC(g48ZFqzM2yvuAMjOMw7z77DB7jTw9JjTkcJcuvo+Zkc=)
+    password: ENC(your-encrypted-password)
 ```
 
 Jasypt 会在应用启动时自动检测 `ENC()` 包裹的值并解密。
@@ -535,9 +547,10 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置管理
 
-所有业务配置都随服务 JAR 打包。各服务 `application.yaml` 保留服务名、端口、默认环境和稳定公共配置，并通过
-`spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin` 等公共 profile；根目录 `application-dev.yaml`
-与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，只 include `nacos`、`zipkin` 和 `sentinel`。
+所有业务配置都随服务 JAR 打包。各服务 `src/main/resources/application.yaml` 保留服务名、端口、默认环境和公共 profile include，
+并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin` 等公共 profile；同目录下的
+`application-dev.yaml` 与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，
+只 include `nacos`、`zipkin` 和 `sentinel`。
 
 Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
 需要重新打包并重启对应服务。
