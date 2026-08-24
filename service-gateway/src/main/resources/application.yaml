@@ -10,3 +10,4 @@ spring:
       - zipkin
       - sentinel
       - nacos
+      - cors

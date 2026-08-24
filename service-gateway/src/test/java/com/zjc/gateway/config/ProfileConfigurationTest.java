@@ -71,9 +71,27 @@ class ProfileConfigurationTest {
     @Test
     @DisplayName("prod 使用安全基线")
     void prodUsesSecureBaseline() {
+        Map<String, Object> application = loadResource("application.yaml");
+        Map<String, Object> dev = loadProfile("application-dev.yaml");
         Map<String, Object> prod = loadProfile("application-prod.yaml");
 
+        assertThat(((List<?>) path(application, "spring.profiles.include")).stream())
+                .anyMatch("cors"::equals);
+        assertThat(path(dev, "spring.cloud.gateway.server.webflux.globalcors")).isNull();
         assertThat(path(prod, "spring.cloud.gateway.server.webflux.globalcors")).isNull();
+        Map<String, Object> cors = loadResource("config/application-cors.yaml");
+        assertThat(path(cors,
+                "spring.cloud.gateway.server.webflux.globalcors.cors-configurations.[/**].allowed-origin-patterns"))
+                .isEqualTo(List.of("*"));
+        assertThat(path(cors,
+                "spring.cloud.gateway.server.webflux.globalcors.cors-configurations.[/**].allowed-headers"))
+                .isEqualTo(List.of("*"));
+        assertThat(path(cors,
+                "spring.cloud.gateway.server.webflux.globalcors.cors-configurations.[/**].allowed-methods"))
+                .isEqualTo(List.of("*"));
+        assertThat(path(cors,
+                "spring.cloud.gateway.server.webflux.globalcors.cors-configurations.[/**].allow-credentials"))
+                .isEqualTo(false);
         assertThat(path(prod, "management.tracing.sampling.probability")).isEqualTo(0.1D);
         assertThat(path(prod, "spring.cloud.nacos.discovery.username")).isNull();
         assertThat(path(prod, "spring.cloud.nacos.discovery.password")).isNull();

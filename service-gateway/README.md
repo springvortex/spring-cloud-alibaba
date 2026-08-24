@@ -15,7 +15,7 @@ API 网关，基于 Spring Cloud Gateway（WebFlux），统一入口与路由。
 
 - 统一路由入口，将请求分发到下游各服务
 - 在本地 dev/prod Profile 中维护路由基线
-- 仅在开发环境启用 CORS 跨域策略
+- 启用 CORS 跨域策略，允许所有来源但不允许凭证
 - 负载均衡（LoadBalancer + Caffeine 缓存）
 - Sentinel 接口限流、单 IP 限流与路由熔断
 - 输出请求开始、结束、耗时与结束信号日志
@@ -202,7 +202,8 @@ Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源�
 
 ### 跨域配置
 
-CORS 仅在开发环境使用 `application-dev.yaml` 开启：
+CORS 公共配置位于 `src/main/resources/config/application-cors.yaml`，并在 `application.yaml`
+中通过 `cors` profile 激活，dev 与 prod 共用：
 
 ```yaml
 spring:
@@ -225,14 +226,14 @@ spring:
 
 配置说明：
 
-- `allowed-origin-patterns`：允许的来源，仅开发环境使用通配符。
+- `allowed-origin-patterns`：允许的来源，当前 dev 与 prod 都使用通配符。
 - `allowed-methods` / `allowed-headers`：允许全部常用方法和请求头。
 - `allow-credentials: false`：不允许携带 Cookie 等凭证；如果改为 `true`，来源不能继续使用 `*`，必须配置明确域名。
 - `max-age: 3600`：浏览器对预检请求结果缓存 1 小时，减少 `OPTIONS` 请求。
 
-路由是列表配置，dev 的 OpenAPI 路由会和业务路由一起完整声明，避免 profile 覆盖基础列表索引。生产环境默认不配置
-`globalcors`，即不开放浏览器跨域访问；如果前端独立域名上线，应在 `application-prod.yaml` 中加入明确的
-真实来源，而不是恢复通配符。调整路由或 CORS 后需要重新打包并重启网关。
+路由是列表配置，dev 的 OpenAPI 路由会和业务路由一起完整声明，避免 profile 覆盖基础列表索引。dev/prod 都开放
+`globalcors`，允许所有来源、方法和请求头，但 `allow-credentials` 固定为 `false`。如果后续需要携带 Cookie
+等凭证，应改为明确的真实来源。调整路由或 CORS 后需要重新打包并重启网关。
 
 ### 请求示例
 
@@ -332,11 +333,11 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 ## 配置说明
 
 `application.yaml` 保留端口、服务名和公共 profile include。业务路由在 `application-dev.yaml` 和
-`application-prod.yaml` 中完整声明：dev 额外包含 OpenAPI 路由和 CORS，prod 只保留业务路由。
+`application-prod.yaml` 中完整声明：dev 额外包含 OpenAPI 路由，prod 只保留业务路由。
 Nacos 与 Zipkin 地址按环境固定：
 dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
-生产环境不配置 `globalcors`，只适合同域部署或由反向代理统一收口；追踪采样率在 `prod` 中覆盖为 `0.1`。
+生产环境同样开启 `globalcors`，允许所有来源但不允许凭证；追踪采样率在 `prod` 中覆盖为 `0.1`。
 
 本地 `dev` profile 通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
 `prod` profile 保持 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。

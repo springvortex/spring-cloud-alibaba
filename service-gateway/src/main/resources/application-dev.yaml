@@ -6,17 +6,6 @@ spring:
     gateway:
       server:
         webflux:
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowed-origin-patterns:
-                  - '*'
-                allowed-headers:
-                  - '*'
-                allowed-methods:
-                  - '*'
-                allow-credentials: false
-                max-age: 3600
           routes:
             - id: provider-openapi-route
               uri: lb://service-provider

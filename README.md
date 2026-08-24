@@ -125,7 +125,7 @@ Nacos 公共认证来自 `config/application-nacos.yaml`，`application-{env}.ya
 | Profile | 说明 |
 |---------|------|
 | `dev` | 共享开发环境配置；开启 SpringDoc 与网关聚合 Swagger UI |
-| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由，也不开放通配 CORS |
+| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由；CORS 允许所有来源但不允许凭证 |
 
 Nacos、MySQL、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
 `prod` 使用 `127.0.0.1`。
@@ -550,7 +550,7 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 所有业务配置都随服务 JAR 打包。各服务 `src/main/resources/application.yaml` 保留服务名、端口、默认环境和公共 profile include，
 并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin` 等公共 profile；同目录下的
 `application-dev.yaml` 与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，
-只 include `nacos`、`zipkin` 和 `sentinel`。
+只 include `nacos`、`zipkin`、`sentinel` 和 `cors`。
 
 Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
 需要重新打包并重启对应服务。
