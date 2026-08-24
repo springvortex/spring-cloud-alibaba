@@ -3,6 +3,8 @@ package com.zjc.provider.service.impl;
 import com.zjc.common.dto.GoodsPurchaseRequestDTO;
 import com.zjc.common.dto.GoodsPurchaseResponseDTO;
 import com.zjc.common.exception.BusinessException;
+import com.zjc.common.lock.DistributedLockFactory;
+import com.zjc.common.lock.DistributedLockTemplate;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.entity.Order;
 import com.zjc.provider.entity.OrderDetail;
@@ -15,8 +17,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.transaction.support.TransactionCallback;
@@ -24,12 +24,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * {@link GoodsPurchaseServiceImpl} 分布式锁与购买事务测试。
+ * {@link GoodsPurchaseServiceImpl} 购买事务测试。
  *
  * @author jiancai.zhong
  */
@@ -45,11 +46,16 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class GoodsPurchaseServiceImplTest {
 
-    @Mock
-    private RedissonClient redissonClient;
+    /**
+     * 购买锁等待超时提示。
+     */
+    private static final String LOCK_TIMEOUT_MESSAGE = "当前购买人数过多，请稍后再试";
 
     @Mock
-    private RLock lock;
+    private DistributedLockFactory distributedLockFactory;
+
+    @Mock
+    private DistributedLockTemplate distributedLockTemplate;
 
     @Mock
     private TransactionTemplate transactionTemplate;
@@ -70,24 +76,18 @@ class GoodsPurchaseServiceImplTest {
     private GoodsPurchaseServiceImpl purchaseService;
 
     /**
-     * 验证获取锁成功后的完整购买链路。
+     * 验证购买业务在分布式锁回调内扣库存、创建订单并清理缓存。
      */
     @Test
-    @DisplayName("purchase: 获取商品锁后扣库存、创建订单并清理缓存")
-    void purchaseSuccess() throws InterruptedException {
+    @DisplayName("purchase: 在锁回调内扣库存、创建订单并清理缓存")
+    void purchaseSuccess() {
         GoodsPurchaseRequestDTO request = request(2);
         Goods goods = goods(10, "99.00");
         mockTransactionExecution();
-        when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
-                .thenReturn(lock);
-        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
+        mockLockExecution();
         when(goodsMapper.selectById(1L)).thenReturn(goods);
         when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
-        doAnswer(invocation -> {
-            Order order = invocation.getArgument(0);
-            order.setOrderId(100L);
-            return null;
-        }).when(orderService).saveWithDetails(any(Order.class), any());
+        mockOrderSave();
         when(cacheManager.getCache("provider:goods:id")).thenReturn(goodsCache);
 
         GoodsPurchaseResponseDTO response = purchaseService.purchase(1L, request);
@@ -109,38 +109,38 @@ class GoodsPurchaseServiceImplTest {
         assertThat(detailsCaptor.getValue().get(0).getGoodsNum()).isEqualTo(2);
         verify(goodsMapper).decreaseStock(1L, 2);
         verify(goodsCache).evict(1L);
-        verify(lock).unlock();
     }
 
     /**
-     * 验证锁等待超时时快速失败，不进入购买事务。
+     * 验证锁模板抛出等待超时异常时不进入购买事务。
      */
     @Test
-    @DisplayName("purchase: 锁等待超时返回业务繁忙且不访问数据库")
-    void purchaseLockTimeout() throws InterruptedException {
-        when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
-                .thenReturn(lock);
-        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(false);
+    @DisplayName("purchase: 锁等待超时不访问数据库")
+    void purchaseLockTimeout() {
+        when(distributedLockFactory.getTemplate()).thenReturn(distributedLockTemplate);
+        when(distributedLockTemplate.execute(
+                eq(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L),
+                eq(GoodsPurchaseServiceImpl.LOCK_WAIT),
+                eq(LOCK_TIMEOUT_MESSAGE),
+                any()))
+                .thenThrow(new BusinessException(503, LOCK_TIMEOUT_MESSAGE));
 
         assertThatThrownBy(() -> purchaseService.purchase(1L, request(1)))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("当前购买人数过多，请稍后再试");
+                .hasMessage(LOCK_TIMEOUT_MESSAGE);
 
         verify(transactionTemplate, never()).execute(any());
         verify(goodsMapper, never()).selectById(1L);
-        verify(lock, never()).unlock();
     }
 
     /**
-     * 验证库存不足时不落订单，并正常释放商品锁。
+     * 验证库存不足时不落订单，业务异常从锁回调中原样传递。
      */
     @Test
-    @DisplayName("purchase: 库存不足时不扣库存、不创建订单并释放锁")
-    void purchaseInsufficientStock() throws InterruptedException {
+    @DisplayName("purchase: 库存不足时不扣库存、不创建订单")
+    void purchaseInsufficientStock() {
         mockTransactionExecution();
-        when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
-                .thenReturn(lock);
-        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
+        mockLockExecution();
         when(goodsMapper.selectById(1L)).thenReturn(goods(1, "99.00"));
 
         assertThatThrownBy(() -> purchaseService.purchase(1L, request(2)))
@@ -150,34 +150,6 @@ class GoodsPurchaseServiceImplTest {
         verify(goodsMapper, never()).decreaseStock(any(), anyInt());
         verify(orderService, never()).saveWithDetails(any(), any());
         verify(goodsCache, never()).evict(any());
-        verify(lock).unlock();
-    }
-
-    /**
-     * 验证锁在解锁前异常丢失时，不掩盖已经成功的购买结果。
-     */
-    @Test
-    @DisplayName("purchase: 解锁时锁已丢失则静默处理且不掩盖业务结果")
-    void purchaseUnlockSilentlyWhenLockLost() throws InterruptedException {
-        mockTransactionExecution();
-        when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
-                .thenReturn(lock);
-        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
-        when(goodsMapper.selectById(1L)).thenReturn(goods(10, "99.00"));
-        when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
-        doAnswer(invocation -> {
-            Order order = invocation.getArgument(0);
-            order.setOrderId(100L);
-            return null;
-        }).when(orderService).saveWithDetails(any(Order.class), any());
-        when(cacheManager.getCache("provider:goods:id")).thenReturn(goodsCache);
-        doThrow(new IllegalMonitorStateException("lock lost")).when(lock).unlock();
-
-        GoodsPurchaseResponseDTO response = purchaseService.purchase(1L, request(2));
-
-        assertThat(response.getOrderId()).isEqualTo(100L);
-        verify(goodsCache).evict(1L);
-        verify(lock).unlock();
     }
 
     /**
@@ -185,18 +157,12 @@ class GoodsPurchaseServiceImplTest {
      */
     @Test
     @DisplayName("purchase: 缓存清理失败不掩盖购买成功")
-    void purchaseCacheEvictFailureDoesNotMaskSuccess() throws InterruptedException {
+    void purchaseCacheEvictFailureDoesNotMaskSuccess() {
         mockTransactionExecution();
-        when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
-                .thenReturn(lock);
-        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
+        mockLockExecution();
         when(goodsMapper.selectById(1L)).thenReturn(goods(10, "99.00"));
         when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
-        doAnswer(invocation -> {
-            Order order = invocation.getArgument(0);
-            order.setOrderId(100L);
-            return null;
-        }).when(orderService).saveWithDetails(any(Order.class), any());
+        mockOrderSave();
         when(cacheManager.getCache("provider:goods:id")).thenReturn(goodsCache);
         doThrow(new IllegalStateException("redis unavailable")).when(goodsCache).evict(1L);
 
@@ -204,7 +170,6 @@ class GoodsPurchaseServiceImplTest {
 
         assertThat(response.getOrderId()).isEqualTo(100L);
         verify(goodsCache).evict(1L);
-        verify(lock).unlock();
     }
 
     /**
@@ -238,8 +203,37 @@ class GoodsPurchaseServiceImplTest {
     }
 
     /**
+     * 模拟分布式锁模板直接执行业务回调。
+     */
+    @SuppressWarnings("unchecked")
+    private void mockLockExecution() {
+        when(distributedLockFactory.getTemplate()).thenReturn(distributedLockTemplate);
+        when(distributedLockTemplate.execute(
+                eq(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L),
+                eq(GoodsPurchaseServiceImpl.LOCK_WAIT),
+                eq(LOCK_TIMEOUT_MESSAGE),
+                any()))
+                .thenAnswer(invocation -> {
+                    Supplier<GoodsPurchaseResponseDTO> action = invocation.getArgument(3);
+                    return action.get();
+                });
+    }
+
+    /**
+     * 模拟订单保存后回填订单 ID。
+     */
+    private void mockOrderSave() {
+        doAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setOrderId(100L);
+            return null;
+        }).when(orderService).saveWithDetails(any(Order.class), any());
+    }
+
+    /**
      * 让事务模板直接执行回调，便于单元测试购买事务内部逻辑。
      */
+    @SuppressWarnings("unchecked")
     private void mockTransactionExecution() {
         when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
             TransactionCallback<GoodsPurchaseResponseDTO> callback = invocation.getArgument(0);

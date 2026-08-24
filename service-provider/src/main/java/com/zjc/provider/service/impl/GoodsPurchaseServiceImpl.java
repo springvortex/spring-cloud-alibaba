@@ -5,6 +5,7 @@ import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.GoodsPurchaseRequestDTO;
 import com.zjc.common.dto.GoodsPurchaseResponseDTO;
 import com.zjc.common.exception.BusinessException;
+import com.zjc.common.lock.DistributedLockFactory;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.entity.Order;
 import com.zjc.provider.entity.OrderDetail;
@@ -13,21 +14,19 @@ import com.zjc.provider.service.GoodsPurchaseService;
 import com.zjc.provider.service.OrderService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 商品购买服务实现。
  *
- * <p>Redisson 锁按商品维度拆分，数据库条件更新继续兜底，避免异常路径下超卖。
+ * <p>分布式锁按商品维度拆分，数据库条件更新继续兜底，避免异常路径下超卖。
  *
  * @author jiancai.zhong
  */
@@ -36,14 +35,14 @@ import java.util.concurrent.TimeUnit;
 public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
 
     /**
-     * 购买锁的 Redis key 前缀。
+     * 购买锁 key 前缀。
      */
     public static final String PURCHASE_LOCK_KEY_PREFIX = "zjc:provider:goods:purchase:lock:";
 
     /**
      * 购买锁最长等待时间；超过后快速失败，避免压测时请求无限堆积。
      */
-    static final long LOCK_WAIT_SECONDS = 20;
+    static final Duration LOCK_WAIT = Duration.ofSeconds(20);
 
     /**
      * 商品详情缓存名称，与查询侧 {@code @Cacheable} 保持一致。
@@ -51,7 +50,7 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
     private static final String GOODS_CACHE_NAME = "provider:goods:id";
 
     @Resource
-    private RedissonClient redissonClient;
+    private DistributedLockFactory distributedLockFactory;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -68,7 +67,7 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
     /**
      * 执行一次商品购买。
      *
-     * <p>同一商品通过 Redisson 可重入锁串行执行；购买事务提交后清理商品详情缓存，
+     * <p>同一商品通过分布式锁串行执行；购买事务提交后清理商品详情缓存，
      * 最后安全释放商品锁。
      *
      * @param goodsId 商品 ID
@@ -82,42 +81,29 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
         log.debug("开始购买：goodsId={}, userId={}, quantity={}",
                 goodsId, request.getUserId(), request.getQuantity());
 
-        RLock lock = redissonClient.getLock(PURCHASE_LOCK_KEY_PREFIX + goodsId);
-        boolean locked = false;
-        try {
-            long lockStartTime = System.nanoTime();
-            locked = lock.tryLock(LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
-            if (!locked) {
-                log.warn("获取商品购买锁超时：goodsId={}, waitSeconds={}", goodsId, LOCK_WAIT_SECONDS);
-                throw new BusinessException(503, "当前购买人数过多，请稍后再试");
-            }
-            log.debug("获取商品购买锁成功：goodsId={}, waitMs={}", goodsId, elapsedMs(lockStartTime));
+        GoodsPurchaseResponseDTO result = distributedLockFactory.getTemplate().execute(
+                PURCHASE_LOCK_KEY_PREFIX + goodsId, LOCK_WAIT, "当前购买人数过多，请稍后再试",
+                () -> {
+                    GoodsPurchaseResponseDTO callbackResult;
+                    try {
+                        callbackResult = transactionTemplate.execute(status -> purchaseInTransaction(goodsId, request));
+                    } catch (BusinessException e) {
+                        throw e;
+                    } catch (RuntimeException e) {
+                        log.error("购买事务执行失败：goodsId={}, userId={}, quantity={}",
+                                goodsId, request.getUserId(), request.getQuantity(), e);
+                        throw e;
+                    }
 
-            GoodsPurchaseResponseDTO result;
-            try {
-                result = transactionTemplate.execute(status -> purchaseInTransaction(goodsId, request));
-            } catch (BusinessException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                log.error("购买事务执行失败：goodsId={}, userId={}, quantity={}", goodsId, request.getUserId(), request.getQuantity(), e);
-                throw e;
-            }
+                    evictGoodsCache(goodsId);
+                    return callbackResult;
+                });
 
-            evictGoodsCache(goodsId);
-            log.info("购买事务提交成功：goodsId={}, userId={}, orderNo={}, quantity={}, payAmount={}, " + "remainingStock={}, lockWaitMs={}, costMs={}",
-                    result.getGoodsId(), result.getUserId(), result.getOrderNo(), result.getQuantity(),
-                    result.getPayAmount(), result.getRemainingStock(), elapsedMs(lockStartTime),
-                    elapsedMs(startTime));
-            return result;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("获取商品购买锁被中断：goodsId={}", goodsId, e);
-            throw new BusinessException(ApiResponseEnum.SERVICE_UNAVAILABLE);
-        } finally {
-            if (locked) {
-                unlockQuietly(lock, goodsId);
-            }
-        }
+        log.info("购买事务提交成功：goodsId={}, userId={}, orderNo={}, quantity={}, payAmount={}, "
+                        + "remainingStock={}, costMs={}",
+                result.getGoodsId(), result.getUserId(), result.getOrderNo(), result.getQuantity(),
+                result.getPayAmount(), result.getRemainingStock(), elapsedMs(startTime));
+        return result;
     }
 
     /**
@@ -223,24 +209,6 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
         } catch (RuntimeException e) {
             log.error("商品详情缓存清理失败，旧库存可能保留至 TTL 到期：cache={}, goodsId={}",
                     GOODS_CACHE_NAME, goodsId, e);
-        }
-    }
-
-    /**
-     * 释放当前请求获取到的商品锁。
-     *
-     * <p>看门狗或 Redis 异常导致锁在解锁前丢失时，Redisson 会抛出
-     * {@link IllegalMonitorStateException}；此时业务事务已经完成，不应让解锁异常
-     * 掩盖原始购买结果。
-     *
-     * @param lock    商品购买锁
-     * @param goodsId 商品 ID
-     */
-    private void unlockQuietly(RLock lock, Long goodsId) {
-        try {
-            lock.unlock();
-        } catch (IllegalMonitorStateException ignored) {
-            log.warn("商品购买锁在解锁前已丢失：goodsId={}", goodsId);
         }
     }
 

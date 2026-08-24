@@ -117,7 +117,7 @@ Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会�
 }
 ```
 
-购买流程按商品 ID 加 Redisson 可重入锁，key 为 `zjc:provider:goods:purchase:lock:{goodsId}`；锁等待 20 秒，超时返回业务码
+购买流程按商品 ID 加分布式锁，key 为 `zjc:provider:goods:purchase:lock:{goodsId}`；锁等待 20 秒，超时返回业务码
 `503` 和“当前购买人数过多，请稍后再试”。锁内使用数据库条件更新 `stock >= quantity` 原子扣库存，并创建订单主表和明细；库存不足返回
 “库存不足，请稍后再试”。购买成功后会清理该商品详情缓存，响应包含订单号、金额和剩余库存。
 
@@ -144,6 +144,25 @@ zjc:provider:seckill:lock:1001
 zjc:provider:seckill:delay-queue
 zjc:provider:ratelimit:user:10001
 ```
+
+## 分布式锁工厂
+
+业务代码统一依赖 `DistributedLockFactory`，实现由 `config/application-lock.yaml` 选择；当前默认使用 Redis，可直接切换为 MySQL 或 ZooKeeper 占位：
+
+```yaml
+zjc:
+  distributed-lock:
+    provider: redis # redis / mysql / zookeeper
+    mysql:
+      table-name: t_distributed_lock
+      lease-time: 30s
+      retry-interval: 100ms
+```
+
+- `redis`：Redisson 可重入锁，看门狗自动续期，是当前推荐实现。
+- `mysql`：基于 `t_distributed_lock` 租约表，支持重入和后台续期；使用前必须执行
+  `src/main/resources/sql/t_distributed_lock.sql`。租约到期后可被抢占，适合没有 Redis 时的兜底方案，不建议热点秒杀长时间使用。
+- `zookeeper`：当前只保留工厂占位，调用会抛出 `UnsupportedOperationException`，后续引入 Curator 后再实现。
 
 ## 自动继承的公共能力
 

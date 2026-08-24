@@ -12,3 +12,4 @@ spring:
       - zipkin
       - nacos
       - redis
+      - lock

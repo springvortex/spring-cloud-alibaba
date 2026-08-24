@@ -1,0 +1,7 @@
+zjc:
+  distributed-lock:
+    provider: redis
+    mysql:
+      table-name: t_distributed_lock
+      lease-time: 30s
+      retry-interval: 100ms

@@ -89,6 +89,23 @@ class ProfileConfigurationTest {
                 .endsWith(")");
     }
 
+    /**
+     * Verify that distributed lock switching is isolated from Redis cache configuration.
+     */
+    @Test
+    @DisplayName("分布式锁工厂配置符合约定")
+    void distributedLockConfigurationFollowsConvention() {
+        Map<String, Object> common = loadResource("config/application-lock.yaml");
+        Map<String, Object> application = loadResource("application.yaml");
+
+        assertThat(path(application, "spring.profiles.include")).asList().contains("lock");
+        assertThat(path(common, "zjc.distributed-lock.provider")).isEqualTo("redis");
+        assertThat(path(common, "zjc.distributed-lock.mysql.table-name"))
+                .isEqualTo("t_distributed_lock");
+        assertThat(path(common, "zjc.distributed-lock.mysql.lease-time")).isEqualTo("30s");
+        assertThat(path(common, "zjc.distributed-lock.mysql.retry-interval")).isEqualTo("100ms");
+    }
+
     private Map<String, Object> loadProfile(String name) {
         return loadResource(name);
     }

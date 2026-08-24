@@ -1,7 +1,8 @@
 ﻿# Service Common
 
 公共模块，业务服务的基础依赖（Gateway 基于 WebFlux，刻意不引入）。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力；
-在业务服务自行引入 Redis / Cache starter 后，还会自动获得统一的 Redis 缓存基础设施。
+在业务服务自行引入 Redis / Cache starter 后，还会自动获得统一的 Redis 缓存基础设施；引入 Redisson 或 JDBC 基础设施后，可获得统一
+分布式锁工厂。
 
 ## 职责
 
@@ -13,6 +14,7 @@
 - 跨服务共享的 Feign API 契约
 - 配置加密（Jasypt，引入后自动生效）
 - Redis / Spring Cache 公共缓存基础设施（按需生效）
+- 分布式锁工厂：Redisson 实现、MySQL 租约表实现、ZooKeeper 占位（按配置选择）
 - OpenFeign / SpringDoc / Web MVC 相关的公共编译 API
 
 ## 包结构
@@ -31,6 +33,13 @@ com.zjc.common
 │   ├── RedisCacheAutoConfiguration Redis 缓存统一自动装配
 │   ├── RedisCacheProperties        zjc.cache.redis 配置属性
 │   └── ResilientCacheErrorHandler  Redis 故障时的业务降级策略
+├── lock
+│   ├── DistributedLockAutoConfiguration 分布式锁模板自动装配
+│   ├── DistributedLockFactory         按 Provider 获取锁模板
+│   ├── DistributedLockTemplate        统一锁模板接口
+│   ├── RedissonDistributedLockTemplate Redis 可重入锁实现
+│   ├── MysqlDistributedLockTemplate   MySQL 租约表实现
+│   └── ZookeeperDistributedLockTemplate ZooKeeper 占位实现
 ├── constant
 │   ├── ApiResponseEnum            响应码标准枚举（实现 ErrorCode 接口）
 │   └── ErrorCode                  错误码接口
@@ -56,6 +65,7 @@ common 模块通过 `META-INF/spring/org.springframework.boot.autoconfigure.Auto
 ```
 com.zjc.common.exception.GlobalExceptionHandler
 com.zjc.common.cache.RedisCacheAutoConfiguration
+com.zjc.common.lock.DistributedLockAutoConfiguration
 com.zjc.common.web.ApiPathAutoConfiguration
 com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.user.factory.UserFeignFallbackFactory
@@ -68,6 +78,10 @@ com.zjc.common.api.user.factory.UserFeignFallbackFactory
 
 > **注意**：`RedisCacheAutoConfiguration` 只在 classpath 存在 Spring Data Redis 时生效。common 中的 Redis 依赖是
 > `optional`，Gateway 等不需要缓存的模块不会被强制引入 Redis 运行时。
+
+> **注意**：`DistributedLockAutoConfiguration` 会按基础设施装配可用实现：注册 `RedissonClient` 后提供 Redis 实现；
+> 注册 `JdbcTemplate` 与 `PlatformTransactionManager` 后提供 MySQL 实现；ZooKeeper 目前只是占位实现。common 中的 Redisson、
+> JDBC 依赖均为 `optional`，需要分布式锁的业务模块自行引入对应运行时。
 
 > **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux
 > 版本。
@@ -276,6 +290,32 @@ zjc:
 
 Redis 连接地址属于环境差异，由各业务服务在自己的 `application-dev.yaml` / `application-prod.yaml` 中维护。
 
+## 分布式锁工厂
+
+业务代码统一注入 `DistributedLockFactory` 并调用 `getTemplate().execute(...)`，不需要直接依赖 Redisson、JDBC 或 ZooKeeper API。
+默认 Provider 由业务服务配置：
+
+```yaml
+zjc:
+  distributed-lock:
+    provider: redis # redis / mysql / zookeeper
+    mysql:
+      table-name: t_distributed_lock
+      lease-time: 30s
+      retry-interval: 100ms
+```
+
+当前实现：
+
+| Provider    | 状态 | 说明 |
+|-------------|------|------|
+| `redis`     | 可用 | Redisson 可重入锁，不显式传租期时由看门狗自动续期，当前推荐默认实现。 |
+| `mysql`     | 可用 | 基于 `t_distributed_lock` 租约表、唯一键、行事务、重入计数和后台续期；租约到期后可抢占。业务库需先建表。 |
+| `zookeeper` | 占位 | 只保留工厂接入能力，调用会抛出 `UnsupportedOperationException`，后续引入 Curator 后实现临时顺序节点锁。 |
+
+MySQL 实现适合作为没有 Redis 时的兜底能力。热点购买链路仍建议使用 Redis 实现；MySQL 租约锁依赖数据库可用性，进程崩溃后锁会在
+`lease-time` 到期后释放，极端停顿超过租期时锁可能被其他持有者抢占。
+
 ## 依赖说明
 
 该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。模块只显式声明源码直接使用的
@@ -292,6 +332,7 @@ Spring MVC、Spring Boot AutoConfigure、AspectJ、OpenFeign、SpringDoc common�
 | Sentinel Feign 熔断             | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`）        |
 | Nacos Discovery / 数据库 / 邮件 | 对应业务模块                                                              |
 | Redis / Spring Cache            | 需要缓存的业务模块（当前 `service-provider`）                             |
+| 分布式锁                         | `service-provider`（Redisson 与 JDBC / Transaction 运行时）               |
 
 这样公共库不会把 Tomcat、Swagger UI、Sentinel 等完整 starter 传递给所有下游模块，后续升级 Spring Boot / Spring Cloud
 时影响面更清晰。新增公共代码如果直接 import 了新的第三方包，应同步在 `service-common/pom.xml` 显式声明，而不是继续依赖传递依赖。

@@ -78,6 +78,27 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Redisson：公共分布式锁模板；业务模块按需引入具体依赖 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- JDBC：公共 MySQL 分布式锁实现；业务模块按需引入具体依赖 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Spring Transaction：MySQL 锁获取和释放的事务边界 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Servlet API 由服务的 Web starter 在运行时提供 -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
