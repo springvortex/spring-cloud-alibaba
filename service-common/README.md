@@ -60,8 +60,8 @@ com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.user.factory.UserFeignFallbackFactory
 ```
 
-任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、统一 API 路径能力、SpringDoc 版本分组、
-Feign 前缀拦截器和用户 Feign 降级工厂，无需手动
+任何引入 `service-common` 依赖的 Spring Boot 应用都会自动获得全局异常处理、统一 API 路径能力、SpringDoc 版本分组、 Feign
+前缀拦截器和用户 Feign 降级工厂，无需手动
 `@Import` 或
 `@ComponentScan`。
 
@@ -124,10 +124,14 @@ Feign 前缀拦截器和用户 Feign 降级工厂，无需手动
 throw new BusinessException(ApiResponseEnum.USER_NOT_FOUND);
 
 // 自定义提示信息，错误码默认 -1
-throw new BusinessException("用户不存在");
+throw new
+
+BusinessException("用户不存在");
 
 // 自定义错误码 + 提示信息
-throw new BusinessException(10001, "用户不存在");
+throw new
+
+BusinessException(10001,"用户不存在");
 ```
 
 自定义错误码只需实现 `ErrorCode` 接口：
@@ -186,8 +190,8 @@ java -jar service-provider-1.0.0.jar
 ### 加密算法配置
 
 Jasypt 加密参数统一来自各业务服务的 `config/application-jasypt.yaml`。算法为
-`PBEWithHMACSHA512AndAES_256`，并使用 100000 次密钥派生迭代、随机盐和随机 IV，与 `JasyptTest` 工具完全一致。
-当前使用已适配 Spring Boot 4.x 的 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值。
+`PBEWithHMACSHA512AndAES_256`，并使用 100000 次密钥派生迭代、随机盐和随机 IV，与 `JasyptTest` 工具完全一致。 当前使用已适配
+Spring Boot 4.x 的 jasypt-spring-boot-starter 4.0.4；仍显式声明这些参数，避免依赖隐式默认值。
 
 > **IDEA 本地开发**：在 Run Configuration -> VM Options 中填入 `-Djasypt.encryptor.password=your-secret-key`
 > 。如果通过系统环境变量传入，需彻底退出 IDEA 再重新打开才能继承。
@@ -206,35 +210,36 @@ zjc:
 ```
 
 当前配置只启用 `v1`，未标注 `@ApiVersion` 的 Controller 使用版本列表中的第一个版本。如需 v1/v2 共存，可在
-`zjc.api.versions` 中追加 `v2`，并显式配置 `default-version`；v2 Controller 标注 `@ApiVersion("v2")`。 SpringDoc 分组由本模块自动生成，Feign
-调用也会在发送前追加目标服务的前缀。
+`zjc.api.versions` 中追加 `v2`，并显式配置 `default-version`；v2 Controller 标注 `@ApiVersion("v2")`。 SpringDoc
+分组由本模块自动生成，Feign 调用也会在发送前追加目标服务的前缀。
 
 ## 共享 Feign API
 
 common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务引入 common 依赖后可直接注入使用。
 
-| 接口           | 目标服务         | 契约资源路径     | 实际请求路径                     | 说明                                   |
-|----------------|------------------|------------------|----------------------------------|----------------------------------------|
-| `MailFeignApi` | service-mail     | `POST /send`     | `POST /api/v1/mail/send`         | 发送邮件，失败时返回业务繁忙错误        |
-| `TestApi`      | service-provider | `GET /port`      | `GET /api/v1/provider/port`      | 获取 provider 实例端口，验证链路连通性 |
+| 接口           | 目标服务         | 契约资源路径     | 实际请求路径                     | 说明                                     |
+|----------------|------------------|------------------|----------------------------------|------------------------------------------|
+| `MailFeignApi` | service-mail     | `POST /send`     | `POST /api/v1/mail/send`         | 发送邮件，失败时返回业务繁忙错误         |
+| `TestApi`      | service-provider | `GET /port`      | `GET /api/v1/provider/port`      | 获取 provider 实例端口，验证链路连通性   |
 | `UserFeignApi` | service-provider | `GET /user/{id}` | `GET /api/v1/provider/user/{id}` | 远程查询单个用户，失败时返回业务繁忙错误 |
 | `UserFeignApi` | service-provider | `GET /user/list` | `GET /api/v1/provider/user/list` | 远程查询用户列表，失败时返回业务繁忙错误 |
 
 ## Redis 缓存基础设施
 
-项目不创建独立的 `service-cache` 服务。`service-common` 只提供缓存基础设施，数据拥有方在自己的 Service 层直接使用
-Redis 和 Spring Cache，避免远程缓存调用、双缓存和跨服务失效问题。
+项目不创建独立的 `service-cache` 服务。`service-common` 只提供缓存基础设施，数据拥有方在自己的 Service 层直接使用 Redis 和
+Spring Cache，避免远程缓存调用、双缓存和跨服务失效问题。
 
 业务服务需要显式引入：
 
 ```xml
+
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-redis</artifactId>
 </dependency>
 <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-cache</artifactId>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-cache</artifactId>
 </dependency>
 ```
 
@@ -275,14 +280,14 @@ Spring MVC、Spring Boot AutoConfigure、AspectJ、OpenFeign、SpringDoc common�
 
 `service-common` 不再替业务服务决定运行时技术栈：
 
-| 运行能力 | 声明位置 |
-|----------|----------|
-| Web 容器 / Spring MVC | `service-provider`、`service-consumer`、`service-mail` |
-| Swagger UI | `service-provider`、`service-consumer`、`service-mail`、`service-gateway` |
-| OpenFeign starter | `service-consumer` |
-| Sentinel Feign 熔断 | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`） |
-| Nacos Discovery / 数据库 / 邮件 | 对应业务模块 |
-| Redis / Spring Cache | 需要缓存的业务模块（当前 `service-provider`） |
+| 运行能力                        | 声明位置                                                                  |
+|---------------------------------|---------------------------------------------------------------------------|
+| Web 容器 / Spring MVC           | `service-provider`、`service-consumer`、`service-mail`                    |
+| Swagger UI                      | `service-provider`、`service-consumer`、`service-mail`、`service-gateway` |
+| OpenFeign starter               | `service-consumer`                                                        |
+| Sentinel Feign 熔断             | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`）        |
+| Nacos Discovery / 数据库 / 邮件 | 对应业务模块                                                              |
+| Redis / Spring Cache            | 需要缓存的业务模块（当前 `service-provider`）                             |
 
 这样公共库不会把 Tomcat、Swagger UI、Sentinel 等完整 starter 传递给所有下游模块，后续升级 Spring Boot / Spring Cloud
 时影响面更清晰。新增公共代码如果直接 import 了新的第三方包，应同步在 `service-common/pom.xml` 显式声明，而不是继续依赖传递依赖。

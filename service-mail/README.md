@@ -84,7 +84,8 @@ com.zjc.mail
 - **dev**：加载 `src/main/resources/application-dev.yaml`，其中维护共享 MailHog、数据源和 MyBatis-Plus 配置。
 - **prod**：加载 `src/main/resources/application-prod.yaml`，其中维护生产 SMTP 与数据源配置。
 
-Nacos、MySQL 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`；dev SMTP 指向共享 MailHog，MySQL 均要求 SSL。Nacos 仅用于服务注册与发现，
+Nacos、MySQL 与 Zipkin 地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`；dev SMTP 指向共享 MailHog，MySQL
+均要求 SSL。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
 生产 Profile 中至少需要维护：

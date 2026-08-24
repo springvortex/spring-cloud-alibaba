@@ -45,13 +45,13 @@
 
 ### 订单管理
 
-| 方法   | 路径          | 说明                         |
-|--------|---------------|------------------------------|
-| GET    | `/order/{id}` | 查询单个订单（含明细聚合）   |
-| GET    | `/order/list` | 查询全部有效订单（不含明细） |
-| GET    | `/order/page` | 分页查询订单                 |
-| POST   | `/order`      | 新增订单（主表与明细同事务） |
-| PUT    | `/order`      | 修改订单                     |
+| 方法   | 路径          | 说明                             |
+|--------|---------------|----------------------------------|
+| GET    | `/order/{id}` | 查询单个订单（含明细聚合）       |
+| GET    | `/order/list` | 查询全部有效订单（不含明细）     |
+| GET    | `/order/page` | 分页查询订单                     |
+| POST   | `/order`      | 新增订单（主表与明细同事务）     |
+| PUT    | `/order`      | 修改订单                         |
 | DELETE | `/order/{id}` | 删除订单及明细（同事务逻辑删除） |
 
 ### 连通性测试
@@ -88,21 +88,21 @@ com.zjc.provider
 
 ## 详情缓存
 
-provider 是用户、商品和订单数据的拥有方，因此第一层 Redis 缓存放在本模块的 Service 层，而不是 Controller 层，
-也不通过 consumer 再包一层缓存，避免同一条数据出现双层缓存和失效不同步。
+provider 是用户、商品和订单数据的拥有方，因此第一层 Redis 缓存放在本模块的 Service 层，而不是 Controller 层， 也不通过
+consumer 再包一层缓存，避免同一条数据出现双层缓存和失效不同步。
 
 当前只缓存稳定读取的单个资源：
 
-| 数据 | cacheName | Key | TTL |
-|------|-----------|-----|-----|
-| 用户详情 | `provider:user:id` | 用户 ID | 30 分钟 |
+| 数据     | cacheName           | Key     | TTL     |
+|----------|---------------------|---------|---------|
+| 用户详情 | `provider:user:id`  | 用户 ID | 30 分钟 |
 | 商品详情 | `provider:goods:id` | 商品 ID | 30 分钟 |
 
-最终 Redis key 形如 `zjc:provider:user:id:1`。查询不存在时也会缓存空值，减少不存在的 ID 对数据库的穿透压力；
-更新、删除成功后按 ID 驱逐对应详情缓存。用户/商品列表、分页和订单聚合查询暂不缓存。
+最终 Redis key 形如 `zjc:provider:user:id:1`。查询不存在时也会缓存空值，减少不存在的 ID 对数据库的穿透压力； 更新、删除成功后按
+ID 驱逐对应详情缓存。用户/商品列表、分页和订单聚合查询暂不缓存。
 
-Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会输出 ERROR 日志，提示旧数据可能保留到 TTL 到期。
-序列化、key 前缀、TTL 和降级策略由 `service-common` 的缓存自动装配统一提供。
+Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会输出 ERROR 日志，提示旧数据可能保留到 TTL 到期。 序列化、key 前缀、TTL
+和降级策略由 `service-common` 的缓存自动装配统一提供。
 
 ## 自动继承的公共能力
 
@@ -122,9 +122,9 @@ Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会�
 基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`；MySQL 均要求 SSL。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
 
-公共缓存配置来自 `config/application-redis.yaml`：使用 Redis Cache，默认 TTL 30 分钟，用户/商品详情各自 30 分钟。
-Redis 地址按环境维护：dev 为 `129.204.226.206:6379`，prod 为 `127.0.0.1:6379`；
-两个环境的密码均使用 Jasypt 密文，启动时通过 `JASYPT_ENCRYPTOR_PASSWORD` 解密。
+公共缓存配置来自 `config/application-redis.yaml`：使用 Redis Cache，默认 TTL 30 分钟，用户/商品详情各自 30 分钟。 Redis
+地址按环境维护：dev 为 `129.204.226.206:6379`，prod 为 `127.0.0.1:6379`； 两个环境的密码均使用 Jasypt 密文，启动时通过
+`JASYPT_ENCRYPTOR_PASSWORD` 解密。
 
 ## 日志与链路追踪
 

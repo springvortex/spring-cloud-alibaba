@@ -1,9 +1,9 @@
 package com.zjc.common.api.user.factory;
 
 import com.zjc.common.api.user.UserFeignApi;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
-import com.zjc.common.constant.ApiResponseEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

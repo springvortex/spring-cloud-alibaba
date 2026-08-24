@@ -2,7 +2,6 @@ package com.zjc.common.api.mail.factory;
 
 import com.zjc.common.api.mail.MailFeignApi;
 import com.zjc.common.constant.ApiResponseEnum;
-import com.zjc.common.dto.MailLogDTO;
 import com.zjc.common.web.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;

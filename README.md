@@ -42,29 +42,28 @@ spring-cloud-alibaba
 
 各模块根目录下均有独立的 README.md，记录该模块的职责、依赖、接口和配置说明。
 
-父 POM 只聚合 `service-common` 和 4 个可运行服务；`MP-Generator` 是独立工具模块，
-需要在 `MP-Generator` 目录单独执行 Maven 命令。
+父 POM 只聚合 `service-common` 和 4 个可运行服务；`MP-Generator` 是独立工具模块， 需要在 `MP-Generator` 目录单独执行 Maven
+命令。
 
 ## 快速开始
 
 ### 组件清单
 
-| 组件       | 必需                   | 默认端口               | 用途                                   | 安装建议                                                                        |
-|------------|------------------------|------------------------|----------------------------------------|---------------------------------------------------------------------------------|
-| JDK 21+    | 是                     | -                      | 编译与运行 Java 服务                   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
-| Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包                       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
-| MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录                     | 官方安装包或 Docker；生产环境仅内网访问                                         |
-| Redis 7+   | service-provider 必需 | 6379                   | 用户/商品详情缓存                       | dev 使用共享 Redis；prod 与应用部署在同一台服务器或内网                         |
-| Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现                         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
-| Zipkin     | 是，当前配置已启用导出 | 9411                   | 展示 trace/span 调用链                 | dev 使用共享环境；prod 与应用部署在同一台服务器并通过内网访问                    |
-| MailHog    | service-mail dev 必需 | 1025                   | 接收开发环境测试邮件                   | dev 使用共享 MailHog，不向真实邮箱发信                                            |
-| SMTP 服务  | service-mail prod 必需 | 视服务商而定           | 发送生产邮件                           | 使用已有邮箱服务商 SMTP，凭据放本地 Profile 并用 Jasypt 加密                      |
+| 组件       | 必需                   | 默认端口               | 用途                   | 安装建议                                                                        |
+|------------|------------------------|------------------------|------------------------|---------------------------------------------------------------------------------|
+| JDK 21+    | 是                     | -                      | 编译与运行 Java 服务   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
+| Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
+| MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录     | 官方安装包或 Docker；生产环境仅内网访问                                         |
+| Redis 7+   | service-provider 必需  | 6379                   | 用户/商品详情缓存      | dev 使用共享 Redis；prod 与应用部署在同一台服务器或内网                         |
+| Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
+| Zipkin     | 是，当前配置已启用导出 | 9411                   | 展示 trace/span 调用链 | dev 使用共享环境；prod 与应用部署在同一台服务器并通过内网访问                   |
+| MailHog    | service-mail dev 必需  | 1025                   | 接收开发环境测试邮件   | dev 使用共享 MailHog，不向真实邮箱发信                                          |
+| SMTP 服务  | service-mail prod 必需 | 视服务商而定           | 发送生产邮件           | 使用已有邮箱服务商 SMTP，凭据放本地 Profile 并用 Jasypt 加密                    |
 
 ### 组件安装
 
 当前 `dev` Profile 直接连接共享开发环境：Nacos `129.204.226.206:8848`、MySQL
-`129.204.226.206:3306`、Redis `129.204.226.206:6379`、Zipkin `129.204.226.206:9411`、
-MailHog `129.204.226.206:1025`。
+`129.204.226.206:3306`、Redis `129.204.226.206:6379`、Zipkin `129.204.226.206:9411`、 MailHog `129.204.226.206:1025`。
 本地开发一般不需要再启动这些组件，只需确认网络可达并准备数据库结构。
 
 如需搭建一套完全隔离的本地组件，可参考以下命令；由于项目配置使用固定地址，搭建后需要把对应服务的
@@ -125,15 +124,15 @@ java -jar service-provider-1.0.0.jar
 java -jar service-provider-1.0.0.jar --spring.profiles.active=prod
 ```
 
-当前支持 `dev/prod` 两个环境。服务包内的 `application.yaml` 提供服务名、端口、默认环境和公共 Profile；
-Nacos 公共认证来自 `config/application-nacos.yaml`，`application-{env}.yaml` 提供各环境差异配置。
+当前支持 `dev/prod` 两个环境。服务包内的 `application.yaml` 提供服务名、端口、默认环境和公共 Profile； Nacos 公共认证来自
+`config/application-nacos.yaml`，`application-{env}.yaml` 提供各环境差异配置。
 
 项目当前主要使用两组环境 Profile：
 
-| Profile | 说明 |
-|---------|------|
-| `dev` | 共享开发环境配置；开启 SpringDoc 与网关聚合 Swagger UI |
-| `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由；CORS 允许所有来源但不允许凭证 |
+| Profile | 说明                                                                                                        |
+|---------|-------------------------------------------------------------------------------------------------------------|
+| `dev`   | 共享开发环境配置；开启 SpringDoc 与网关聚合 Swagger UI                                                      |
+| `prod`  | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由；CORS 允许所有来源但不允许凭证 |
 
 Nacos、MySQL、Redis、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
 `prod` 使用 `127.0.0.1`。
@@ -199,8 +198,8 @@ management:
       enabled: true
 ```
 
-上述配置固定开启链路导出；`dev` Profile 使用全采样，`prod` Profile 使用 `0.1` 采样率，
-并将 Zipkin 地址覆盖为 `http://127.0.0.1:9411/api/v2/spans`。
+上述配置固定开启链路导出；`dev` Profile 使用全采样，`prod` Profile 使用 `0.1` 采样率， 并将 Zipkin
+地址覆盖为 `http://127.0.0.1:9411/api/v2/spans`。
 
 排查方式：
 
@@ -557,10 +556,10 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 
 ## 配置管理
 
-所有业务配置都随服务 JAR 打包。各服务 `src/main/resources/application.yaml` 保留服务名、端口、默认环境和公共 profile include，
-并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin`、`redis` 等公共 profile；同目录下的
-`application-dev.yaml` 与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，
-只 include `nacos`、`zipkin`、`sentinel` 和 `cors`。
+所有业务配置都随服务 JAR 打包。各服务 `src/main/resources/application.yaml` 保留服务名、端口、默认环境和公共 profile
+include， 并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin`、`redis` 等公共 profile；同目录下的
+`application-dev.yaml` 与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt， 只 include `nacos`、
+`zipkin`、`sentinel` 和 `cors`。
 
 Nacos 不保存业务配置，也不参与配置导入；服务启动时只通过 Nacos Discovery 注册实例并发现下游服务。修改环境配置后，
 需要重新打包并重启对应服务。
@@ -584,11 +583,11 @@ http://localhost/swagger-ui.html
 按版本自动生成分组，例如 `v1-provider`。
 
 生产使用 `prod` profile 时，生产配置保持 `springdoc.api-docs.enabled=false` 和
-`springdoc.swagger-ui.enabled=false`，网关也不会加载 OpenAPI 转发路由。因此生产环境
-不能通过 `/swagger-ui.html`、`/v3/api-docs` 或网关聚合地址查看接口文档。
+`springdoc.swagger-ui.enabled=false`，网关也不会加载 OpenAPI 转发路由。因此生产环境 不能通过 `/swagger-ui.html`、
+`/v3/api-docs` 或网关聚合地址查看接口文档。
 
-验证时不要只看业务服务的 HTTP 状态码：WebMVC 服务的全局异常处理会把不存在的路径包装成 HTTP 200，
-响应体为 `code=102`、`message=资源不存在`。SpringDoc 关闭后业务接口文档地址返回该响应；Gateway 自身则返回 404。
+验证时不要只看业务服务的 HTTP 状态码：WebMVC 服务的全局异常处理会把不存在的路径包装成 HTTP 200， 响应体为 `code=102`、
+`message=资源不存在`。SpringDoc 关闭后业务接口文档地址返回该响应；Gateway 自身则返回 404。
 
 > **注意**：生产 Profile 不应重新设置 `springdoc.*.enabled=true`，避免生产文档被重新打开。
 

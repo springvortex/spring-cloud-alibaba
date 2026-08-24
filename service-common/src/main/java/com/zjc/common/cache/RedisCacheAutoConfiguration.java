@@ -18,8 +18,8 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -120,7 +120,7 @@ public class RedisCacheAutoConfiguration implements CachingConfigurer {
     }
 
     private RedisCacheConfiguration baseConfiguration(RedisCacheProperties properties,
-                                                     GenericJacksonJsonRedisSerializer serializer) {
+                                                      GenericJacksonJsonRedisSerializer serializer) {
         Duration ttl = properties.getDefaultTtl();
         return RedisCacheConfiguration.defaultCacheConfig()
                 .computePrefixWith(cacheName -> properties.getKeyPrefix() + cacheName + ":")

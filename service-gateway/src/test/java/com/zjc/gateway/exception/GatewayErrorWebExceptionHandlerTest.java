@@ -75,7 +75,7 @@ class GatewayErrorWebExceptionHandlerTest {
 
         try {
             handler.handle(exchange, new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No static resource favicon.ico"))
+                            "No static resource favicon.ico"))
                     .block();
         } finally {
             logger.detachAppender(appender);

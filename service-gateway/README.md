@@ -143,10 +143,10 @@ zjc:
 ```
 
 默认规则匹配除 `/api/{版本}/mail/send` 外的全部网关入口，例如 Consumer 与 Provider 的用户详情接口统一使用
-`100/10 QPS`；`mail-send` 单独使用 `20/2 QPS`。负向前瞻保证 mail 发送接口只命中专用规则，不会同时进入默认规则。
-用户查询链路的外部入口是 Consumer 时：`Gateway -> service-consumer -> Feign/LoadBalancer -> service-provider`。
-Sentinel 只统计进入 Gateway 的这一次请求，Consumer 内部调用 Provider 不会再次经过 Gateway 规则，因此不会重复限流。
-直连 `service-provider`、`service-consumer` 等业务服务端口时不经过 Gateway，也不会触发这些入口限流规则。
+`100/10 QPS`；`mail-send` 单独使用 `20/2 QPS`。负向前瞻保证 mail 发送接口只命中专用规则，不会同时进入默认规则。 用户查询链路的外部入口是
+Consumer 时：`Gateway -> service-consumer -> Feign/LoadBalancer -> service-provider`。 Sentinel 只统计进入 Gateway
+的这一次请求，Consumer 内部调用 Provider 不会再次经过 Gateway 规则，因此不会重复限流。 直连 `service-provider`、
+`service-consumer` 等业务服务端口时不经过 Gateway，也不会触发这些入口限流规则。
 
 `spring.cloud.sentinel.filter.enabled=false` 会关闭普通 WebFlux Sentinel 过滤器。Gateway 使用官方
 `SentinelGatewayFilter`，如果两者同时开启，同一个请求会被统计两次，阈值表现也会偏离配置。
@@ -159,8 +159,7 @@ Sentinel 只统计进入 Gateway 的这一次请求，Consumer 内部调用 Prov
 - `per-ip-qps`：单个客户端 IP 的 QPS 上限，不能大于 `total-qps`。
 - `interval-sec`：流控统计窗口。
 
-每条接口规则会生成两条 Sentinel Gateway Flow Rule：一条全局 QPS，一条按 `CLIENT_IP` 参数限流。
-被限流时返回 HTTP 429：
+每条接口规则会生成两条 Sentinel Gateway Flow Rule：一条全局 QPS，一条按 `CLIENT_IP` 参数限流。 被限流时返回 HTTP 429：
 
 ```json
 {
@@ -177,11 +176,11 @@ Sentinel 只统计进入 Gateway 的这一次请求，Consumer 内部调用 Prov
 `X-Forwarded-For` 绕过单 IP 限流。如果生产环境前面有 Nginx、云负载均衡或 WAF，必须把它们的内网直连地址加入
 `trusted-proxies`。
 
-路由熔断使用 Gateway 的 `default-filters` 统一挂载 `CircuitBreaker` 过滤器，不需要在 `dev`、`prod` 的
-每条路由上重复配置。网关中的这个过滤器由 `SentinelGatewayCircuitBreakerFilterFactory` 提供，内部会委托
-Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源名和 fallback 地址。
-`statusCodes` 会把下游 500、502、503、504 转成熔断统计的异常信号；触发阈值后，请求不再等待下游完整恢复，
-而是进入对应的内部 Controller，并返回 HTTP 503：
+路由熔断使用 Gateway 的 `default-filters` 统一挂载 `CircuitBreaker` 过滤器，不需要在 `dev`、`prod` 的 每条路由上重复配置。网关中的这个过滤器由
+`SentinelGatewayCircuitBreakerFilterFactory` 提供，内部会委托 Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源名和
+fallback 地址。
+`statusCodes` 会把下游 500、502、503、504 转成熔断统计的异常信号；触发阈值后，请求不再等待下游完整恢复， 而是进入对应的内部
+Controller，并返回 HTTP 503：
 
 ```json
 {
@@ -203,8 +202,8 @@ Sentinel Reactive CircuitBreaker，并按 `routeId` 生成独立的熔断资源�
 - `recovery-seconds`：熔断后的半开放恢复等待时间。
 
 `prod` Profile 会加载地址、追踪与文档开关等环境差异；Sentinel 公共配置随 `sentinel` profile 从应用包内加载。
-规则在应用启动时加载，调整阈值后需要重启网关。当前实现是应用内规则基线，尚未接入 Sentinel Dashboard
-或 Nacos Sentinel datasource，规则调整后如需动态推送，可在此基础上继续扩展 datasource。
+规则在应用启动时加载，调整阈值后需要重启网关。当前实现是应用内规则基线，尚未接入 Sentinel Dashboard 或 Nacos Sentinel
+datasource，规则调整后如需动态推送，可在此基础上继续扩展 datasource。
 
 ### 跨域配置
 
@@ -339,11 +338,10 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 ## 配置说明
 
 `application.yaml` 保留端口、服务名和公共 profile include。业务路由在 `application-dev.yaml` 和
-`application-prod.yaml` 中完整声明：dev 额外包含 OpenAPI 路由，prod 只保留业务路由。
-Nacos 与 Zipkin 地址按环境固定：
-dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
-`spring.cloud.nacos.config.enabled` 保持为 `false`。
-生产环境同样开启 `globalcors`，允许所有来源但不允许凭证；追踪采样率在 `prod` 中覆盖为 `0.1`。
+`application-prod.yaml` 中完整声明：dev 额外包含 OpenAPI 路由，prod 只保留业务路由。 Nacos 与 Zipkin 地址按环境固定： dev 使用
+`129.204.226.206`，prod 使用 `127.0.0.1`。Nacos 仅用于服务注册与发现，
+`spring.cloud.nacos.config.enabled` 保持为 `false`。 生产环境同样开启 `globalcors`，允许所有来源但不允许凭证；追踪采样率在
+`prod` 中覆盖为 `0.1`。
 
 本地 `dev` profile 通过 `/swagger-ui.html` 聚合 Provider、Consumer、Mail 的 OpenAPI 文档；生产
 `prod` profile 保持 SpringDoc 默认关闭状态，且网关不注册 OpenAPI 转发路由。
