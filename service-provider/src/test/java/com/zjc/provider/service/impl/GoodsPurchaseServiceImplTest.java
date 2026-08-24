@@ -80,7 +80,7 @@ class GoodsPurchaseServiceImplTest {
         mockTransactionExecution();
         when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
                 .thenReturn(lock);
-        when(lock.tryLock(3, TimeUnit.SECONDS)).thenReturn(true);
+        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
         when(goodsMapper.selectById(1L)).thenReturn(goods);
         when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
         doAnswer(invocation -> {
@@ -120,7 +120,7 @@ class GoodsPurchaseServiceImplTest {
     void purchaseLockTimeout() throws InterruptedException {
         when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
                 .thenReturn(lock);
-        when(lock.tryLock(3, TimeUnit.SECONDS)).thenReturn(false);
+        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(false);
 
         assertThatThrownBy(() -> purchaseService.purchase(1L, request(1)))
                 .isInstanceOf(BusinessException.class)
@@ -140,7 +140,7 @@ class GoodsPurchaseServiceImplTest {
         mockTransactionExecution();
         when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
                 .thenReturn(lock);
-        when(lock.tryLock(3, TimeUnit.SECONDS)).thenReturn(true);
+        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
         when(goodsMapper.selectById(1L)).thenReturn(goods(1, "99.00"));
 
         assertThatThrownBy(() -> purchaseService.purchase(1L, request(2)))
@@ -162,7 +162,7 @@ class GoodsPurchaseServiceImplTest {
         mockTransactionExecution();
         when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
                 .thenReturn(lock);
-        when(lock.tryLock(3, TimeUnit.SECONDS)).thenReturn(true);
+        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
         when(goodsMapper.selectById(1L)).thenReturn(goods(10, "99.00"));
         when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
         doAnswer(invocation -> {
@@ -189,7 +189,7 @@ class GoodsPurchaseServiceImplTest {
         mockTransactionExecution();
         when(redissonClient.getLock(GoodsPurchaseServiceImpl.PURCHASE_LOCK_KEY_PREFIX + 1L))
                 .thenReturn(lock);
-        when(lock.tryLock(3, TimeUnit.SECONDS)).thenReturn(true);
+        when(lock.tryLock(GoodsPurchaseServiceImpl.LOCK_WAIT_SECONDS, TimeUnit.SECONDS)).thenReturn(true);
         when(goodsMapper.selectById(1L)).thenReturn(goods(10, "99.00"));
         when(goodsMapper.decreaseStock(1L, 2)).thenReturn(1);
         doAnswer(invocation -> {

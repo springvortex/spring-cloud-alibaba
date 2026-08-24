@@ -260,6 +260,8 @@ zjc:
       cache-ttls:
         "provider:user:id": 30m
         "provider:goods:id": 30m
+      allowed-sub-types:
+        - java.math.BigDecimal
 ```
 
 统一能力：
@@ -267,7 +269,8 @@ zjc:
 - JSON 值序列化，key 使用字符串序列化。
 - 最终 key 格式为 `zjc:{cacheName}:{key}`。
 - 默认 TTL 30 分钟，支持按 cacheName 覆盖。
-- 多态反序列化只允许 `com.zjc.` 类型和 Spring Cache 空值对象，降低 Redis 被写入恶意 `@type` 时的攻击面。
+- 多态反序列化只允许 `com.zjc.` 类型、Spring Cache 空值对象和 `allowed-sub-types` 中显式声明的 JDK 类型，
+  降低 Redis 被写入恶意 `@type` 时的攻击面。后续 DTO 使用新的非 `com.zjc` 类型时，在配置中追加完整类名即可。
 - Redis 读/写失败只记录 WARN 并降级执行业务方法；缓存清理失败记录 ERROR，因为旧数据可能保留到 TTL 到期。
 - 业务服务可以注册自己的 `CacheErrorHandler`，common 不会强行覆盖。
 

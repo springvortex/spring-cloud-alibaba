@@ -49,18 +49,19 @@ public class RedisCacheAutoConfiguration implements CachingConfigurer {
     /**
      * Redis JSON 序列化器。
      *
-     * <p>类型信息只允许来自 Spring Cache 的空值对象和项目内部 DTO，避免把 Redis 当作可信边界
-     * 而引入任意类型反序列化风险。
+     * <p>类型信息只允许来自 Spring Cache 的空值对象、项目内部 DTO 和 DTO 常用的 JDK 数值类型，
+     * 避免把 Redis 当作可信边界而引入任意类型反序列化风险。
      *
      * @return 通用 JSON 序列化器
      */
     @Bean
     @ConditionalOnMissingBean(GenericJacksonJsonRedisSerializer.class)
-    public GenericJacksonJsonRedisSerializer redisJsonRedisSerializer() {
-        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+    public GenericJacksonJsonRedisSerializer redisJsonRedisSerializer(RedisCacheProperties properties) {
+        BasicPolymorphicTypeValidator.Builder validatorBuilder = BasicPolymorphicTypeValidator.builder()
                 .allowIfSubType("com.zjc.")
-                .allowIfSubType(NullValue.class)
-                .build();
+                .allowIfSubType(NullValue.class);
+        properties.getAllowedSubTypes().forEach(validatorBuilder::allowIfSubType);
+        PolymorphicTypeValidator typeValidator = validatorBuilder.build();
 
         return GenericJacksonJsonRedisSerializer.builder()
                 .enableDefaultTyping(typeValidator)

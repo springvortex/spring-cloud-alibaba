@@ -117,7 +117,7 @@ Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会�
 }
 ```
 
-购买流程按商品 ID 加 Redisson 可重入锁，key 为 `zjc:provider:goods:purchase:lock:{goodsId}`；锁等待 3 秒，超时返回业务码
+购买流程按商品 ID 加 Redisson 可重入锁，key 为 `zjc:provider:goods:purchase:lock:{goodsId}`；锁等待 20 秒，超时返回业务码
 `503` 和“当前购买人数过多，请稍后再试”。锁内使用数据库条件更新 `stock >= quantity` 原子扣库存，并创建订单主表和明细；库存不足返回
 “库存不足，请稍后再试”。购买成功后会清理该商品详情缓存，响应包含订单号、金额和剩余库存。
 

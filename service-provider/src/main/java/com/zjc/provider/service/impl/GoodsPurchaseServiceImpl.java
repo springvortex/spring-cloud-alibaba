@@ -43,7 +43,7 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
     /**
      * 购买锁最长等待时间；超过后快速失败，避免压测时请求无限堆积。
      */
-    private static final long LOCK_WAIT_SECONDS = 10;
+    static final long LOCK_WAIT_SECONDS = 20;
 
     /**
      * 商品详情缓存名称，与查询侧 {@code @Cacheable} 保持一致。
@@ -143,7 +143,7 @@ public class GoodsPurchaseServiceImpl implements GoodsPurchaseService {
 
         int quantity = request.getQuantity();
         if (goods.getStock() == null || goods.getStock() < quantity) {
-            log.warn("商品库存不足，拒绝购买：goodsId={}, quantity={}, currentStock={}",
+            log.info("商品库存不足，拒绝购买：goodsId={}, quantity={}, currentStock={}",
                     goodsId, quantity, goods.getStock());
             throw new BusinessException("库存不足，请稍后再试");
         }

@@ -5,6 +5,7 @@ import com.zjc.common.dto.GoodsPurchaseRequestDTO;
 import com.zjc.common.dto.GoodsPurchaseResponseDTO;
 import com.zjc.common.web.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,7 +32,7 @@ public interface GoodsFeignApi {
      * @param request 购买请求
      * @return 订单与剩余库存信息；远程调用失败时返回业务繁忙失败响应
      */
-    @PostMapping("/goods/{id}/purchase")
+    @PostMapping(value = "/goods/{id}/purchase", consumes = MediaType.APPLICATION_JSON_VALUE)
     ApiResponse<GoodsPurchaseResponseDTO> purchase(
             @PathVariable("id") Long goodsId,
             @RequestBody GoodsPurchaseRequestDTO request);

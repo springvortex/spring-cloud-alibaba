@@ -1,6 +1,7 @@
 package com.zjc.common.cache;
 
 import com.zjc.common.dto.UserDTO;
+import com.zjc.common.dto.GoodsDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -17,6 +18,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -111,9 +114,39 @@ class RedisCacheAutoConfigurationTest {
         assertThat(new String(json, StandardCharsets.UTF_8)).contains("com.zjc.common.dto.UserDTO");
         assertThat(serializer.deserialize(json)).usingRecursiveComparison().isEqualTo(user);
 
+        GoodsDTO goods = new GoodsDTO();
+        goods.setGoodsId(1L);
+        goods.setGoodsName("小米手机");
+        goods.setGoodsPrice(new BigDecimal("3999.00"));
+        goods.setStock(88);
+        goods.setStatus(1);
+        goods.setCreateTime(LocalDateTime.of(2026, 7, 20, 10, 0));
+
+        byte[] goodsJson = serializer.serialize(goods);
+        assertThat(serializer.deserialize(goodsJson)).usingRecursiveComparison().isEqualTo(goods);
+
         byte[] maliciousJson = "{\"@type\":\"java.lang.Thread\"}"
                 .getBytes(StandardCharsets.UTF_8);
         assertThatThrownBy(() -> serializer.deserialize(maliciousJson)).isInstanceOf(Exception.class);
+    }
+
+    @Test
+    @DisplayName("可通过配置扩展 JDK 多态类型白名单")
+    void testJdkSubTypesCanBeConfigured() {
+        AtomicReference<GenericJacksonJsonRedisSerializer> serializerReference = new AtomicReference<>();
+        contextRunner
+                .withPropertyValues(
+                        "zjc.cache.redis.allowed-sub-types[0]=java.math.BigDecimal",
+                        "zjc.cache.redis.allowed-sub-types[1]=java.math.BigInteger"
+                )
+                .run(context -> serializerReference.set(context.getBean(GenericJacksonJsonRedisSerializer.class)));
+        GenericJacksonJsonRedisSerializer serializer = serializerReference.get();
+        TestAmountValue value = new TestAmountValue();
+        value.setAmount(BigInteger.valueOf(88));
+
+        assertThat(serializer.deserialize(serializer.serialize(value)))
+                .isInstanceOfSatisfying(TestAmountValue.class, decoded ->
+                        assertThat(decoded.getAmount()).isEqualTo(BigInteger.valueOf(88)));
     }
 
     @Configuration
@@ -134,6 +167,22 @@ class RedisCacheAutoConfigurationTest {
         @Bean
         RedisConnectionFactory redisConnectionFactory() {
             return org.mockito.Mockito.mock(RedisConnectionFactory.class);
+        }
+    }
+
+    /**
+     * 包含 JDK 数值类型的缓存测试载体。
+     */
+    static class TestAmountValue {
+
+        private BigInteger amount;
+
+        public BigInteger getAmount() {
+            return amount;
+        }
+
+        public void setAmount(BigInteger amount) {
+            this.amount = amount;
         }
     }
 }

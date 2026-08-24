@@ -1,6 +1,7 @@
 package com.zjc.common.aop;
 
 import cn.hutool.json.JSONUtil;
+import com.zjc.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
  * <ul>
  *   <li>请求前：记录 HTTP 方法、URI、类名、方法名、入参</li>
  *   <li>正常返回：记录耗时与返回值（超长截断）</li>
- *   <li>抛出异常：记录耗时与异常消息，异常继续向上抛出（由全局异常处理器接管）</li>
+ *   <li>抛出异常：业务异常记录 WARN，未预期异常记录 ERROR，异常继续向上抛出</li>
  * </ul>
  *
  * <p>无需手动注册，通过 {@code AutoConfiguration.imports} 自动生效。
@@ -77,7 +78,13 @@ public class WebLogAspect {
             return result;
         } catch (Throwable e) {
             long costTime = System.currentTimeMillis() - startTime;
-            log.error("<== {} {} | {} | cost={}ms | error={}", httpMethod, uri, target, costTime, e.getMessage());
+            if (e instanceof BusinessException) {
+                log.warn("<== {} {} | {} | cost={}ms | businessError={}",
+                        httpMethod, uri, target, costTime, e.getMessage());
+            } else {
+                log.error("<== {} {} | {} | cost={}ms | error={}",
+                        httpMethod, uri, target, costTime, e.getMessage());
+            }
             throw e;
         }
     }

@@ -11,6 +11,8 @@ zjc:
       cache-ttls:
         provider:user:id: 30m
         provider:goods:id: 30m
+      allowed-sub-types:
+        - java.math.BigDecimal
   redisson:
     enabled: true
     lock-watchdog-timeout: 30s

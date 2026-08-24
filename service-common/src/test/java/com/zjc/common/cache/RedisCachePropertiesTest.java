@@ -3,7 +3,9 @@ package com.zjc.common.cache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +27,8 @@ class RedisCachePropertiesTest {
         assertThat(properties.getKeyPrefix()).isEqualTo("zjc:");
         assertThat(properties.getDefaultTtl()).isEqualTo(Duration.ofMinutes(30));
         assertThat(properties.getCacheTtls()).isEmpty();
+        assertThat(properties.getAllowedSubTypes())
+                .containsExactly(BigDecimal.class.getName());
     }
 
     @Test
@@ -41,5 +45,20 @@ class RedisCachePropertiesTest {
         assertThat(properties.getCacheTtls())
                 .containsEntry("provider:user:id", Duration.ofMinutes(1))
                 .containsEntry("provider:goods:id", Duration.ofMinutes(2));
+    }
+
+    @Test
+    @DisplayName("支持通过配置扩展 Redis 多态类型白名单")
+    void testAllowedSubTypesOverride() {
+        RedisCacheProperties properties = new RedisCacheProperties();
+        properties.setAllowedSubTypes(List.of(
+                BigDecimal.class.getName(),
+                "java.math.BigInteger"
+        ));
+
+        assertThat(properties.getAllowedSubTypes()).containsExactly(
+                BigDecimal.class.getName(),
+                "java.math.BigInteger"
+        );
     }
 }

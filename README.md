@@ -9,7 +9,7 @@
 | 语言           | Java                                 | 21         |
 | 构建工具       | Maven                                | 3.9+       |
 | 基础框架       | Spring Boot                          | 4.1.0      |
-| 微服务框架     | Spring Cloud                         | 2025.1.2   |
+| 微服务框架     | Spring Cloud                         | 2025.1.3   |
 | 注册中心       | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
 | ORM            | MyBatis-Plus                         | 3.5.17     |
 | 数据库         | MySQL                                | -          |
