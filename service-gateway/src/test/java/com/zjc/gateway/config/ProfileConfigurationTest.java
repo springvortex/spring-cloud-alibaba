@@ -59,6 +59,30 @@ class ProfileConfigurationTest {
         );
     }
 
+    @Test
+    @DisplayName("Sentinel 只限制网关入口接口")
+    void sentinelOnlyLimitsGatewayEntryInterfaces() {
+        Map<String, Object> sentinel = loadResource("config/application-sentinel.yaml");
+        List<?> interfaces = (List<?>) path(sentinel, "zjc.gateway.sentinel.interfaces");
+
+        assertThat(interfaces).hasSize(2);
+        Map<?, ?> defaultRule = (Map<?, ?>) interfaces.get(0);
+        assertThat(defaultRule.get("name")).isEqualTo("non-mail-interfaces");
+        String defaultPattern = String.valueOf(defaultRule.get("pattern"));
+        assertThat(defaultPattern).isEqualTo("/api/(?![^/]+/mail/send$).*");
+        assertThat(defaultRule.get("total-qps")).isEqualTo(100);
+        assertThat(defaultRule.get("per-ip-qps")).isEqualTo(10);
+        assertThat(java.util.regex.Pattern.matches(defaultPattern, "/api/v1/consumer/user/1")).isTrue();
+        assertThat(java.util.regex.Pattern.matches(defaultPattern, "/api/v1/provider/user/1")).isTrue();
+        assertThat(java.util.regex.Pattern.matches(defaultPattern, "/api/v1/mail/send")).isFalse();
+
+        Map<?, ?> mailRule = (Map<?, ?>) interfaces.get(1);
+        assertThat(mailRule.get("name")).isEqualTo("mail-send");
+        assertThat(mailRule.get("pattern")).isEqualTo("/api/[^/]+/mail/send");
+        assertThat(mailRule.get("total-qps")).isEqualTo(20);
+        assertThat(mailRule.get("per-ip-qps")).isEqualTo(2);
+    }
+
     private List<String> routeIds(Map<String, Object> profile) {
         List<?> routes = (List<?>) path(profile,
                 "spring.cloud.gateway.server.webflux.routes");

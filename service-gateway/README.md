@@ -79,7 +79,7 @@ spring:
 
 网关直接集成 Sentinel，当前提供三类能力：
 
-- 按接口维度限流：使用 Sentinel API 分组和正则路径匹配，一条规则代表一个接口或一组同构接口。
+- 按接口维度限流：使用 Sentinel API 分组和正则路径匹配，一条规则代表一个入口接口或一组同构入口接口。
 - 按 IP 限流：在接口规则上增加 `per-ip-qps`，同一客户端 IP 超过阈值后返回 429。
 - 路由熔断：每条业务路由独立统计异常比例和慢请求比例，下游故障时快速转发到网关兜底响应。
 
@@ -123,8 +123,8 @@ zjc:
         - ::1
         - 0:0:0:0:0:0:0:1
       interfaces:
-        - name: provider-user-detail
-          pattern: /api/[^/]+/provider/user/\d+
+        - name: non-mail-interfaces
+          pattern: /api/(?![^/]+/mail/send$).*
           total-qps: 100
           per-ip-qps: 10
           interval-sec: 1
@@ -141,6 +141,12 @@ zjc:
         stat-interval-ms: 60000
         recovery-seconds: 10
 ```
+
+默认规则匹配除 `/api/{版本}/mail/send` 外的全部网关入口，例如 Consumer 与 Provider 的用户详情接口统一使用
+`100/10 QPS`；`mail-send` 单独使用 `20/2 QPS`。负向前瞻保证 mail 发送接口只命中专用规则，不会同时进入默认规则。
+用户查询链路的外部入口是 Consumer 时：`Gateway -> service-consumer -> Feign/LoadBalancer -> service-provider`。
+Sentinel 只统计进入 Gateway 的这一次请求，Consumer 内部调用 Provider 不会再次经过 Gateway 规则，因此不会重复限流。
+直连 `service-provider`、`service-consumer` 等业务服务端口时不经过 Gateway，也不会触发这些入口限流规则。
 
 `spring.cloud.sentinel.filter.enabled=false` 会关闭普通 WebFlux Sentinel 过滤器。Gateway 使用官方
 `SentinelGatewayFilter`，如果两者同时开启，同一个请求会被统计两次，阈值表现也会偏离配置。

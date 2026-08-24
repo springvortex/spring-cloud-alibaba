@@ -196,7 +196,7 @@ management:
 
 排查方式：
 
-1. 通过 Gateway 发起请求，例如 `GET /api/v1/provider/user/1`。
+1. 通过 Gateway 发起请求，例如 `GET /api/v1/consumer/user/1`。
 2. 从 Gateway 开始/结束日志中复制 `traceId`。
 3. 在 Zipkin 查询该 `traceId`，查看网关与下游服务的调用树、耗时和异常。
 4. 也可用同一个 `traceId` 聚合各服务本地日志。

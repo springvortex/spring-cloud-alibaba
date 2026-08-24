@@ -24,7 +24,7 @@ class SentinelGatewayPropertiesTest {
 
         assertThatIllegalStateException()
                 .isThrownBy(properties::validate)
-                .withMessageContaining("provider-user-detail");
+                .withMessageContaining("non-mail-interfaces");
     }
 
     @Test
@@ -38,12 +38,12 @@ class SentinelGatewayPropertiesTest {
                 .isThrownBy(properties::validate)
                 .withMessageContaining("name is required");
 
-        rule.setName("provider-user-detail");
+        rule.setName("non-mail-interfaces");
         assertThatIllegalStateException()
                 .isThrownBy(properties::validate)
                 .withMessageContaining("pattern is required");
 
-        rule.setPattern("/api/[^/]+/provider/user/\\d+");
+        rule.setPattern("/api/(?![^/]+/mail/send$).*");
         rule.setTotalQps(0);
         assertThatIllegalStateException()
                 .isThrownBy(properties::validate)
@@ -85,7 +85,7 @@ class SentinelGatewayPropertiesTest {
                 .withMessageContaining("name must be unique");
 
         SentinelGatewayProperties.InterfaceRule invalidPatternRule = newRule(100, 10);
-        invalidPatternRule.setPattern("/api/[^/+/provider/user/\\d+");
+        invalidPatternRule.setPattern("/api/(?![^/+/mail/send$).*");
         SentinelGatewayProperties invalidPatternProperties = new SentinelGatewayProperties();
         invalidPatternProperties.setInterfaces(List.of(invalidPatternRule));
 
@@ -107,8 +107,8 @@ class SentinelGatewayPropertiesTest {
 
     private SentinelGatewayProperties.InterfaceRule newRule(double totalQps, double perIpQps) {
         SentinelGatewayProperties.InterfaceRule rule = new SentinelGatewayProperties.InterfaceRule();
-        rule.setName("provider-user-detail");
-        rule.setPattern("/api/[^/]+/provider/user/\\d+");
+        rule.setName("non-mail-interfaces");
+        rule.setPattern("/api/(?![^/]+/mail/send$).*");
         rule.setTotalQps(totalQps);
         rule.setPerIpQps(perIpQps);
         rule.setIntervalSec(1);

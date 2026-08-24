@@ -78,7 +78,7 @@ public class SentinelGatewayProperties {
         private String name;
 
         /**
-         * 接口路径正则，例如 {@code /api/[^/]+/provider/user/\d+}。
+         * 接口路径正则，例如 {@code /api/(?![^/]+/mail/send$).*}。
          */
         private String pattern;
 

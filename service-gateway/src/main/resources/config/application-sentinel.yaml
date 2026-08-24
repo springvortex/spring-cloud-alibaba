@@ -24,8 +24,8 @@ zjc:
         - ::1
         - 0:0:0:0:0:0:0:1
       interfaces:
-        - name: provider-user-detail
-          pattern: /api/[^/]+/provider/user/\d+
+        - name: non-mail-interfaces
+          pattern: /api/(?![^/]+/mail/send$).*
           total-qps: 100
           per-ip-qps: 10
           interval-sec: 1
