@@ -3,10 +3,13 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.GoodsDTO;
+import com.zjc.common.dto.GoodsPurchaseRequestDTO;
+import com.zjc.common.dto.GoodsPurchaseResponseDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.GoodsConverter;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
+import com.zjc.provider.service.GoodsPurchaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,8 +51,17 @@ public class GoodsController {
     private GoodsService goodsService;
 
     @Resource
+    private GoodsPurchaseService goodsPurchaseService;
+
+    @Resource
     private GoodsConverter goodsConverter;
 
+    /**
+     * 查询单个有效商品，不存在时 data 为 null。
+     *
+     * @param id 商品主键
+     * @return 商品 DTO
+     */
     @Operation(summary = "根据ID查询单个商品")
     @GetMapping("/goods/{id}")
     public ApiResponse<GoodsDTO> getGoods(
@@ -57,12 +69,24 @@ public class GoodsController {
         return ApiResponse.success(goodsService.getGoods(id));
     }
 
+    /**
+     * 查询全部有效商品。
+     *
+     * @return 商品 DTO 列表
+     */
     @Operation(summary = "查询全部有效商品")
     @GetMapping("/goods/list")
     public ApiResponse<List<GoodsDTO>> list() {
         return ApiResponse.success(goodsConverter.entityListToDtoList(goodsService.list()));
     }
 
+    /**
+     * 分页查询有效商品。
+     *
+     * @param current 页码，从 1 开始
+     * @param size    每页数量，范围 1-100
+     * @return 商品分页结果
+     */
     @Operation(summary = "分页查询有效商品")
     @GetMapping("/goods/page")
     public ApiResponse<Page<GoodsDTO>> page(
@@ -79,6 +103,12 @@ public class GoodsController {
         return ApiResponse.success(result);
     }
 
+    /**
+     * 新增商品，并返回数据库回填主键后的 DTO。
+     *
+     * @param dto 商品信息
+     * @return 新增后的商品 DTO
+     */
     @Operation(summary = "新增商品")
     @PostMapping("/goods")
     public ApiResponse<GoodsDTO> add(@Valid @RequestBody GoodsDTO dto) {
@@ -87,6 +117,29 @@ public class GoodsController {
         return ApiResponse.success(goodsConverter.entityToDto(goods));
     }
 
+    /**
+     * 购买指定商品。
+     *
+     * <p>服务层会按商品维度获取分布式锁，并在事务内完成扣库存和创建订单。
+     *
+     * @param id      商品主键
+     * @param request 购买请求
+     * @return 订单与剩余库存信息
+     */
+    @Operation(summary = "购买商品", description = "按商品维度使用 Redisson 分布式锁扣减库存并创建待支付订单")
+    @PostMapping("/goods/{id}/purchase")
+    public ApiResponse<GoodsPurchaseResponseDTO> purchase(
+            @Parameter(description = "商品主键") @PathVariable("id") Long id,
+            @Valid @RequestBody GoodsPurchaseRequestDTO request) {
+        return ApiResponse.success("购买成功", goodsPurchaseService.purchase(id, request));
+    }
+
+    /**
+     * 根据商品 ID 修改有效商品。
+     *
+     * @param dto 商品信息，必须包含商品主键
+     * @return 修改成功返回成功响应，商品不存在返回 NOT_FOUND
+     */
     @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
     public ApiResponse<Void> update(@Valid @RequestBody GoodsDTO dto) {
@@ -94,6 +147,12 @@ public class GoodsController {
         return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
+    /**
+     * 逻辑删除指定商品。
+     *
+     * @param id 商品主键
+     * @return 删除成功返回成功响应，商品不存在返回 NOT_FOUND
+     */
     @Operation(summary = "根据ID删除商品（逻辑删除）")
     @DeleteMapping("/goods/{id}")
     public ApiResponse<Void> delete(

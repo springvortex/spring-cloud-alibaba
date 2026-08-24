@@ -23,6 +23,22 @@
 | GET  | `/user/{id}` | 远程查询用户（Feign + 降级演示） |
 | GET  | `/user/list` | 远程查询用户列表                 |
 
+### 商品消费
+
+通过 Feign 代理调用 provider 的商品购买接口，LoadBalancer 会从 provider 的多个实例中选择一个节点。
+
+| 方法 | 路径                      | 说明                                   |
+|------|---------------------------|----------------------------------------|
+| POST | `/goods/{id}/purchase`    | 远程购买商品（Feign + 分布式锁压测）   |
+
+直连 consumer 请求示例：
+
+```bash
+curl -X POST "http://localhost:9002/api/v1/consumer/goods/1/purchase" \
+  -H "Content-Type: application/json" \
+  -d '{"userId":1,"quantity":1}'
+```
+
 ### Feign 测试
 
 | 方法 | 路径          | 说明                              |

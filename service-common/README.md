@@ -35,7 +35,8 @@ com.zjc.common
 │   ├── ApiResponseEnum            响应码标准枚举（实现 ErrorCode 接口）
 │   └── ErrorCode                  错误码接口
 ├── dto                            跨服务传输对象
-│   ├── UserDTO / GoodsDTO / OrderDTO / OrderDetailDTO
+│   ├── UserDTO / GoodsDTO / GoodsPurchaseRequestDTO
+│   │  / GoodsPurchaseResponseDTO / OrderDTO / OrderDetailDTO
 │   ├── MailSendDTO / MailLogDTO
 ├── exception
 │   ├── BusinessException          业务异常（供 Service / Controller 抛出）

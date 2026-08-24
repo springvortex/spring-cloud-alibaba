@@ -32,6 +32,7 @@ class AutoConfigurationImportsTest {
 
         assertThat(imports).contains(
                 "com.zjc.common.cache.RedisCacheAutoConfiguration",
+                "com.zjc.common.api.goods.factory.GoodsFeignFallbackFactory",
                 "com.zjc.common.api.mail.factory.MailFeignFallbackFactory",
                 "com.zjc.common.api.user.factory.UserFeignFallbackFactory"
         );

@@ -10,7 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  *
  * <p>通过 {@code @EnableFeignClients} 指定扫描 {@code com.zjc.common.api} 包，
  * 直接复用 common 模块中共享的 Feign API 契约，
- * 包括 {@code TestApi}、{@code MailFeignApi}、{@code UserFeignApi}，
+ * 包括 {@code TestApi}、{@code MailFeignApi}、{@code UserFeignApi}、{@code GoodsFeignApi}，
  * consumer 无需在本地重复声明。
  *
  * @author jiancai.zhong

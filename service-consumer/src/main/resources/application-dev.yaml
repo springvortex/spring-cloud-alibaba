@@ -8,8 +8,8 @@ spring:
         config:
           default:
             logger-level: full
-            connect-timeout: 1000
-            read-timeout: 2000
+            connect-timeout: 10000
+            read-timeout: 60000
 
 feign:
   sentinel:

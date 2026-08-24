@@ -40,6 +40,7 @@
 | GET    | `/goods/list` | 查询全部有效商品     |
 | GET    | `/goods/page` | 分页查询商品         |
 | POST   | `/goods`      | 新增商品             |
+| POST   | `/goods/{id}/purchase` | 购买商品（分布式锁扣库存并创建订单） |
 | PUT    | `/goods`      | 修改商品             |
 | DELETE | `/goods/{id}` | 删除商品（逻辑删除） |
 
@@ -104,6 +105,21 @@ ID 驱逐对应详情缓存。用户/商品列表、分页和订单聚合查询�
 
 Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会输出 ERROR 日志，提示旧数据可能保留到 TTL 到期。 序列化、key 前缀、TTL
 和降级策略由 `service-common` 的缓存自动装配统一提供。
+
+### 购买接口
+
+购买接口使用 `POST /api/v1/provider/goods/{id}/purchase`，请求体：
+
+```json
+{
+  "userId": 1,
+  "quantity": 1
+}
+```
+
+购买流程按商品 ID 加 Redisson 可重入锁，key 为 `zjc:provider:goods:purchase:lock:{goodsId}`；锁等待 3 秒，超时返回业务码
+`503` 和“当前购买人数过多，请稍后再试”。锁内使用数据库条件更新 `stock >= quantity` 原子扣库存，并创建订单主表和明细；库存不足返回
+“库存不足，请稍后再试”。购买成功后会清理该商品详情缓存，响应包含订单号、金额和剩余库存。
 
 ## Redisson
 

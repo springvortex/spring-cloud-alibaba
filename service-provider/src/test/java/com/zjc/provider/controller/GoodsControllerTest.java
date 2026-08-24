@@ -3,10 +3,13 @@ package com.zjc.provider.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.GoodsDTO;
+import com.zjc.common.dto.GoodsPurchaseRequestDTO;
+import com.zjc.common.dto.GoodsPurchaseResponseDTO;
 import com.zjc.common.web.ApiResponse;
 import com.zjc.provider.converter.GoodsConverter;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.service.GoodsService;
+import com.zjc.provider.service.GoodsPurchaseService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,9 @@ class GoodsControllerTest {
 
     @Mock
     private GoodsService goodsService;
+
+    @Mock
+    private GoodsPurchaseService goodsPurchaseService;
 
     @Mock
     private GoodsConverter goodsConverter;
@@ -162,6 +168,29 @@ class GoodsControllerTest {
     }
 
     /**
+     * 验证购买接口委托购买服务，并包装订单结果。
+     */
+    @Test
+    @DisplayName("purchase: 委托购买服务并返回订单结果")
+    void testPurchaseReturnsResult() {
+        GoodsPurchaseRequestDTO request = new GoodsPurchaseRequestDTO();
+        request.setUserId(1L);
+        request.setQuantity(2);
+        GoodsPurchaseResponseDTO result = new GoodsPurchaseResponseDTO();
+        result.setGoodsId(1L);
+        result.setQuantity(2);
+        result.setRemainingStock(8);
+        when(goodsPurchaseService.purchase(1L, request)).thenReturn(result);
+
+        ApiResponse<GoodsPurchaseResponseDTO> resp = goodsController.purchase(1L, request);
+
+        assertThat(resp.isSuccess()).isTrue();
+        assertThat(resp.getMessage()).isEqualTo("购买成功");
+        assertThat(resp.getData()).isSameAs(result);
+        verify(goodsPurchaseService).purchase(1L, request);
+    }
+
+    /**
      * 验证修改商品时调用 updateById。
      */
     @Test
@@ -181,6 +210,9 @@ class GoodsControllerTest {
         verify(goodsService).updateGoods(any(Goods.class));
     }
 
+    /**
+     * 验证修改不存在的商品时返回资源不存在。
+     */
     @Test
     @DisplayName("update: 商品不存在返回资源不存在")
     void testUpdateNotFound() {
@@ -212,6 +244,9 @@ class GoodsControllerTest {
         verify(goodsService).deleteGoods(1L);
     }
 
+    /**
+     * 验证删除不存在的商品时返回资源不存在。
+     */
     @Test
     @DisplayName("delete: 商品不存在返回资源不存在")
     void testDeleteNotFound() {
