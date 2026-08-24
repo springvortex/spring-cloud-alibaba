@@ -55,6 +55,38 @@ class ProfileConfigurationTest {
         assertThat(path(prod, "springdoc.swagger-ui.enabled")).isEqualTo(false);
     }
 
+    @Test
+    @DisplayName("Redis 公共配置与环境地址符合约定")
+    void redisConfigurationFollowsEnvironmentConvention() {
+        Map<String, Object> common = loadResource("config/application-redis.yaml");
+        Map<String, Object> dev = loadProfile("application-dev.yaml");
+        Map<String, Object> prod = loadProfile("application-prod.yaml");
+        Map<String, Object> application = loadResource("application.yaml");
+
+        assertThat(path(application, "spring.profiles.include")).asList().contains("redis");
+        assertThat(path(common, "spring.cache.type")).isEqualTo("redis");
+        assertThat(path(common, "zjc.cache.redis.enabled")).isEqualTo(true);
+        assertThat(path(common, "zjc.cache.redis.key-prefix")).isEqualTo("zjc:");
+        assertThat(path(common, "zjc.cache.redis.default-ttl")).isEqualTo("30m");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> cacheTtls = (Map<String, Object>) path(common, "zjc.cache.redis.cache-ttls");
+        assertThat(cacheTtls)
+                .containsEntry("provider:user:id", "30m")
+                .containsEntry("provider:goods:id", "30m");
+
+        assertThat(path(dev, "spring.data.redis.host")).isEqualTo("129.204.226.206");
+        assertThat(path(dev, "spring.data.redis.port")).isEqualTo(6379);
+        assertThat(path(dev, "spring.data.redis.password").toString())
+                .startsWith("ENC(")
+                .endsWith(")");
+        assertThat(path(prod, "spring.data.redis.host")).isEqualTo("127.0.0.1");
+        assertThat(path(prod, "spring.data.redis.port")).isEqualTo(6379);
+        assertThat(path(prod, "spring.data.redis.password").toString())
+                .startsWith("ENC(")
+                .endsWith(")");
+    }
+
     private Map<String, Object> loadProfile(String name) {
         return loadResource(name);
     }

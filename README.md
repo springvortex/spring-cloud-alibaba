@@ -13,6 +13,7 @@
 | 注册中心       | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
 | ORM            | MyBatis-Plus                         | 3.5.17     |
 | 数据库         | MySQL                                | -          |
+| 缓存           | Spring Cache + Redis                 | -          |
 | 网关           | Spring Cloud Gateway                 | -          |
 | 服务调用       | OpenFeign                            | -          |
 | 客户端负载均衡 | Spring Cloud LoadBalancer + Caffeine | -          |
@@ -31,7 +32,7 @@
 
 ```
 spring-cloud-alibaba
-├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API，业务服务依赖（Gateway 除外）
+├── service-common      公共模块，存放 DTO、统一响应、常量、Feign 共享 API 和缓存基础设施，业务服务依赖（Gateway 除外）
 ├── service-provider    服务提供者，端口 9001，用户/商品/订单业务
 ├── service-consumer    服务消费者，端口 9002，通过 Feign 调用 provider
 ├── service-gateway     API 网关，端口 80，统一入口与路由
@@ -53,6 +54,7 @@ spring-cloud-alibaba
 | JDK 21+    | 是                     | -                      | 编译与运行 Java 服务                   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
 | Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包                       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
 | MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录                     | 官方安装包或 Docker；生产环境仅内网访问                                         |
+| Redis 7+   | service-provider 必需 | 6379                   | 用户/商品详情缓存                       | dev 使用共享 Redis；prod 与应用部署在同一台服务器或内网                         |
 | Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现                         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
 | Zipkin     | 是，当前配置已启用导出 | 9411                   | 展示 trace/span 调用链                 | dev 使用共享环境；prod 与应用部署在同一台服务器并通过内网访问                    |
 | MailHog    | service-mail dev 必需 | 1025                   | 接收开发环境测试邮件                   | dev 使用共享 MailHog，不向真实邮箱发信                                            |
@@ -61,7 +63,8 @@ spring-cloud-alibaba
 ### 组件安装
 
 当前 `dev` Profile 直接连接共享开发环境：Nacos `129.204.226.206:8848`、MySQL
-`129.204.226.206:3306`、Zipkin `129.204.226.206:9411`、MailHog `129.204.226.206:1025`。
+`129.204.226.206:3306`、Redis `129.204.226.206:6379`、Zipkin `129.204.226.206:9411`、
+MailHog `129.204.226.206:1025`。
 本地开发一般不需要再启动这些组件，只需确认网络可达并准备数据库结构。
 
 如需搭建一套完全隔离的本地组件，可参考以下命令；由于项目配置使用固定地址，搭建后需要把对应服务的
@@ -74,6 +77,11 @@ docker run -d --name mysql \
   -e MYSQL_DATABASE=spring_cloud_alibaba \
   -p 3306:3306 \
   mysql:8
+
+# Redis 7（service-provider 缓存）
+docker run -d --name redis \
+  -p 6379:6379 \
+  redis:7
 
 # Nacos standalone（开发环境；生产建议配置外置 MySQL 并开启鉴权）
 docker run -d --name nacos \
@@ -100,8 +108,8 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 
 1. MySQL `spring_cloud_alibaba` 数据库和业务表已初始化。
 2. Zipkin 打开 `http://129.204.226.206:9411` 确认可访问。
-3. Nacos、MySQL、Zipkin、MailHog 端口从开发机可访问。
-4. Nacos、MySQL、Zipkin、MailHog 不建议作为生产入口暴露公网。
+3. Redis、Nacos、MySQL、Zipkin、MailHog 端口从开发机可访问。
+4. Redis、Nacos、MySQL、Zipkin、MailHog 不建议作为生产入口暴露公网。
 
 当前仓库没有维护数据库初始化 SQL 文件，业务表结构需要从现有环境导出，或自行按下方表清单创建后再导入数据。
 
@@ -127,7 +135,7 @@ Nacos 公共认证来自 `config/application-nacos.yaml`，`application-{env}.ya
 | `dev` | 共享开发环境配置；开启 SpringDoc 与网关聚合 Swagger UI |
 | `prod` | 生产配置；默认关闭 `/v3/api-docs` 与 Swagger UI，网关不注册 OpenAPI 转发路由；CORS 允许所有来源但不允许凭证 |
 
-Nacos、MySQL、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
+Nacos、MySQL、Redis、Zipkin 的主机地址按环境直接写入各服务的 Profile：`dev` 使用 `129.204.226.206`，
 `prod` 使用 `127.0.0.1`。
 
 Nacos 认证只作用于服务发现与注册。`dev` 与 `prod` 均使用 `config/application-nacos.yaml`
@@ -151,7 +159,7 @@ Nacos 认证只作用于服务发现与注册。`dev` 与 `prod` 均使用 `conf
 
 ### 启动顺序
 
-1. 确认 Nacos、MySQL、Zipkin 可用；dev 使用共享环境，Mail 服务还需共享 MailHog
+1. 确认 Nacos、MySQL、Redis、Zipkin 可用；dev 使用共享环境，Mail 服务还需共享 MailHog
 2. `service-provider`（业务核心）
 3. `service-gateway`（统一入口，建议启动）
 4. `service-consumer` / `service-mail`（按需）
@@ -254,7 +262,7 @@ service-provider/target/
 ### 前提条件
 
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
-- 生产服务器已运行 Nacos、MySQL 和 Zipkin，服务通过 `127.0.0.1` 访问
+- 生产服务器已运行 Nacos、MySQL、Redis 和 Zipkin，服务通过 `127.0.0.1` 访问
 - 生产 SMTP 账号与 Jasypt 密钥已准备完成
 - 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，默认激活 `dev`，生产部署时切换到 `prod`
 
@@ -362,6 +370,7 @@ HTTP 端口供 Gateway 和其他内部服务调用，但这些端口必须留在
 | service-mail     | 9004                          | 禁止             | 仅 Gateway / 内部服务访问                   |
 | Nacos            | 8848、9848、9849、7848        | 禁止             | 控制台、客户端通信、Raft 端口都不能公网开放 |
 | MySQL            | 3306                          | 禁止             | 仅业务服务和运维链路访问                    |
+| Redis            | 6379                          | 禁止             | 仅业务服务内网访问                          |
 | Zipkin           | 9411                          | 禁止             | 仅应用和运维人员内网访问                    |
 
 推荐的网络拓扑：
@@ -376,7 +385,7 @@ service-gateway（唯一暴露入口）
 内网：service-provider / service-consumer / service-mail
     |
     v
-内网：Nacos / MySQL / Zipkin
+内网：Nacos / MySQL / Redis / Zipkin
 ```
 
 部署时的具体要求：
@@ -385,6 +394,7 @@ service-gateway（唯一暴露入口）
 - `9001`、`9002`、`9004` 只允许内网访问；Docker 部署时不要把这些端口映射到宿主机公网地址。
 - Nacos 的 `8848` 控制台以及 `9848`、`9849`、`7848` 通信端口都不得暴露公网。
 - MySQL `3306` 不得暴露公网，应用通过内网地址连接。
+- Redis `6379` 不得暴露公网，应用通过内网地址连接。
 - Zipkin `9411` 不得暴露公网；确需远程查看时通过 VPN、堡垒机或内网反向代理接入。
 - 直接访问 `http://host:9001/swagger-ui.html`、`http://host:9002/swagger-ui.html`、
   `http://host:9004/swagger-ui.html` 只适用于本机或内网调试，生产环境不允许绕过 Gateway。
@@ -548,7 +558,7 @@ generator.tables=t_user,t_order,t_order_detail,t_goods
 ## 配置管理
 
 所有业务配置都随服务 JAR 打包。各服务 `src/main/resources/application.yaml` 保留服务名、端口、默认环境和公共 profile include，
-并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin` 等公共 profile；同目录下的
+并通过 `spring.profiles.include` 引入 `nacos`、`api`、`jasypt`、`zipkin`、`redis` 等公共 profile；同目录下的
 `application-dev.yaml` 与 `application-prod.yaml` 维护环境差异。Gateway 不使用 API 前缀和 Jasypt，
 只 include `nacos`、`zipkin`、`sentinel` 和 `cors`。
 

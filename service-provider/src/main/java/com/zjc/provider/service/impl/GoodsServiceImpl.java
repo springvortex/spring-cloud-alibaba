@@ -1,9 +1,14 @@
 package com.zjc.provider.service.impl;
 
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.zjc.common.dto.GoodsDTO;
+import com.zjc.provider.converter.GoodsConverter;
 import com.zjc.provider.entity.Goods;
 import com.zjc.provider.mapper.GoodsMapper;
 import com.zjc.provider.service.GoodsService;
+import jakarta.annotation.Resource;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,4 +23,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements GoodsService {
 
+    @Resource
+    private GoodsConverter goodsConverter;
+
+    @Override
+    @Cacheable(cacheNames = "provider:goods:id", key = "#goodsId")
+    public GoodsDTO getGoods(Long goodsId) {
+        return goodsConverter.entityToDto(getById(goodsId));
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "provider:goods:id", key = "#goods.goodsId")
+    public boolean updateGoods(Goods goods) {
+        return updateById(goods);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "provider:goods:id", key = "#goodsId")
+    public boolean deleteGoods(Long goodsId) {
+        return removeById(goodsId);
+    }
 }

@@ -54,7 +54,7 @@ public class UserController {
     @GetMapping("/user/{id}")
     public ApiResponse<UserDTO> getUser(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
-        return ApiResponse.success(userConverter.entityToDto(userService.getById(id)));
+        return ApiResponse.success(userService.getUser(id));
     }
 
     @Operation(summary = "查询全部有效用户")
@@ -90,7 +90,7 @@ public class UserController {
     @Operation(summary = "根据ID修改用户")
     @PutMapping("/user")
     public ApiResponse<Void> update(@Valid @RequestBody UserDTO dto) {
-        boolean updated = userService.updateById(userConverter.dtoToEntity(dto));
+        boolean updated = userService.updateUser(userConverter.dtoToEntity(dto));
         return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
@@ -98,7 +98,7 @@ public class UserController {
     @DeleteMapping("/user/{id}")
     public ApiResponse<Void> delete(
             @Parameter(description = "用户主键") @PathVariable("id") Long id) {
-        boolean removed = userService.removeById(id);
+        boolean removed = userService.deleteUser(id);
         return removed ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 }

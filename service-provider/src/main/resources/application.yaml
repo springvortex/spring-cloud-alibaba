@@ -11,3 +11,4 @@ spring:
       - jasypt
       - zipkin
       - nacos
+      - redis

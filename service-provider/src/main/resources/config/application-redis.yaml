@@ -1,0 +1,13 @@
+spring:
+  cache:
+    type: redis
+
+zjc:
+  cache:
+    redis:
+      enabled: true
+      key-prefix: "zjc:"
+      default-ttl: 30m
+      cache-ttls:
+        provider:user:id: 30m
+        provider:goods:id: 30m

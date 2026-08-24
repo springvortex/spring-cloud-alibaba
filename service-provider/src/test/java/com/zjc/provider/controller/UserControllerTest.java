@@ -46,28 +46,23 @@ class UserControllerTest {
     @Test
     @DisplayName("getUser: 返回单个用户 DTO")
     void testGetUserReturnsDto() {
-        User user = new User();
-        user.setUserId(1L);
-        user.setUsername("zhangsan");
         UserDTO dto = new UserDTO();
         dto.setUserId(1L);
         dto.setUsername("zhangsan");
-        when(userService.getById(1L)).thenReturn(user);
-        when(userConverter.entityToDto(user)).thenReturn(dto);
+        when(userService.getUser(1L)).thenReturn(dto);
 
         ApiResponse<UserDTO> resp = userController.getUser(1L);
 
         assertThat(resp.isSuccess()).isTrue();
         assertThat(resp.getData().getUserId()).isEqualTo(1L);
         assertThat(resp.getData().getUsername()).isEqualTo("zhangsan");
-        verify(userService).getById(1L);
+        verify(userService).getUser(1L);
     }
 
     @Test
     @DisplayName("getUser: 用户不存在时返回 null data")
     void testGetUserNotFound() {
-        when(userService.getById(999L)).thenReturn(null);
-        when(userConverter.entityToDto(null)).thenReturn(null);
+        when(userService.getUser(999L)).thenReturn(null);
 
         ApiResponse<UserDTO> resp = userController.getUser(999L);
 
@@ -155,12 +150,12 @@ class UserControllerTest {
         User entity = new User();
         entity.setUserId(1L);
         when(userConverter.dtoToEntity(dto)).thenReturn(entity);
-        when(userService.updateById(any(User.class))).thenReturn(true);
+        when(userService.updateUser(any(User.class))).thenReturn(true);
 
         ApiResponse<Void> resp = userController.update(dto);
 
         assertThat(resp.isSuccess()).isTrue();
-        verify(userService).updateById(any(User.class));
+        verify(userService).updateUser(any(User.class));
     }
 
     @Test
@@ -171,7 +166,7 @@ class UserControllerTest {
         User entity = new User();
         entity.setUserId(999L);
         when(userConverter.dtoToEntity(dto)).thenReturn(entity);
-        when(userService.updateById(entity)).thenReturn(false);
+        when(userService.updateUser(entity)).thenReturn(false);
 
         ApiResponse<Void> resp = userController.update(dto);
 
@@ -183,18 +178,18 @@ class UserControllerTest {
     @Test
     @DisplayName("delete: 逻辑删除用户")
     void testDeleteSuccess() {
-        when(userService.removeById(1L)).thenReturn(true);
+        when(userService.deleteUser(1L)).thenReturn(true);
 
         ApiResponse<Void> resp = userController.delete(1L);
 
         assertThat(resp.isSuccess()).isTrue();
-        verify(userService).removeById(1L);
+        verify(userService).deleteUser(1L);
     }
 
     @Test
     @DisplayName("delete: 用户不存在返回资源不存在")
     void testDeleteNotFound() {
-        when(userService.removeById(999L)).thenReturn(false);
+        when(userService.deleteUser(999L)).thenReturn(false);
 
         ApiResponse<Void> resp = userController.delete(999L);
 

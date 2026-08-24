@@ -54,7 +54,7 @@ public class GoodsController {
     @GetMapping("/goods/{id}")
     public ApiResponse<GoodsDTO> getGoods(
             @Parameter(description = "商品主键") @PathVariable("id") Long id) {
-        return ApiResponse.success(goodsConverter.entityToDto(goodsService.getById(id)));
+        return ApiResponse.success(goodsService.getGoods(id));
     }
 
     @Operation(summary = "查询全部有效商品")
@@ -90,7 +90,7 @@ public class GoodsController {
     @Operation(summary = "根据ID修改商品")
     @PutMapping("/goods")
     public ApiResponse<Void> update(@Valid @RequestBody GoodsDTO dto) {
-        boolean updated = goodsService.updateById(goodsConverter.dtoToEntity(dto));
+        boolean updated = goodsService.updateGoods(goodsConverter.dtoToEntity(dto));
         return updated ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 
@@ -98,7 +98,7 @@ public class GoodsController {
     @DeleteMapping("/goods/{id}")
     public ApiResponse<Void> delete(
             @Parameter(description = "商品主键") @PathVariable("id") Long id) {
-        boolean removed = goodsService.removeById(id);
+        boolean removed = goodsService.deleteGoods(id);
         return removed ? ApiResponse.success() : ApiResponse.failure(ApiResponseEnum.NOT_FOUND);
     }
 }

@@ -1,4 +1,5 @@
 com.zjc.common.exception.GlobalExceptionHandler
+com.zjc.common.cache.RedisCacheAutoConfiguration
 com.zjc.common.web.ApiPathAutoConfiguration
 com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.mail.factory.MailFeignFallbackFactory

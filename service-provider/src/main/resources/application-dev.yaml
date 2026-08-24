@@ -8,6 +8,13 @@ spring:
     url: jdbc:mysql://129.204.226.206:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
     username: spring_cloud_alibaba
     password: ENC(v7mfKeB+hZoLIe9kRHW1/6ZqFYR7HBT5LqnWKt78RnNxkNfe3gKYNZ0CyI6/UZGLIYKe+tUIWR/pK8Ej9Tglhw==)
+  data:
+    redis:
+      host: 129.204.226.206
+      port: 6379
+      password: ENC(mpeWTrI3Lm8jPYnwt1CQA6ehGPWHH2ABK/gLycL0VsmPISZuEDrBbLW07t3b7DrU)
+      timeout: 2s
+      connect-timeout: 2s
 
 management:
   tracing:

@@ -49,16 +49,11 @@ class GoodsControllerTest {
     @Test
     @DisplayName("getGoods: 返回单个商品 DTO")
     void testGetGoodsReturnsDto() {
-        Goods goods = new Goods();
-        goods.setGoodsId(1L);
-        goods.setGoodsName("iPhone");
-        goods.setGoodsPrice(new BigDecimal("6999"));
         GoodsDTO dto = new GoodsDTO();
         dto.setGoodsId(1L);
         dto.setGoodsName("iPhone");
         dto.setGoodsPrice(new BigDecimal("6999"));
-        when(goodsService.getById(1L)).thenReturn(goods);
-        when(goodsConverter.entityToDto(goods)).thenReturn(dto);
+        when(goodsService.getGoods(1L)).thenReturn(dto);
 
         ApiResponse<GoodsDTO> resp = goodsController.getGoods(1L);
 
@@ -73,8 +68,7 @@ class GoodsControllerTest {
     @Test
     @DisplayName("getGoods: 商品不存在返回 null")
     void testGetGoodsNotFound() {
-        when(goodsService.getById(999L)).thenReturn(null);
-        when(goodsConverter.entityToDto(null)).thenReturn(null);
+        when(goodsService.getGoods(999L)).thenReturn(null);
 
         ApiResponse<GoodsDTO> resp = goodsController.getGoods(999L);
 
@@ -179,12 +173,12 @@ class GoodsControllerTest {
         Goods entity = new Goods();
         entity.setGoodsId(1L);
         when(goodsConverter.dtoToEntity(dto)).thenReturn(entity);
-        when(goodsService.updateById(any(Goods.class))).thenReturn(true);
+        when(goodsService.updateGoods(any(Goods.class))).thenReturn(true);
 
         ApiResponse<Void> resp = goodsController.update(dto);
 
         assertThat(resp.isSuccess()).isTrue();
-        verify(goodsService).updateById(any(Goods.class));
+        verify(goodsService).updateGoods(any(Goods.class));
     }
 
     @Test
@@ -195,7 +189,7 @@ class GoodsControllerTest {
         Goods entity = new Goods();
         entity.setGoodsId(999L);
         when(goodsConverter.dtoToEntity(dto)).thenReturn(entity);
-        when(goodsService.updateById(entity)).thenReturn(false);
+        when(goodsService.updateGoods(entity)).thenReturn(false);
 
         ApiResponse<Void> resp = goodsController.update(dto);
 
@@ -210,18 +204,18 @@ class GoodsControllerTest {
     @Test
     @DisplayName("delete: 逻辑删除")
     void testDeleteSuccess() {
-        when(goodsService.removeById(1L)).thenReturn(true);
+        when(goodsService.deleteGoods(1L)).thenReturn(true);
 
         ApiResponse<Void> resp = goodsController.delete(1L);
 
         assertThat(resp.isSuccess()).isTrue();
-        verify(goodsService).removeById(1L);
+        verify(goodsService).deleteGoods(1L);
     }
 
     @Test
     @DisplayName("delete: 商品不存在返回资源不存在")
     void testDeleteNotFound() {
-        when(goodsService.removeById(999L)).thenReturn(false);
+        when(goodsService.deleteGoods(999L)).thenReturn(false);
 
         ApiResponse<Void> resp = goodsController.delete(999L);
 

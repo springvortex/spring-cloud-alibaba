@@ -86,12 +86,31 @@ com.zjc.provider
 └── service / impl                  业务逻辑
 ```
 
+## 详情缓存
+
+provider 是用户、商品和订单数据的拥有方，因此第一层 Redis 缓存放在本模块的 Service 层，而不是 Controller 层，
+也不通过 consumer 再包一层缓存，避免同一条数据出现双层缓存和失效不同步。
+
+当前只缓存稳定读取的单个资源：
+
+| 数据 | cacheName | Key | TTL |
+|------|-----------|-----|-----|
+| 用户详情 | `provider:user:id` | 用户 ID | 30 分钟 |
+| 商品详情 | `provider:goods:id` | 商品 ID | 30 分钟 |
+
+最终 Redis key 形如 `zjc:provider:user:id:1`。查询不存在时也会缓存空值，减少不存在的 ID 对数据库的穿透压力；
+更新、删除成功后按 ID 驱逐对应详情缓存。用户/商品列表、分页和订单聚合查询暂不缓存。
+
+Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会输出 ERROR 日志，提示旧数据可能保留到 TTL 到期。
+序列化、key 前缀、TTL 和降级策略由 `service-common` 的缓存自动装配统一提供。
+
 ## 自动继承的公共能力
 
 引入 service-common 依赖后，本模块自动获得以下能力（无需配置）：
 
 - **全局异常处理**：`GlobalExceptionHandler` 统一拦截异常并用 `ApiResponse` 包装返回
 - **接口日志切面**：`WebLogAspect` 自动记录 Controller 入参、返回值与执行耗时
+- **Redis 缓存基础设施**：由 `RedisCacheAutoConfiguration` 提供统一 JSON 序列化、key 前缀、TTL 和故障降级
 
 ## 配置说明
 
@@ -102,6 +121,10 @@ com.zjc.provider
 
 基础设施地址按环境固定：dev 使用 `129.204.226.206`，prod 使用 `127.0.0.1`；MySQL 均要求 SSL。Nacos 仅用于服务注册与发现，
 `spring.cloud.nacos.config.enabled` 保持为 `false`。
+
+公共缓存配置来自 `config/application-redis.yaml`：使用 Redis Cache，默认 TTL 30 分钟，用户/商品详情各自 30 分钟。
+Redis 地址按环境维护：dev 为 `129.204.226.206:6379`，prod 为 `127.0.0.1:6379`；
+两个环境的密码均使用 Jasypt 密文，启动时通过 `JASYPT_ENCRYPTOR_PASSWORD` 解密。
 
 ## 日志与链路追踪
 
@@ -130,6 +153,8 @@ management:
 - spring-cloud-starter-alibaba-nacos-discovery
 - spring-boot-starter-web
 - spring-boot-starter-actuator
+- spring-boot-starter-data-redis
+- spring-boot-starter-cache
 - spring-boot-starter-zipkin
 - mybatis-plus-spring-boot4-starter
 - mybatis-plus-jsqlparser

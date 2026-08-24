@@ -1,6 +1,7 @@
 ﻿# Service Common
 
-公共模块，业务服务的基础依赖（Gateway 基于 WebFlux，刻意不引入）。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力。
+公共模块，业务服务的基础依赖（Gateway 基于 WebFlux，刻意不引入）。引入此模块后自动获得全局异常处理、接口日志切面、配置加密等能力；
+在业务服务自行引入 Redis / Cache starter 后，还会自动获得统一的 Redis 缓存基础设施。
 
 ## 职责
 
@@ -11,6 +12,7 @@
 - 跨服务传输 DTO
 - 跨服务共享的 Feign API 契约
 - 配置加密（Jasypt，引入后自动生效）
+- Redis / Spring Cache 公共缓存基础设施（按需生效）
 - OpenFeign / SpringDoc / Web MVC 相关的公共编译 API
 
 ## 包结构
@@ -25,6 +27,10 @@ com.zjc.common
 │   └── user
 │       ├── UserFeignApi           用户服务 Feign 客户端
 │       └── factory                UserFeignFallbackFactory - 用户接口降级工厂
+├── cache
+│   ├── RedisCacheAutoConfiguration Redis 缓存统一自动装配
+│   ├── RedisCacheProperties        zjc.cache.redis 配置属性
+│   └── ResilientCacheErrorHandler  Redis 故障时的业务降级策略
 ├── constant
 │   ├── ApiResponseEnum            响应码标准枚举（实现 ErrorCode 接口）
 │   └── ErrorCode                  错误码接口
@@ -48,6 +54,7 @@ common 模块通过 `META-INF/spring/org.springframework.boot.autoconfigure.Auto
 
 ```
 com.zjc.common.exception.GlobalExceptionHandler
+com.zjc.common.cache.RedisCacheAutoConfiguration
 com.zjc.common.web.ApiPathAutoConfiguration
 com.zjc.common.aop.WebLogAspect
 com.zjc.common.api.user.factory.UserFeignFallbackFactory
@@ -57,6 +64,9 @@ com.zjc.common.api.user.factory.UserFeignFallbackFactory
 Feign 前缀拦截器和用户 Feign 降级工厂，无需手动
 `@Import` 或
 `@ComponentScan`。
+
+> **注意**：`RedisCacheAutoConfiguration` 只在 classpath 存在 Spring Data Redis 时生效。common 中的 Redis 依赖是
+> `optional`，Gateway 等不需要缓存的模块不会被强制引入 Redis 运行时。
 
 > **注意**：Gateway 基于 WebFlux，`@RestControllerAdvice` 和 `@RestController` 切面对它无效。Gateway 需要单独编写 WebFlux
 > 版本。
@@ -210,6 +220,53 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 | `UserFeignApi` | service-provider | `GET /user/{id}` | `GET /api/v1/provider/user/{id}` | 远程查询单个用户，失败时返回业务繁忙错误 |
 | `UserFeignApi` | service-provider | `GET /user/list` | `GET /api/v1/provider/user/list` | 远程查询用户列表，失败时返回业务繁忙错误 |
 
+## Redis 缓存基础设施
+
+项目不创建独立的 `service-cache` 服务。`service-common` 只提供缓存基础设施，数据拥有方在自己的 Service 层直接使用
+Redis 和 Spring Cache，避免远程缓存调用、双缓存和跨服务失效问题。
+
+业务服务需要显式引入：
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+```
+
+公共配置示例：
+
+```yaml
+spring:
+  cache:
+    type: redis
+
+zjc:
+  cache:
+    redis:
+      enabled: true
+      key-prefix: "zjc:"
+      default-ttl: 30m
+      cache-ttls:
+        "provider:user:id": 30m
+        "provider:goods:id": 30m
+```
+
+统一能力：
+
+- JSON 值序列化，key 使用字符串序列化。
+- 最终 key 格式为 `zjc:{cacheName}:{key}`。
+- 默认 TTL 30 分钟，支持按 cacheName 覆盖。
+- 多态反序列化只允许 `com.zjc.` 类型和 Spring Cache 空值对象，降低 Redis 被写入恶意 `@type` 时的攻击面。
+- Redis 读/写失败只记录 WARN 并降级执行业务方法；缓存清理失败记录 ERROR，因为旧数据可能保留到 TTL 到期。
+- 业务服务可以注册自己的 `CacheErrorHandler`，common 不会强行覆盖。
+
+Redis 连接地址属于环境差异，由各业务服务在自己的 `application-dev.yaml` / `application-prod.yaml` 中维护。
+
 ## 依赖说明
 
 该模块不打包为可执行 Spring Boot 应用（`spring-boot.repackage.skip=true`），仅作为 jar 供其他模块引入。模块只显式声明源码直接使用的
@@ -225,6 +282,7 @@ Spring MVC、Spring Boot AutoConfigure、AspectJ、OpenFeign、SpringDoc common�
 | OpenFeign starter | `service-consumer` |
 | Sentinel Feign 熔断 | `service-consumer`（当前只有它启用 `feign.sentinel.enabled=true`） |
 | Nacos Discovery / 数据库 / 邮件 | 对应业务模块 |
+| Redis / Spring Cache | 需要缓存的业务模块（当前 `service-provider`） |
 
 这样公共库不会把 Tomcat、Swagger UI、Sentinel 等完整 starter 传递给所有下游模块，后续升级 Spring Boot / Spring Cloud
 时影响面更清晰。新增公共代码如果直接 import 了新的第三方包，应同步在 `service-common/pom.xml` 显式声明，而不是继续依赖传递依赖。

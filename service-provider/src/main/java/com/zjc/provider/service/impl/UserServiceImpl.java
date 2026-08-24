@@ -1,9 +1,14 @@
 package com.zjc.provider.service.impl;
 
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.zjc.common.dto.UserDTO;
+import com.zjc.provider.converter.UserConverter;
 import com.zjc.provider.entity.User;
 import com.zjc.provider.mapper.UserMapper;
 import com.zjc.provider.service.UserService;
+import jakarta.annotation.Resource;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,4 +23,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
+    @Resource
+    private UserConverter userConverter;
+
+    @Override
+    @Cacheable(cacheNames = "provider:user:id", key = "#userId")
+    public UserDTO getUser(Long userId) {
+        return userConverter.entityToDto(getById(userId));
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "provider:user:id", key = "#user.userId")
+    public boolean updateUser(User user) {
+        return updateById(user);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "provider:user:id", key = "#userId")
+    public boolean deleteUser(Long userId) {
+        return removeById(userId);
+    }
 }
