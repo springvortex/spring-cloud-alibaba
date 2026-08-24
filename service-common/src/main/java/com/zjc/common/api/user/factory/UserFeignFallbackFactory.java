@@ -1,13 +1,13 @@
 package com.zjc.common.api.user.factory;
 
 import com.zjc.common.api.user.UserFeignApi;
+import com.zjc.common.constant.ApiResponseEnum;
 import com.zjc.common.dto.UserDTO;
 import com.zjc.common.web.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,10 +22,10 @@ import java.util.List;
  *
  * <p><b>降级策略：</b>
  * <ul>
- *   <li>单个查询：返回空数据的成功响应，上层用 {@code data == null} 判断是否命中降级</li>
- *   <li>列表查询：返回空列表，保证上层 forEach / 分页不会 NPE</li>
+ *   <li>统一返回失败响应，错误码为 503，提示「业务繁忙，请稍后再试」</li>
+ *   <li>失败原因只写入日志，不透出给调用方</li>
  * </ul>
- * 实际项目里应根据业务取舍：是返回兜底数据（可用性优先）还是直接抛错（一致性优先）。
+ * 这样可以区分「查询成功但数据不存在」和「下游服务不可用」。
  *
  * @author jiancai.zhong
  */
@@ -34,10 +34,15 @@ import java.util.List;
 public class UserFeignFallbackFactory implements FallbackFactory<UserFeignApi> {
 
     /**
+     * 降级时的对外提示，不暴露连接超时、下游地址等基础设施细节。
+     */
+    private static final String FALLBACK_MESSAGE = "业务繁忙，请稍后再试";
+
+    /**
      * 创建降级代理对象，远程调用失败时由 Feign 自动回调。
      *
      * @param cause 远程调用失败原因（超时、连接拒绝、服务不可用等）
-     * @return 降级代理，返回兜底数据而非抛异常
+     * @return 降级代理，返回服务不可用的失败响应而非抛异常
      */
     @Override
     public UserFeignApi create(Throwable cause) {
@@ -48,14 +53,18 @@ public class UserFeignFallbackFactory implements FallbackFactory<UserFeignApi> {
             @Override
             public ApiResponse<UserDTO> getUser(Long userId) {
                 log.warn("getUser 降级，userId={}", userId);
-                return ApiResponse.success();
+                return serviceUnavailable();
             }
 
             @Override
             public ApiResponse<List<UserDTO>> list() {
-                log.warn("list 降级，返回空列表");
-                return ApiResponse.success(Collections.emptyList());
+                log.warn("list 降级");
+                return serviceUnavailable();
             }
         };
+    }
+
+    private static <T> ApiResponse<T> serviceUnavailable() {
+        return ApiResponse.failure(ApiResponseEnum.SERVICE_UNAVAILABLE.code(), FALLBACK_MESSAGE);
     }
 }

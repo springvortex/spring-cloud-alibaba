@@ -36,7 +36,7 @@ public interface UserFeignApi {
      * 根据用户 ID 查询用户信息。
      *
      * @param userId 用户主键
-     * @return 用户信息（降级时返回 null 包装在成功响应里）
+     * @return 用户信息（降级时返回业务繁忙失败响应）
      */
     @GetMapping("/user/{id}")
     ApiResponse<UserDTO> getUser(@PathVariable("id") Long userId);
@@ -44,7 +44,7 @@ public interface UserFeignApi {
     /**
      * 查询全部有效用户列表。
      *
-     * @return 用户列表（降级时返回空列表）
+     * @return 用户列表（降级时返回业务繁忙失败响应）
      */
     @GetMapping("/user/list")
     ApiResponse<List<UserDTO>> list();

@@ -39,7 +39,7 @@ public class UserConsumerController {
      * 远程查询单个用户，底层通过 Feign 代理调用 service-provider。
      *
      * @param id 用户主键
-     * @return 用户信息，降级时 data 为 null
+     * @return 用户信息，降级时返回业务繁忙失败响应
      */
     @Operation(summary = "远程查询用户（Feign + 降级演示）")
     @GetMapping("/user/{id}")
@@ -51,7 +51,7 @@ public class UserConsumerController {
     /**
      * 远程查询用户列表，底层通过 Feign 代理调用 service-provider。
      *
-     * @return 用户列表，降级时返回空列表
+     * @return 用户列表，降级时返回业务繁忙失败响应
      */
     @Operation(summary = "远程查询用户列表")
     @GetMapping("/user/list")

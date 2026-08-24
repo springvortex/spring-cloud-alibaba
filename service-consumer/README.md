@@ -51,7 +51,8 @@ com.zjc.consumer
 ## Feign 降级机制
 
 用户调用复用 `service-common` 中的 `UserFeignApi`，其 `UserFeignFallbackFactory` 也由 common 自动注册。provider 不可用或调用超时
-时，单个用户查询返回空 `data`，用户列表返回空列表，上层 Controller 无需 try-catch。
+时，统一返回 `success=false`、`code=503`、`message=业务繁忙，请稍后再试`。失败原因只记录在服务日志中，不透出给调用方；上层
+Controller 无需 try-catch。
 
 `/feign/port` 使用 common 中的 `TestApi`。consumer 通过
 `@EnableFeignClients(basePackages = {"com.zjc.common.api"})` 扫描共享契约，本地没有重复定义 Feign 客户端。
