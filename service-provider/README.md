@@ -78,7 +78,8 @@ com.zjc.provider
 ├── config
 │   ├── AuditMetaObjectHandler      自动填充 createTime / updateTime（时区 Asia/Shanghai）
 │   ├── MybatisPlusConfig           分页插件
-│   └── OpenApiConfig               SpringDoc 元信息配置
+│   ├── OpenApiConfig               SpringDoc 元信息配置
+│   └── RedissonConfiguration       Redisson 客户端配置
 ├── controller                      REST 接口（User/Goods/Order/Test）
 ├── converter                       MapStruct Entity/DTO 转换器
 ├── entity                          数据库实体（User/Goods/Order/OrderDetail）
@@ -104,6 +105,30 @@ ID 驱逐对应详情缓存。用户/商品列表、分页和订单聚合查询�
 Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会输出 ERROR 日志，提示旧数据可能保留到 TTL 到期。 序列化、key 前缀、TTL
 和降级策略由 `service-common` 的缓存自动装配统一提供。
 
+## Redisson
+
+provider 引入 Redisson Core，用于后续秒杀、延迟任务和跨实例协调场景，例如可重入锁、看门狗、延迟队列和分布式限流。客户端不使用
+starter 自动装配，而是由 `RedissonConfiguration` 复用 `spring.data.redis` 的 host、port、database、认证和超时配置；dev/prod
+不需要额外维护 Redisson 地址。
+
+客户端启用懒初始化，只有第一次执行命令时才建立连接。看门狗基础值默认 30 秒：
+
+```yaml
+zjc:
+  redisson:
+    enabled: true
+    lock-watchdog-timeout: 30s
+```
+
+使用 `lock()`、`tryLock(...)` 且不传 `leaseTime` 时，Redisson 会自动续期；一旦显式传入 `leaseTime`，锁到期后自动释放，不再由看门狗
+续期。Redisson 对象名不经过 Spring Cache 的 key 前缀处理，业务代码需自行保持单冒号风格，例如：
+
+```text
+zjc:provider:seckill:lock:1001
+zjc:provider:seckill:delay-queue
+zjc:provider:ratelimit:user:10001
+```
+
 ## 自动继承的公共能力
 
 引入 service-common 依赖后，本模块自动获得以下能力（无需配置）：
@@ -124,7 +149,7 @@ Redis 读/写异常时业务请求会继续查数据库；缓存清理失败会�
 
 公共缓存配置来自 `config/application-redis.yaml`：使用 Redis Cache，默认 TTL 30 分钟，用户/商品详情各自 30 分钟。 Redis
 地址按环境维护：dev 为 `129.204.226.206:6379`，prod 为 `127.0.0.1:6379`； 两个环境的密码均使用 Jasypt 密文，启动时通过
-`JASYPT_ENCRYPTOR_PASSWORD` 解密。
+`JASYPT_ENCRYPTOR_PASSWORD` 解密。Redisson 与 Spring Cache 共用这组连接配置。
 
 ## 日志与链路追踪
 
@@ -155,6 +180,7 @@ management:
 - spring-boot-starter-actuator
 - spring-boot-starter-data-redis
 - spring-boot-starter-cache
+- redisson
 - spring-boot-starter-zipkin
 - mybatis-plus-spring-boot4-starter
 - mybatis-plus-jsqlparser

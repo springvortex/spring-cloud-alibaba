@@ -13,7 +13,7 @@
 | 注册中心       | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
 | ORM            | MyBatis-Plus                         | 3.5.17     |
 | 数据库         | MySQL                                | -          |
-| 缓存           | Spring Cache + Redis                 | -          |
+| 缓存           | Spring Cache + Redis + Redisson      | -          |
 | 网关           | Spring Cloud Gateway                 | -          |
 | 服务调用       | OpenFeign                            | -          |
 | 客户端负载均衡 | Spring Cloud LoadBalancer + Caffeine | -          |
@@ -54,7 +54,7 @@ spring-cloud-alibaba
 | JDK 21+    | 是                     | -                      | 编译与运行 Java 服务   | Windows/macOS 使用 Temurin、Oracle JDK 等发行版；Linux 使用发行版包或解压发行版 |
 | Maven 3.9+ | 构建必需               | -                      | 编译、测试、打包       | `mvn -version` 确认可用；IDEA 可使用 Bundled Maven                              |
 | MySQL 8+   | 是                     | 3306                   | 业务数据、邮件记录     | 官方安装包或 Docker；生产环境仅内网访问                                         |
-| Redis 7+   | service-provider 必需  | 6379                   | 用户/商品详情缓存      | dev 使用共享 Redis；prod 与应用部署在同一台服务器或内网                         |
+| Redis 7+   | service-provider 必需  | 6379                   | 详情缓存、分布式锁、延迟队列 | dev 使用共享 Redis；prod 与应用部署在同一台服务器或内网                         |
 | Nacos 3.x  | 是                     | 8848、9848、9849、7848 | 服务注册与发现         | 官方发行包或 Docker；开发可用 standalone + Derby，生产建议外置 MySQL            |
 | Zipkin     | 是，当前配置已启用导出 | 9411                   | 展示 trace/span 调用链 | dev 使用共享环境；prod 与应用部署在同一台服务器并通过内网访问                   |
 | MailHog    | service-mail dev 必需  | 1025                   | 接收开发环境测试邮件   | dev 使用共享 MailHog，不向真实邮箱发信                                          |
@@ -77,7 +77,7 @@ docker run -d --name mysql \
   -p 3306:3306 \
   mysql:8
 
-# Redis 7（service-provider 缓存）
+# Redis 7（service-provider 缓存与 Redisson）
 docker run -d --name redis \
   -p 6379:6379 \
   redis:7

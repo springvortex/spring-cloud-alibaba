@@ -68,6 +68,8 @@ class ProfileConfigurationTest {
         assertThat(path(common, "zjc.cache.redis.enabled")).isEqualTo(true);
         assertThat(path(common, "zjc.cache.redis.key-prefix")).isEqualTo("zjc:");
         assertThat(path(common, "zjc.cache.redis.default-ttl")).isEqualTo("30m");
+        assertThat(path(common, "zjc.redisson.enabled")).isEqualTo(true);
+        assertThat(path(common, "zjc.redisson.lock-watchdog-timeout")).isEqualTo("30s");
 
         @SuppressWarnings("unchecked")
         Map<String, Object> cacheTtls = (Map<String, Object>) path(common, "zjc.cache.redis.cache-ttls");

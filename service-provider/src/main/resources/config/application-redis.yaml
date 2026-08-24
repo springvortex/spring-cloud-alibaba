@@ -11,3 +11,6 @@ zjc:
       cache-ttls:
         provider:user:id: 30m
         provider:goods:id: 30m
+  redisson:
+    enabled: true
+    lock-watchdog-timeout: 30s
