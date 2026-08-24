@@ -303,7 +303,7 @@ com.zjc.gateway.exception.GatewayErrorWebExceptionHandler
 - HTTP 404 映射业务码 `102`，提示请求路径或路由不存在。
 - HTTP 503 映射业务码 `503`，用于下游服务不存在、不可用或负载均衡找不到实例。
 - 其他 HTTP 状态码按 `ApiResponseEnum` 的码段规则映射，未识别状态使用通用失败码 `-1`。
-- 4xx 记录 warn 日志，5xx 记录 error 日志；响应体只输出稳定提示，不暴露内部异常细节。
+- 4xx 记录 warn 日志，5xx 记录 error 日志；浏览器自动请求 `/favicon.ico` 产生的 404 不记录，避免无意义告警。
 - 不会拦截已经成功转发的业务响应；业务服务返回的 JSON 会原样透传。
 
 ## 入口与端口边界

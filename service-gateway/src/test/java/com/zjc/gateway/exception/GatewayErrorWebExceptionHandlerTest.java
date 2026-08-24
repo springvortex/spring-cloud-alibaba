@@ -2,6 +2,7 @@ package com.zjc.gateway.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -57,6 +58,32 @@ class GatewayErrorWebExceptionHandlerTest {
         JsonNode body = objectMapper.readTree(exchange.getResponse().getBodyAsString().block());
         assertThat(body.get("code").asInt()).isEqualTo(503);
         assertThat(body.get("message").asString()).isEqualTo("服务不可用，请稍后再试");
+    }
+
+    @Test
+    @DisplayName("favicon 404 不产生网关告警日志")
+    void testFaviconNotFoundDoesNotLogWarning() {
+        GatewayErrorWebExceptionHandler handler = newHandler();
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/favicon.ico").build());
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(GatewayErrorWebExceptionHandler.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+                new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        try {
+            handler.handle(exchange, new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "No static resource favicon.ico"))
+                    .block();
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+
+        assertThat(appender.list).isEmpty();
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private GatewayErrorWebExceptionHandler newHandler() {

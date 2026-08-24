@@ -34,6 +34,8 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
 
     private static final String CACHE_CONTROL_NO_STORE = "no-store";
 
+    private static final String FAVICON_PATH = "/favicon.ico";
+
     private final ObjectMapper objectMapper;
 
     public GatewayErrorWebExceptionHandler(ObjectMapper objectMapper) {
@@ -53,7 +55,7 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
 
         if (status.is5xxServerError()) {
             log.error("网关请求处理失败：{} {}", exchange.getRequest().getMethod(), path, ex);
-        } else {
+        } else if (!isBrowserFaviconNotFound(path, status)) {
             log.warn("网关请求处理失败：{} {}，状态码：{}，原因：{}",
                     exchange.getRequest().getMethod(), path, status.value(), ex.getMessage());
         }
@@ -79,6 +81,14 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
             return errorResponse.getStatusCode();
         }
         return HttpStatusCode.valueOf(500);
+    }
+
+    /**
+     * Browsers request the favicon automatically when any HTML page is opened.
+     * Its expected 404 is noise in gateway logs and is therefore not logged.
+     */
+    private boolean isBrowserFaviconNotFound(String path, HttpStatusCode status) {
+        return status.value() == 404 && FAVICON_PATH.equals(path);
     }
 
     /**
