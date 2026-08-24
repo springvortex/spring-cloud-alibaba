@@ -54,7 +54,7 @@
         <hutool.version>5.8.47</hutool.version>
         <bouncycastle.version>1.85.2</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
-        <swagger.version>2.2.53</swagger.version>
+        <swagger.version>2.2.54</swagger.version>
         <springdoc.version>3.1.0</springdoc.version>
         <jasypt-spring-boot.version>4.0.4</jasypt-spring-boot.version>
         <jasypt.version>1.9.3</jasypt.version>
