@@ -1,5 +1,6 @@
 package com.zjc.common.api.mail;
 
+import com.zjc.common.api.mail.factory.MailFeignFallbackFactory;
 import com.zjc.common.dto.MailLogDTO;
 import com.zjc.common.dto.MailSendDTO;
 import com.zjc.common.web.ApiResponse;
@@ -19,7 +20,11 @@ import org.springframework.web.bind.annotation.RequestBody;
  *
  * @author jiancai.zhong
  */
-@FeignClient(value = "service-mail", contextId = "mailFeignApi")
+@FeignClient(
+        value = "service-mail",
+        contextId = "mailFeignApi",
+        fallbackFactory = MailFeignFallbackFactory.class
+)
 public interface MailFeignApi {
 
     /**

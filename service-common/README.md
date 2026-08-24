@@ -205,7 +205,7 @@ common 模块中定义了跨服务共享的 Feign 客户端接口，其他服务
 
 | 接口           | 目标服务         | 契约资源路径     | 实际请求路径                     | 说明                                   |
 |----------------|------------------|------------------|----------------------------------|----------------------------------------|
-| `MailFeignApi` | service-mail     | `POST /send`     | `POST /api/v1/mail/send`         | 发送邮件                               |
+| `MailFeignApi` | service-mail     | `POST /send`     | `POST /api/v1/mail/send`         | 发送邮件，失败时返回业务繁忙错误        |
 | `TestApi`      | service-provider | `GET /port`      | `GET /api/v1/provider/port`      | 获取 provider 实例端口，验证链路连通性 |
 | `UserFeignApi` | service-provider | `GET /user/{id}` | `GET /api/v1/provider/user/{id}` | 远程查询单个用户，失败时返回业务繁忙错误 |
 | `UserFeignApi` | service-provider | `GET /user/list` | `GET /api/v1/provider/user/list` | 远程查询用户列表，失败时返回业务繁忙错误 |
