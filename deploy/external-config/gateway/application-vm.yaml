@@ -1,0 +1,14 @@
+# gateway 的虚拟机覆盖配置：路由、限流、CORS 继续使用镜像内置配置
+spring:
+  cloud:
+    nacos:
+      discovery:
+        # 网关通过 Nacos 拉取 provider/consumer/mail 实例列表
+        server-addr: 192.168.100.128:8848
+
+management:
+  tracing:
+    export:
+      zipkin:
+        # 记录网关入口链路，便于串联下游服务
+        endpoint: http://192.168.100.128:9411/api/v2/spans

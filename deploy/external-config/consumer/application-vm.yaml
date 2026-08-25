@@ -1,0 +1,14 @@
+# consumer 的虚拟机覆盖配置：无数据库和 Redis，只需服务发现与链路追踪
+spring:
+  cloud:
+    nacos:
+      discovery:
+        # consumer 通过 Nacos 发现 provider 实例并负载均衡调用
+        server-addr: 192.168.100.128:8848
+
+management:
+  tracing:
+    export:
+      zipkin:
+        # consumer 聚合调用的链路数据也发送到同一个 Zipkin
+        endpoint: http://192.168.100.128:9411/api/v2/spans

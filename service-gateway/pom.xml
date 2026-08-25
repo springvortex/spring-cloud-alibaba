@@ -99,4 +99,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <!-- 只负责生成 service-gateway 的 OCI 镜像 tar，不影响常规 Maven 构建 -->
+        <profile>
+            <id>docker-tar</id>
+            <properties>
+                <!-- Jib 启动服务使用的 main class -->
+                <docker.main-class>com.zjc.gateway.GatewayApplication</docker.main-class>
+                <!-- 镜像元数据中的默认端口；Compose 中会映射为宿主机 80 -->
+                <docker.container-port>80</docker.container-port>
+                <!-- 打开父 POM 中 Jib buildTar 执行的开关 -->
+                <jib.skip>false</jib.skip>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>

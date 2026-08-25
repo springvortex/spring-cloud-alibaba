@@ -1,0 +1,4 @@
+# 真实密钥不进 Git；部署机从 .env.example 复制后填写
+.env
+# 日志由 Compose 挂载到宿主机，仅保留在部署机
+logs/

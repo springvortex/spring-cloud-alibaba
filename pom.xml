@@ -66,6 +66,17 @@
         <!-- MapStruct（编译期 DTO <-> Entity 转换，零反射） -->
         <mapstruct.version>1.6.3</mapstruct.version>
 
+        <!-- Docker 镜像构建：Jib 版本 -->
+        <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
+        <!-- 本地镜像名：zjc/<module>:tag -->
+        <docker.image-prefix>zjc</docker.image-prefix>
+        <!-- 可通过 -Ddocker.tag=... 覆盖，默认使用工程版本 -->
+        <docker.tag>${project.version}</docker.tag>
+        <!-- 构建时基础镜像；Docker Hub 直连不稳定时可用 -Ddocker.base-image=... 替换 -->
+        <docker.base-image>dockerproxy.net/library/eclipse-temurin:21-jre</docker.base-image>
+        <!-- 可运行模块在 docker-tar Profile 中覆盖为 false；common 和父 POM 不生成镜像 -->
+        <jib.skip>true</jib.skip>
+
     </properties>
 
     <dependencyManagement>
@@ -186,6 +197,56 @@
     <build>
         <pluginManagement>
             <plugins>
+                <!--
+                    Jib 公共配置：可运行服务通过 docker-tar Profile 激活。
+                    buildTar 不依赖本机 Docker daemon，产物是 target/jib-image.tar。
+                -->
+                <plugin>
+                    <groupId>com.google.cloud.tools</groupId>
+                    <artifactId>jib-maven-plugin</artifactId>
+                    <version>${jib-maven-plugin.version}</version>
+                    <configuration>
+                        <!-- 父 POM 和依赖模块默认跳过，只有可运行服务的 docker-tar Profile 打开开关 -->
+                        <skip>${jib.skip}</skip>
+                        <from>
+                            <!-- 基础镜像只提供 JRE；平台固定为 VMware Ubuntu 常见的 linux/amd64 -->
+                            <image>${docker.base-image}</image>
+                            <platforms>
+                                <platform>
+                                    <os>linux</os>
+                                    <architecture>amd64</architecture>
+                                </platform>
+                            </platforms>
+                        </from>
+                        <to>
+                            <!-- 镜像名中的 artifactId 对应各服务模块，不含 service-common -->
+                            <image>${docker.image-prefix}/${project.artifactId}:${docker.tag}</image>
+                        </to>
+                        <container>
+                            <!-- 启动类和端口由各可运行模块在 docker-tar Profile 中提供 -->
+                            <mainClass>${docker.main-class}</mainClass>
+                            <!-- Logback 使用相对路径 logs/...，工作目录固定后日志落在 /app/logs/... -->
+                            <workingDirectory>/app</workingDirectory>
+                            <jvmFlags>
+                                <jvmFlag>-Duser.timezone=Asia/Shanghai</jvmFlag>
+                                <jvmFlag>-Dfile.encoding=UTF-8</jvmFlag>
+                                <!-- 追加外置配置目录；optional 保证未挂载时仍使用镜像内置配置 -->
+                                <jvmFlag>-Dspring.config.additional-location=optional:file:/app/config/</jvmFlag>
+                                <!-- 按容器内存限制计算堆，便于在 Compose 中统一调优 -->
+                                <jvmFlag>-XX:MaxRAMPercentage=75.0</jvmFlag>
+                                <!-- OOM 时退出进程，交给 Docker 重启策略拉起新实例 -->
+                                <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+                                <!-- 保留 OOM 现场，默认输出到进程工作目录 -->
+                                <jvmFlag>-XX:+HeapDumpOnOutOfMemoryError</jvmFlag>
+                            </jvmFlags>
+                            <!-- 仅是镜像元数据声明，不限制运行时映射到宿主机的端口 -->
+                            <ports>
+                                <port>${docker.container-port}</port>
+                            </ports>
+                        </container>
+                    </configuration>
+                </plugin>
+
                 <!-- 编译插件 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -217,9 +278,24 @@
             </plugins>
         </pluginManagement>
 
-        <!-- 所有子模块自动继承以下插件 -->
-        <plugins>
-            <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
+    <!-- 所有子模块自动继承以下插件 -->
+    <plugins>
+        <!-- Jib：由各可运行模块的 docker-tar Profile 覆盖 jib.skip 后生成镜像 tar -->
+        <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>build-docker-tar</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>buildTar</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <!-- JaCoCo：运行 mvn test 时生成覆盖率报告 -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

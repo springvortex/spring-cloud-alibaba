@@ -1,0 +1,22 @@
+# provider 的虚拟机覆盖配置：只写与镜像内置 dev 配置不同的基础设施地址
+spring:
+  cloud:
+    nacos:
+      discovery:
+        # Nacos 仍只做服务注册与发现
+        server-addr: 192.168.100.128:8848
+  datasource:
+    # 数据库在 VMware 宿主机网络中，容器内不能用 127.0.0.1
+    url: jdbc:mysql://192.168.100.128:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
+  data:
+    redis:
+      # 业务缓存与 Redisson 分布式锁共用这个 Redis 地址
+      host: 192.168.100.128
+      port: 6379
+
+management:
+  tracing:
+    export:
+      zipkin:
+        # 迁移 Zipkin 时只改此文件并重启服务
+        endpoint: http://192.168.100.128:9411/api/v2/spans

@@ -1,0 +1,29 @@
+# mail 的虚拟机覆盖配置：数据库、SMTP、Nacos、Zipkin 均指向 192.168.100.128
+spring:
+  cloud:
+    nacos:
+      discovery:
+        # 供网关和调用方通过服务发现访问 mail
+        server-addr: 192.168.100.128:8848
+  datasource:
+    # 邮件发送记录表所在数据库
+    url: jdbc:mysql://192.168.100.128:3306/spring_cloud_alibaba?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&sslMode=REQUIRED
+  mail:
+    # Mailhog 是开发测试 SMTP，不启用认证和 TLS
+    host: 192.168.100.128
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          ssl:
+            enable: false
+          starttls:
+            enable: false
+
+management:
+  tracing:
+    export:
+      zipkin:
+        # 便于排查邮件接口的调用链路
+        endpoint: http://192.168.100.128:9411/api/v2/spans

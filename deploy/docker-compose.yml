@@ -1,0 +1,87 @@
+# Compose 项目名：docker compose ps 等命令默认按这个名称归组
+name: zjc-spring-cloud
+
+# 四个业务服务共用同一个 bridge 网络，保证网关能访问 Nacos 返回的容器 IP
+networks:
+  zjc-net:
+    driver: bridge
+
+# 公共运行参数：镜像外必须注入的只有 profile 与 Jasypt 主密钥
+x-common-environment: &common-environment
+  TZ: Asia/Shanghai
+  # dev 读取镜像内置基线配置；vm 读取 /app/config/application-vm.yaml 覆盖基础设施地址
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}
+  # 解密配置中的 ENC(...)；真实值只保存在部署机 .env
+  JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD}
+
+services:
+  service-provider:
+    image: zjc/service-provider:${APP_TAG}
+    environment: *common-environment
+    # expose 只声明 Docker 网络内可访问，不占用宿主机端口
+    expose:
+      - "9001"
+    networks:
+      - zjc-net
+    volumes:
+      # 外置配置优先级高于镜像内置 YAML；:ro 防止容器修改部署配置
+      - ./external-config/provider:/app/config:ro
+      # Logback 工作目录为 /app，宿主机直接查看 logs/provider
+      - ./logs/provider:/app/logs/service-provider
+    restart: unless-stopped
+    # 比 application-shutdown.yaml 的 30s 等待多 10s，留给 Compose 发送信号
+    stop_grace_period: 40s
+
+  service-consumer:
+    image: zjc/service-consumer:${APP_TAG}
+    environment: *common-environment
+    # expose 不发布宿主机端口，外部流量统一走网关
+    expose:
+      - "9002"
+    networks:
+      - zjc-net
+    volumes:
+      # consumer 不连数据库，只覆盖 Nacos 与 Zipkin 地址
+      - ./external-config/consumer:/app/config:ro
+      # 避免容器重建后业务日志丢失
+      - ./logs/consumer:/app/logs/service-consumer
+    restart: unless-stopped
+    stop_grace_period: 40s
+
+  service-mail:
+    image: zjc/service-mail:${APP_TAG}
+    environment: *common-environment
+    # mail 同样只在 Docker 内部网络暴露，由网关转发 /api/*/mail/**
+    expose:
+      - "9004"
+    networks:
+      - zjc-net
+    volumes:
+      # mail 需要 MySQL、SMTP、Nacos、Zipkin 的虚拟机地址
+      - ./external-config/mail:/app/config:ro
+      # mail 优雅停机等待 60s，日志目录单独隔离
+      - ./logs/mail:/app/logs/service-mail
+    restart: unless-stopped
+    # 比 application-shutdown.yaml 的 60s 等待多 10s
+    stop_grace_period: 70s
+
+  service-gateway:
+    image: zjc/service-gateway:${APP_TAG}
+    environment: *common-environment
+    # ports 才会发布到宿主机；只有网关对外开放入口
+    ports:
+      - "80:80"
+    networks:
+      - zjc-net
+    volumes:
+      # 网关外置配置只覆盖 Nacos 与 Zipkin，路由和 CORS 继续使用镜像内置配置
+      - ./external-config/gateway:/app/config:ro
+      # 网关访问日志与错误日志落在宿主机 logs/gateway
+      - ./logs/gateway:/app/logs/service-gateway
+    restart: unless-stopped
+    stop_grace_period: 40s
+    # 只控制容器启动顺序；服务是否就绪仍由 Nacos 注册和健康检查体现
+    depends_on:
+      - service-provider
+      - service-consumer
+      - service-mail
