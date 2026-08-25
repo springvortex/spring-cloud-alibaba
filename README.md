@@ -27,6 +27,8 @@
 | 工具库         | Hutool                               | 5.8.47     |
 | 测试           | JUnit 5 + Mockito + AssertJ          | -          |
 | 覆盖率         | JaCoCo                               | 0.8.15     |
+| 容器打包       | Jib Maven Plugin                     | 3.5.2      |
+| 容器编排       | Docker Compose                       | -          |
 
 ## 模块说明
 
@@ -213,7 +215,7 @@ management:
 
 ## 打包
 
-项目采用 Spring Boot 标准 **Fat JAR** 打包方式：每个可启动服务的业务代码和全部运行依赖都打包在同一个 JAR 中，可直接通过
+项目默认采用 Spring Boot 标准 **Fat JAR** 打包方式：每个可启动服务的业务代码和全部运行依赖都打包在同一个 JAR 中，可直接通过
 `java -jar` 启动，不再需要外部 `lib/` 目录和 `loader.path` 参数。
 
 ### 打包命令
@@ -228,6 +230,19 @@ mvn clean package
 # 构建独立代码生成器模块
 cd MP-Generator && mvn package
 ```
+
+### Docker 镜像打包
+
+四个可运行服务支持使用 Jib 生成 OCI 镜像 tar，用于 Docker 容器化部署：
+
+```powershell
+mvn -Pdocker-tar "-Ddocker.tag=1.0.0" -DskipTests clean package
+```
+
+构建产物为各服务的 `target/jib-image.tar`。该方式通过 Jib `buildTar` 直接生成镜像 tar，
+构建机不需要安装 Docker daemon，也不需要登录镜像仓库。
+
+部署编排文件、配置模板和 Ubuntu 部署流程见 [deploy/README.md](deploy/README.md)。
 
 ### 打包后的输出结构
 
@@ -254,21 +269,83 @@ service-provider/target/
 
 ### 配置位置
 
-所有打包配置都在父 `pom.xml` 的 `<plugins>` 中统一管理（非 pluginManagement），子模块自动继承，新建业务模块无需在 pom
-中添加任何打包配置。
+Spring Boot Fat JAR 打包配置由父 `pom.xml` 统一管理，业务服务自动继承。Jib 公共配置同样收敛在父 `pom.xml`，
+可运行服务只需在自己的 `docker-tar` Profile 中声明启动类、容器端口和 `jib.skip=false`。
 
 ---
 
 ## 部署
 
-### 前提条件
+项目支持两种部署方式：
+
+| 部署方式 | 适用场景 |
+|---------|---------|
+| Docker Compose 容器化部署 | 虚拟机或服务器统一运行 gateway、provider、consumer、mail |
+| Fat JAR 直接部署 | 单独运行某个服务，或暂不引入 Docker 的环境 |
+
+### Docker Compose 容器化部署
+
+项目已提供 Docker Compose 部署方案：
+
+- 每个可运行服务独立构建一个镜像。
+- `gateway` 是唯一发布到宿主机 `80` 端口的服务。
+- `provider`、`consumer`、`mail` 只留在 Docker 内部网络，通过 Nacos 服务发现访问。
+- 基础设施地址通过部署机 `config/<module>/application-vm.yaml` 外置覆盖；仓库只维护对应的 `.template` 模板，部署时不会覆盖服务器上的运行配置。
+- Jasypt 主密钥通过部署机 `.env` 注入，不提交 Git。
+
+Windows 侧构建、传输并远程加载镜像：
+
+```powershell
+mvn -Pdocker-tar "-Ddocker.tag=1.0.0" -DskipTests clean package
+.\deploy\scripts\windows\deploy.ps1 -Tag "1.0.0" -Load
+```
+
+Ubuntu 部署机首次使用时，从 `.env.example` 创建 `.env`，填写 `JASYPT_ENCRYPTOR_PASSWORD` 并确认 `APP_TAG`：
+
+```bash
+cd /home/zjc/app
+cp .env.example .env
+chmod 600 .env
+vi .env
+```
+
+再从配置模板生成各服务实际读取的 `application-vm.yaml`：
+
+```bash
+for module in provider consumer gateway mail; do
+  cp "config/$module/application-vm.yaml.template" \
+     "config/$module/application-vm.yaml"
+done
+```
+
+然后启动：
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Ubuntu 部署机也可以使用交互式维护脚本完成启停、日志、扩缩容和配置重启：
+
+```bash
+cd /home/zjc/app
+./scripts/unix/manage.sh
+```
+
+完整的镜像构建、Ubuntu 安装 Docker、外置配置、扩缩容、日志、维护和回滚说明见
+[deploy/README.md](deploy/README.md)，部署脚本的具体参数和菜单说明见
+[deploy/scripts/README.md](deploy/scripts/README.md)。
+
+### Fat JAR 直接部署
+
+#### 前提条件
 
 - JDK 21+（服务器上只需 JRE/JDK，不需要 Maven）
 - 生产服务器已运行 Nacos、MySQL、Redis 和 Zipkin，服务通过 `127.0.0.1` 访问
 - 生产 SMTP 账号与 Jasypt 密钥已准备完成
 - 应用配置（`application.yaml` 与环境 Profile）已打在 JAR 内，默认激活 `dev`，生产部署时切换到 `prod`
 
-### 需要拷贝的文件
+#### 需要拷贝的文件
 
 | 文件                                  | 说明                    |
 |---------------------------------------|-------------------------|
@@ -280,7 +357,7 @@ service-provider/target/
 部署后的目录结构：
 
 ```
-deploy/
+fat-jar-deploy/
 ├── service-gateway-1.0.0.jar
 ├── service-provider-1.0.0.jar
 ├── service-consumer-1.0.0.jar
@@ -289,20 +366,20 @@ deploy/
 
 > 只部署需要的服务即可；每个 Fat JAR 都是独立制品，不要求放在同一个目录。
 
-### Windows 部署
+#### Windows 部署
 
-#### 1. 拷贝文件
+##### 1. 拷贝文件
 
 将需要部署的 Fat JAR 拷贝到部署目录。
 
-#### 2. 确保 Java 可用
+##### 2. 确保 Java 可用
 
 ```powershell
 java -version
 # 确认输出 Java 21+
 ```
 
-#### 3. 启动服务
+##### 3. 启动服务
 
 ```powershell
 java -jar service-provider-1.0.0.jar
@@ -318,20 +395,20 @@ Start-Process -FilePath "java" `
   -RedirectStandardError "provider.err"
 ```
 
-### macOS / Linux 部署
+#### macOS / Linux 部署
 
-#### 1. 拷贝文件
+##### 1. 拷贝文件
 
 将需要部署的 Fat JAR 拷贝到部署目录。
 
-#### 2. 确保 Java 可用
+##### 2. 确保 Java 可用
 
 ```bash
 java -version
 # 确认输出 Java 21+
 ```
 
-#### 3. 启动服务
+##### 3. 启动服务
 
 ```bash
 # 前台启动
@@ -344,7 +421,7 @@ nohup java -Xms256m -Xmx512m -jar service-provider-1.0.0.jar \
 echo $! > provider.pid
 ```
 
-#### 4. 停止服务
+##### 4. 停止服务
 
 ```bash
 kill "$(cat provider.pid)"

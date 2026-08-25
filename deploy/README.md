@@ -15,7 +15,7 @@ Windows 开发机
 
 VMware Ubuntu 192.168.100.128
   ├── Docker Engine + Docker Compose
-  ├── /home/zjc/zjc-app：Compose、外置配置、镜像 tar、业务日志
+  ├── /home/zjc/app：Compose、配置模板、运行配置、镜像 tar、业务日志
   ├── MySQL / Redis / Nacos / Zipkin / Mailhog：运行在宿主机网络
   └── 业务容器：provider、consumer、mail、gateway
 ```
@@ -37,14 +37,15 @@ VMware Ubuntu 192.168.100.128
 deploy/
   docker-compose.yml                         # Ubuntu 上运行的 Compose 文件
   .env.example                               # 环境变量模板，不含真实密钥
-  .gitignore                                 # 排除真实 .env 和日志
-  config/provider/application-vm.yaml
-  config/consumer/application-vm.yaml
-  config/gateway/application-vm.yaml
-  config/mail/application-vm.yaml
+  .gitignore                                 # 排除真实 .env、运行配置和日志
+  config/provider/application-vm.yaml.template
+  config/consumer/application-vm.yaml.template
+  config/gateway/application-vm.yaml.template
+  config/mail/application-vm.yaml.template
 
-scripts/
-  deploy.ps1                                 # Windows 侧构建、传输、加载、启动脚本
+  scripts/windows/deploy.ps1                 # Windows 侧构建、传输、加载、启动脚本
+  scripts/unix/manage.sh                     # Ubuntu/macOS 侧交互式应用维护脚本
+  scripts/README.md                          # Windows / Ubuntu(macOS) 部署脚本专门说明
 
 service-provider/target/jib-image.tar        # provider 镜像 tar
 service-consumer/target/jib-image.tar        # consumer 镜像 tar
@@ -52,7 +53,7 @@ service-gateway/target/jib-image.tar         # gateway 镜像 tar
 service-mail/target/jib-image.tar            # mail 镜像 tar
 ```
 
-镜像 tar 是构建产物，不应该提交 Git。真实 `.env` 和日志也只保存在部署机，不提交 Git。
+镜像 tar 是构建产物，不应该提交 Git。真实 `.env`、服务器上的 `application-vm.yaml` 运行配置和日志也只保存在部署机，不提交 Git。
 
 ## 3. 在 Windows 上打包镜像
 
@@ -131,7 +132,7 @@ mvn -Pdocker-tar "-Ddocker.base-image=eclipse-temurin:21-jre" "-Ddocker.tag=1.0.
 
 镜像不包含：
 
-- `deploy/config` 下的外置配置
+- `deploy/config` 下的配置模板
 - 真实 `.env`
 - 部署机上的日志
 
@@ -187,13 +188,90 @@ docker ps
 uname -m
 ```
 
-预期是：
+当前默认按 VMware Ubuntu 常见的 x86_64 机器构建，预期输出：
 
 ```text
 x86_64
 ```
 
-如果是 `aarch64`，当前 Jib 配置生成的 `linux/amd64` 镜像不能直接运行，需要修改根 POM 中的 platform 配置。
+如果是：
+
+```text
+aarch64
+```
+
+说明 Ubuntu 是 ARM64 机器，当前默认生成的 `linux/amd64` 镜像不能直接运行，运行时会报 `exec format error`。
+
+Jib/Docker 镜像元数据中不使用 `aarch64` 这个写法，对应值是：
+
+```text
+arm64
+```
+
+需要把根 `pom.xml` 中 Jib 的 platform 配置：
+
+```xml
+<platforms>
+    <platform>
+        <os>linux</os>
+        <architecture>amd64</architecture>
+    </platform>
+</platforms>
+```
+
+改为：
+
+```xml
+<platforms>
+    <platform>
+        <os>linux</os>
+        <architecture>arm64</architecture>
+    </platform>
+</platforms>
+```
+
+然后使用带架构后缀的 tag 重新构建，避免和已有 AMD64 镜像混淆：
+
+```powershell
+mvn -Pdocker-tar "-Ddocker.tag=1.0.0-arm64" -DskipTests clean package
+```
+
+传输并加载：
+
+```powershell
+.\deploy\scripts\windows\deploy.ps1 -Tag "1.0.0-arm64" -Load
+```
+
+修改 Ubuntu 上的 `.env`：
+
+```text
+APP_TAG=1.0.0-arm64
+```
+
+重建容器：
+
+```bash
+cd /home/zjc/app
+docker compose up -d
+```
+
+验证镜像架构：
+
+```bash
+docker image inspect zjc/service-provider:1.0.0-arm64 --format '{{.Architecture}}'
+```
+
+预期输出：
+
+```text
+arm64
+```
+
+注意：
+
+- `eclipse-temurin:21-jre` 官方多架构基础镜像支持 `linux/arm64`，但要确认当前使用的 `dockerproxy.net` 代理也能正确拉取 arm64 manifest。
+- 当前“Windows 构建 tar -> scp -> docker load”方案适合按架构分别构建，不适合直接生成一个同时包含 amd64/arm64 的 multi-arch tag。
+- 如果以后经常需要同时维护 AMD64 和 ARM64，可以把 `architecture` 提升为 Maven 属性，通过 `-Ddocker.platform-architecture=arm64` 覆盖，减少频繁修改 XML。
 
 ## 5. 传输镜像和部署文件
 
@@ -202,49 +280,89 @@ x86_64
 在 Windows 仓库根目录执行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -Build
+powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\scripts\windows\deploy.ps1 -Build
 ```
 
 默认目标是：
 
 ```text
 zjc@192.168.100.128
-/home/zjc/zjc-app
+/home/zjc/app
 ```
 
 常用参数：
 
 ```powershell
 # 只传输已经存在的镜像 tar，不重新构建
-.\scripts\deploy.ps1
+.\deploy\scripts\windows\deploy.ps1
 
 # 构建、传输，然后远程 docker load
-.\scripts\deploy.ps1 -Build -Load
+.\deploy\scripts\windows\deploy.ps1 -Build -Load
 
 # 构建、传输、远程 docker load，并启动 docker compose
-.\scripts\deploy.ps1 -Build -Start
+.\deploy\scripts\windows\deploy.ps1 -Build -Start
 
 # 自定义远程地址、目录和镜像 tag
-.\scripts\deploy.ps1 -Build -Start -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/zjc-app" -Tag "1.0.1"
+.\deploy\scripts\windows\deploy.ps1 -Build -Start -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/app" -Tag "1.0.1"
 ```
 
 脚本会自动从 `deploy/docker-compose.yml` 解析 `zjc/service-*` 镜像定义。以后新增模块后，只要 Compose 里出现了新的 `zjc/service-ai:${APP_TAG}`，脚本就会自动检查并传输 `service-ai\target\jib-image.tar`，不需要修改脚本。
 
+脚本还会把 `deploy/README.md` 同步到远程 `/home/zjc/app/README.md`，把 `deploy/scripts/README.md`
+同步到远程 `/home/zjc/app/scripts/README.md`，把 `deploy/scripts/unix/manage.sh` 同步到远程
+`/home/zjc/app/scripts/unix/manage.sh`，作为部署机上的文档和启停维护入口。
+
+配置只上传 `.template` 模板，不会上传或覆盖远程的
+`config/<module>/application-vm.yaml`。首次部署需要在 Ubuntu 手动从模板复制生成运行配置；后续在服务器上修改的运行配置会保留。
+
 注意：脚本不会创建或覆盖远程 `.env`，避免把真实密钥弄丢。`.env` 需要第一次手动创建。
 
-### 5.2 手动传输
+### 5.2 从旧部署目录迁移
+
+如果部署机以前使用过其他部署目录，先停止旧目录下的 Compose 应用。不同目录使用同一个 Compose 项目名时，同时启动会争抢容器名、网络和宿主机 80 端口：
+
+```bash
+ssh zjc@192.168.100.128 "cd <旧部署目录> && docker compose down"
+```
+
+创建新目录，并迁移不能重新生成的 `.env`：
+
+```bash
+ssh zjc@192.168.100.128 "mkdir -p /home/zjc/app"
+ssh zjc@192.168.100.128 "cp <旧部署目录>/.env /home/zjc/app/.env && chmod 600 /home/zjc/app/.env"
+```
+
+如果远程外置 YAML 或历史日志有临时修改，也一并迁移：
+
+```bash
+ssh zjc@192.168.100.128 "cp -a <旧部署目录>/config /home/zjc/app/"
+ssh zjc@192.168.100.128 "cp -a <旧部署目录>/logs /home/zjc/app/"
+```
+
+镜像保存在 Docker daemon 中，不属于部署目录，不需要搬运。之后在 Windows 上重新执行部署脚本，默认就会写入 `/home/zjc/app`。
+
+### 5.3 手动传输
 
 如果不使用脚本，可以在 Windows 上执行：
 
 ```powershell
 $Remote = "zjc@192.168.100.128"
-$AppDir = "/home/zjc/zjc-app"
+$AppDir = "/home/zjc/app"
 
 ssh $Remote "mkdir -p $AppDir/images"
 
 scp deploy\docker-compose.yml "$($Remote):$AppDir/docker-compose.yml"
 scp deploy\.env.example "$($Remote):$AppDir/.env.example"
-scp -r deploy\config "$($Remote):$AppDir/"
+scp deploy\README.md "$($Remote):$AppDir/README.md"
+ssh $Remote "mkdir -p $AppDir/scripts/unix"
+scp deploy\scripts\README.md "$($Remote):$AppDir/scripts/README.md"
+scp deploy\scripts\unix\manage.sh "$($Remote):$AppDir/scripts/unix/manage.sh"
+ssh $Remote "chmod 700 $AppDir/scripts/unix/manage.sh"
+
+foreach ($module in @("provider", "consumer", "gateway", "mail")) {
+    ssh $Remote "mkdir -p $AppDir/config/$module"
+    scp "deploy\config\$module\application-vm.yaml.template" "$($Remote):$AppDir/config/$module/application-vm.yaml.template"
+}
 
 foreach ($module in @("provider", "consumer", "gateway", "mail")) {
     scp "service-$module\target\jib-image.tar" "$($Remote):$AppDir/images/service-$module.tar"
@@ -260,7 +378,7 @@ foreach ($module in @("provider", "consumer", "gateway", "mail")) {
 在 Ubuntu 上执行：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 cp .env.example .env
 chmod 600 .env
 vi .env
@@ -291,10 +409,34 @@ SPRING_PROFILE=prod,vm
 
 `JASYPT_ENCRYPTOR_PASSWORD` 只写在部署机的 `.env` 中，不要提交 Git，也不要输出到日志、终端截图或聊天记录里。
 
-### 6.2 加载镜像
+### 6.2 创建运行配置
+
+首次部署时，在 Ubuntu 上从模板生成 Spring Boot 实际读取的配置文件：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
+
+for module in provider consumer gateway mail; do
+  cp "config/$module/application-vm.yaml.template" \
+     "config/$module/application-vm.yaml"
+done
+```
+
+按当前环境检查和修改这些文件：
+
+```text
+config/provider/application-vm.yaml
+config/consumer/application-vm.yaml
+config/gateway/application-vm.yaml
+config/mail/application-vm.yaml
+```
+
+后续部署脚本只更新 `.template`，不会覆盖这些运行配置。若模板更新了，需要你自己对比并决定是否把差异合入运行配置。
+
+### 6.3 加载镜像
+
+```bash
+cd /home/zjc/app
 
 for module in provider consumer gateway mail; do
   docker load -i "images/service-$module.tar"
@@ -307,7 +449,7 @@ done
 docker images "zjc/service-*"
 ```
 
-### 6.3 启动服务
+### 6.4 启动服务
 
 ```bash
 docker compose up -d
@@ -330,10 +472,10 @@ docker compose logs -f
 业务文件日志在宿主机：
 
 ```text
-/home/zjc/zjc-app/logs/provider
-/home/zjc/zjc-app/logs/consumer
-/home/zjc/zjc-app/logs/mail
-/home/zjc/zjc-app/logs/gateway
+/home/zjc/app/logs/provider
+/home/zjc/app/logs/consumer
+/home/zjc/app/logs/mail
+/home/zjc/app/logs/gateway
 ```
 
 `SPRING_PROFILE=dev,vm` 时，日志会同时输出到控制台和文件，所以 `docker compose logs` 方便排查。`SPRING_PROFILE=prod,vm` 时，Logback 只保留异步文件日志，业务日志要以宿主机挂载目录为准。
@@ -351,7 +493,7 @@ curl http://192.168.100.128/api/v1/consumer/user/1
 sudo ufw allow 80/tcp
 ```
 
-### 6.4 停止和重启
+### 6.5 停止和重启
 
 ```bash
 docker compose start
@@ -364,6 +506,58 @@ docker compose down
 `stop` 只停止容器，容器定义还保留，后续用 `start` 拉起。`down` 会停止并删除容器、删除 Compose 创建的网络，但不会删除镜像、`.env`、外置配置和日志。`up -d` 会按当前 Compose 文件和 `.env` 创建或重建容器。
 
 `stop_grace_period` 已比应用优雅停机等待时间多留了 10 秒。停止或删除容器时，Docker 会先发 `SIGTERM`，等待应用处理完请求和注册信息，再强制停止。
+
+### 6.6 使用 Ubuntu/macOS 交互维护脚本
+
+Windows 部署脚本会同步交互脚本到部署机：
+
+```text
+/home/zjc/app/scripts/unix/manage.sh
+```
+
+在 Ubuntu 部署机执行：
+
+```bash
+cd /home/zjc/app
+./scripts/unix/manage.sh
+```
+
+脚本菜单包含：
+
+- 启动、停止、重启全部服务或指定服务。
+- 默认 `start/stop/restart` 不删除容器。
+- 停止并删除指定容器或全部容器。
+- 外置 YAML 修改后重启指定服务。
+- `.env`、镜像 tag、Compose 文件修改后应用新定义。
+- 跟踪全部或指定服务日志、查看最近日志。
+- 加载已上传的镜像 tar。
+- 扩缩容指定服务。
+- 查看状态、镜像、配置清单，以及校验 Compose 配置。
+- 编辑 `.env`，按 `0` 退出。
+
+也可以不走菜单，直接执行命令：
+
+```bash
+./scripts/unix/manage.sh status
+./scripts/unix/manage.sh start all
+./scripts/unix/manage.sh stop service-provider
+./scripts/unix/manage.sh config-restart service-provider
+./scripts/unix/manage.sh recent service-gateway 300
+./scripts/unix/manage.sh down
+```
+
+Mac 本机如果已经有同结构的部署目录，也可以运行：
+
+```bash
+bash deploy/scripts/unix/manage.sh --app-dir /path/to/app
+```
+
+常见维护差异：
+
+- `restart`：适合 `config/<module>/application-vm.yaml` 修改，容器保留，应用重新读取配置。
+- `apply`：适合 `.env`、`APP_TAG`、`docker-compose.yml` 修改，对应 `docker compose up -d`，需要时会创建或重建容器。
+- `down`：停止并删除全部容器和网络，但保留镜像、`.env`、外置配置和应用日志。
+- `load`：只把 `images/*.tar` 加载进 Docker；更新镜像 tag 后还要执行 `apply`。
 
 更完整的启停、更新、配置变更、扩缩容和清理流程见第 12 章《日常维护手册》。
 
@@ -386,35 +580,40 @@ volumes:
 
 因此 `/app/config/application-vm.yaml` 会作为外置配置加载。`SPRING_PROFILE=dev,vm` 时，`application-vm.yaml` 用于覆盖内置 `dev` 配置中的基础设施地址。
 
+仓库中的 `application-vm.yaml.template` 只是初始模板，Spring Boot 不会加载 `.template` 文件。
+
 `:ro` 表示容器内进程不能修改这个目录，但宿主机上的 Ubuntu 用户仍然可以编辑文件。
 
 ### 7.2 修改配置
 
-推荐流程是修改仓库中的文件：
+运行配置的实际维护位置在部署机：
 
 ```text
-deploy/config/<module>/application-vm.yaml
+/home/zjc/app/config/<module>/application-vm.yaml
 ```
 
-然后重新传输并重启对应服务：
-
-```powershell
-.\scripts\deploy.ps1
-```
+修改后重启对应服务：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 docker compose restart service-provider
 ```
 
-如果只在 Ubuntu 上临时修改，可以直接编辑：
+如果要把新的默认值沉淀到仓库，修改模板：
 
-```bash
-vi /home/zjc/zjc-app/config/provider/application-vm.yaml
-docker compose restart service-provider
+```text
+deploy/config/<module>/application-vm.yaml.template
 ```
 
-但要注意：下次执行部署脚本时，本地仓库中的同名外置配置会重新传输到远程并覆盖它。长期配置应该改在 Git 仓库里，临时救火才直接改远程。
+后续部署只会更新模板，不会自动改变服务器上的运行配置。你需要手动对比差异，并把需要的内容合入 `application-vm.yaml` 后重启服务。
+
+对比模板和当前运行配置：
+
+```bash
+diff -u \
+  /home/zjc/app/config/provider/application-vm.yaml.template \
+  /home/zjc/app/config/provider/application-vm.yaml
+```
 
 ### 7.3 只写差异，不要复制全量配置
 
@@ -438,7 +637,7 @@ spring:
 
 ### 7.4 迁移基础设施
 
-如果 MySQL、Redis、Nacos、Zipkin 从 192.168.100.128 迁到其他机器，只需要修改相关 `application-vm.yaml` 中的地址，然后重新传输并重启服务，不需要重新构建镜像。
+如果 MySQL、Redis、Nacos、Zipkin 从 192.168.100.128 迁到其他机器，只需要修改服务器上相关 `application-vm.yaml` 的地址，然后重启服务，不需要重新构建镜像，也不需要重新传输配置。
 
 示例：
 
@@ -469,7 +668,7 @@ docker run --rm \
   --network zjc-spring-cloud_zjc-net \
   -e SPRING_PROFILES_ACTIVE=dev,vm \
   -e JASYPT_ENCRYPTOR_PASSWORD="$JASYPT_ENCRYPTOR_PASSWORD" \
-  -v /home/zjc/zjc-app/config/provider:/app/config:ro \
+  -v /home/zjc/app/config/provider:/app/config:ro \
   zjc/service-provider:1.0.0
 ```
 
@@ -502,13 +701,13 @@ Windows：
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy.ps1 -Tag "1.0.1" -Load
+.\deploy\scripts\windows\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 Ubuntu：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 vi .env
 ```
 
@@ -532,7 +731,7 @@ docker compose ps
 只要旧镜像还保留在部署机上：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 vi .env
 ```
 
@@ -579,7 +778,7 @@ docker image prune
 例如 provider 起两个实例：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 docker compose up -d --scale service-provider=2
 docker compose ps
 ```
@@ -732,7 +931,7 @@ spring:
 创建：
 
 ```text
-deploy/config/ai/application-vm.yaml
+deploy/config/ai/application-vm.yaml.template
 ```
 
 示例：
@@ -759,13 +958,14 @@ management:
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy.ps1 -Tag "1.0.1" -Load
+.\deploy\scripts\windows\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 Ubuntu：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
+cp config/ai/application-vm.yaml.template config/ai/application-vm.yaml
 docker compose up -d
 docker compose logs -f service-ai
 ```
@@ -897,7 +1097,7 @@ docker compose exec service-provider sh
 如果提示 PowerShell 脚本不能执行，使用：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -Build
+powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\scripts\windows\deploy.ps1 -Build
 ```
 
 这只是对当前进程放开限制，不会修改系统全局执行策略。
@@ -914,7 +1114,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -Build
 exec format error
 ```
 
-常见原因是镜像架构和 Ubuntu CPU 架构不一致。当前镜像固定为 `linux/amd64`。
+常见原因是镜像架构和 Ubuntu CPU 架构不一致。当前默认构建 `linux/amd64`；如果 Ubuntu 输出 `aarch64`，需要按第 4.3 节改为 `arm64` 后重新构建。
 
 检查：
 
@@ -949,20 +1149,20 @@ Ubuntu 已加载镜像
 ```bash
 df -h
 docker system df
-du -sh /home/zjc/zjc-app/logs/*
+du -sh /home/zjc/app/logs/*
 ```
 
 日志已有保留策略，但磁盘仍然需要监控。
 
 ### 11.13 远程残留旧配置
 
-部署脚本使用 `scp -r` 覆盖同名文件，但不会删除远程已经不存在于本地仓库的旧文件。如果删除了某个模块或某个外置配置文件，需要手动清理远程对应文件。
+部署脚本只覆盖 Compose、文档、脚本、镜像 tar 和 `.template` 模板，不会删除远程运行配置。如果删除了某个模块、模板文件或运行配置文件，需要手动清理远程对应文件。
 
-当前本地目录已经命名为 `deploy/config`。如果部署机以前部署过旧版本并存在 `/home/zjc/zjc-app/external-config`，新版本不会再使用它。确认 `config` 目录和服务运行正常后，可以手动清理旧目录：
+当前本地目录已经命名为 `deploy/config`。如果部署机以前部署过旧版本并存在 `/home/zjc/app/external-config`，新版本不会再使用它。确认 `config` 目录和服务运行正常后，可以手动清理旧目录：
 
 ```bash
-ls -la /home/zjc/zjc-app/config
-rm -rf /home/zjc/zjc-app/external-config
+ls -la /home/zjc/app/config
+rm -rf /home/zjc/app/external-config
 ```
 
 注意：已有容器仍保留着创建时的旧挂载路径。传输新 Compose 后需要在 Ubuntu 执行 `docker compose up -d` 重建容器，新的 `./config/...` 挂载才会生效。
@@ -976,7 +1176,13 @@ rm -rf /home/zjc/zjc-app/external-config
 以下命令默认都在 Ubuntu 部署机执行：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
+```
+
+也可以进入交互菜单执行常用操作：
+
+```bash
+./scripts/unix/manage.sh
 ```
 
 ### 12.1 启动、停止和重启
@@ -1061,13 +1267,13 @@ docker compose up -d
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy.ps1 -Tag "1.0.1" -Load
+.\deploy\scripts\windows\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 然后在 Ubuntu 上修改 `.env`：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 vi .env
 ```
 
@@ -1102,29 +1308,23 @@ docker compose up -d
 
 ### 12.3 修改配置
 
-外置配置的长期维护入口在仓库中：
+外置运行配置维护在部署机：
 
 ```text
-deploy/config/<module>/application-vm.yaml
+/home/zjc/app/config/<module>/application-vm.yaml
 ```
 
-推荐流程：
-
-```powershell
-# Windows：传输新的外置配置
-.\scripts\deploy.ps1
-```
+修改运行配置后重启：
 
 ```bash
-# Ubuntu：重启对应服务
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 docker compose restart service-provider
 ```
 
 只修改 `.env` 时的流程：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 vi .env
 docker compose up -d
 ```
@@ -1132,18 +1332,17 @@ docker compose up -d
 只修改 `docker-compose.yml` 时的流程：
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 docker compose up -d
 ```
 
-如果只是在 Ubuntu 上临时改外置 YAML，可以直接编辑并重启：
+仓库中的模板只作为首次部署和新增服务的默认值：
 
-```bash
-vi /home/zjc/zjc-app/config/provider/application-vm.yaml
-docker compose restart service-provider
+```text
+deploy/config/<module>/application-vm.yaml.template
 ```
 
-但要记住：下次执行部署脚本时，仓库中的同名文件会覆盖远程临时修改。长期配置必须提交回仓库。
+部署脚本会更新模板，但不会覆盖运行配置。模板和运行配置的差异需要人工确认。
 
 ### 12.4 扩容和缩容
 
@@ -1201,25 +1400,25 @@ docker logs -f zjc-spring-cloud-service-provider-1
 应用文件日志：
 
 ```text
-/home/zjc/zjc-app/logs/provider/service-provider/info/service-provider-info-YYYY-MM-DD.N.log
-/home/zjc/zjc-app/logs/consumer/service-consumer/info/service-consumer-info-YYYY-MM-DD.N.log
-/home/zjc/zjc-app/logs/gateway/service-gateway/info/service-gateway-info-YYYY-MM-DD.N.log
-/home/zjc/zjc-app/logs/mail/service-mail/info/service-mail-info-YYYY-MM-DD.N.log
+/home/zjc/app/logs/provider/info/service-provider-info-YYYY-MM-DD.N.log
+/home/zjc/app/logs/consumer/info/service-consumer-info-YYYY-MM-DD.N.log
+/home/zjc/app/logs/gateway/info/service-gateway-info-YYYY-MM-DD.N.log
+/home/zjc/app/logs/mail/info/service-mail-info-YYYY-MM-DD.N.log
 ```
 
 debug、warn、error 分别在对应级别目录下：
 
 ```text
-logs/provider/service-provider/debug/
-logs/provider/service-provider/info/
-logs/provider/service-provider/warn/
-logs/provider/service-provider/error/
+logs/provider/debug/
+logs/provider/info/
+logs/provider/warn/
+logs/provider/error/
 ```
 
 查看当前实际日志文件：
 
 ```bash
-find /home/zjc/zjc-app/logs -type f -name "*.log" -ls
+find /home/zjc/app/logs -type f -name "*.log" -ls
 ```
 
 应用文件日志由 Logback 控制：
@@ -1298,8 +1497,8 @@ docker compose exec service-provider ls -l /app/config
 ```bash
 df -h
 docker system df
-du -sh /home/zjc/zjc-app/logs/*
-du -sh /home/zjc/zjc-app/images/*
+du -sh /home/zjc/app/logs/*
+du -sh /home/zjc/app/images/*
 ```
 
 查看业务镜像：
@@ -1323,8 +1522,8 @@ docker image prune
 清理不再需要的镜像 tar：
 
 ```bash
-ls -lh /home/zjc/zjc-app/images
-rm /home/zjc/zjc-app/images/service-provider.tar
+ls -lh /home/zjc/app/images
+rm /home/zjc/app/images/service-provider.tar
 ```
 
 不要盲目执行：
@@ -1340,11 +1539,11 @@ docker system prune -a
 当前部署目录中必须备份或保护的内容：
 
 ```text
-/home/zjc/zjc-app/.env
-/home/zjc/zjc-app/docker-compose.yml
-/home/zjc/zjc-app/config/
-/home/zjc/zjc-app/images/
-/home/zjc/zjc-app/logs/
+/home/zjc/app/.env
+/home/zjc/app/docker-compose.yml
+/home/zjc/app/config/
+/home/zjc/app/images/
+/home/zjc/app/logs/
 ```
 
 其中：
@@ -1391,7 +1590,7 @@ curl http://192.168.100.128/api/v1/provider/user/1
 ### 12.10 常用命令速查
 
 ```bash
-cd /home/zjc/zjc-app
+cd /home/zjc/app
 
 # 状态
 docker compose ps

@@ -2,3 +2,5 @@
 .env
 # 日志由 Compose 挂载到宿主机，仅保留在部署机
 logs/
+# 运行配置只在部署机生成和维护，模板文件才进入 Git
+config/**/application-vm.yaml
