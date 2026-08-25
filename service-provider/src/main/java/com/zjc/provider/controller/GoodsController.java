@@ -126,7 +126,7 @@ public class GoodsController {
      * @param request 购买请求
      * @return 订单与剩余库存信息
      */
-    @Operation(summary = "购买商品", description = "按商品维度使用 Redisson 分布式锁扣减库存并创建待支付订单")
+    @Operation(summary = "购买商品", description = "按商品维度使用分布式锁扣减库存并创建待支付订单")
     @PostMapping("/goods/{id}/purchase")
     public ApiResponse<GoodsPurchaseResponseDTO> purchase(
             @Parameter(description = "商品主键") @PathVariable("id") Long id,

@@ -8,7 +8,7 @@
 |----------------|--------------------------------------|------------|
 | 语言           | Java                                 | 21         |
 | 构建工具       | Maven                                | 3.9+       |
-| 基础框架       | Spring Boot                          | 4.1.0      |
+| 基础框架       | Spring Boot                          | 4.1.1      |
 | 微服务框架     | Spring Cloud                         | 2025.1.3   |
 | 注册中心       | Spring Cloud Alibaba Nacos           | 2025.1.0.0 |
 | ORM            | MyBatis-Plus                         | 3.5.17     |
@@ -110,7 +110,9 @@ Windows 不使用 Docker 时，下载对应组件的压缩包或安装包，解�
 3. Redis、Nacos、MySQL、Zipkin、MailHog 端口从开发机可访问。
 4. Redis、Nacos、MySQL、Zipkin、MailHog 不建议作为生产入口暴露公网。
 
-当前仓库没有维护数据库初始化 SQL 文件，业务表结构需要从现有环境导出，或自行按下方表清单创建后再导入数据。
+当前仓库仅维护 `service-provider/src/main/resources/sql/t_distributed_lock.sql` 这一张 MySQL 分布式锁租约表；
+`t_user`、`t_goods`、`t_order`、`t_order_detail`、`t_mail_log` 等业务表尚未提供完整初始化 SQL，需要从现有环境导出，
+或自行按下方表清单创建后再导入数据。
 
 ### 配置来源
 
@@ -169,8 +171,9 @@ Nacos 认证只作用于服务发现与注册。`dev` 与 `prod` 均使用 `conf
 
 ### 统一日志
 
-各服务使用 Spring Boot 默认日志配置，日志输出到服务进程标准输出，并包含 Micrometer Tracing 注入的
-`traceId` 与 `spanId`。生产环境建议由容器运行时或进程管理器统一收集与轮转。
+四个可运行服务均使用各自的 `logback-spring.xml` 统一日志格式，日志包含 Micrometer Tracing 注入的
+`traceId` 与 `spanId`。`dev/test` 会同步输出控制台并异步写入按级别拆分的文件；`prod` 仅保留异步文件输出，
+并按级别、日期和文件大小滚动。生产环境建议由容器运行时或进程管理器统一收集这些文件。
 
 ### 链路追踪
 
