@@ -106,7 +106,7 @@ try {
         "deploy\scripts\unix\manage.sh"
     )
     foreach ($module in $modules) {
-        $requiredFiles += "deploy\config\$module\application-vm.yaml.template"
+        $requiredFiles += "deploy\config\$module\application.yaml.template"
         $requiredFiles += "service-$module\target\jib-image.tar"
     }
 
@@ -138,14 +138,14 @@ try {
         throw "传输 README.md 失败"
     }
 
-    # 只上传模板；远程 application-vm.yaml 是部署机本地配置，后续部署不覆盖。
+    # 只上传模板；远程 application.yaml 是部署机本地配置，后续部署不覆盖。
     foreach ($module in $modules) {
         & ssh $Remote "mkdir -p '$AppDir/config/$module'"
         if ($LASTEXITCODE -ne 0) {
             throw "无法创建远程配置目录：$AppDir/config/$module"
         }
 
-        & scp "deploy\config\$module\application-vm.yaml.template" "$($Remote):$AppDir/config/$module/application-vm.yaml.template"
+        & scp "deploy\config\$module\application.yaml.template" "$($Remote):$AppDir/config/$module/application.yaml.template"
         if ($LASTEXITCODE -ne 0) {
             throw "传输 $module 配置模板失败"
         }
@@ -154,7 +154,7 @@ try {
     # 运行配置必须在部署机上手动生成；缺失时禁止 -Start，避免服务退回镜像内置配置。
     $missingRuntimeConfigs = @()
     foreach ($module in $modules) {
-        & ssh $Remote "test -f '$AppDir/config/$module/application-vm.yaml'" *> $null
+        & ssh $Remote "test -f '$AppDir/config/$module/application.yaml'" *> $null
         if ($LASTEXITCODE -ne 0) {
             $missingRuntimeConfigs += $module
         }
@@ -196,7 +196,7 @@ try {
         Write-Host "以下服务缺少运行配置：$($missingRuntimeConfigs -join ', ')" -ForegroundColor Yellow
         Write-Host "请先在 Ubuntu 执行：" -ForegroundColor Yellow
         Write-Host "  cd $AppDir"
-        Write-Host "  for module in $($missingRuntimeConfigs -join ' '); do cp config/\$module/application-vm.yaml.template config/\$module/application-vm.yaml; done"
+        Write-Host ('  for module in {0}; do cp config/$module/application.yaml.template config/$module/application.yaml; done' -f ($missingRuntimeConfigs -join ' '))
         throw "远程运行配置未生成，已取消启动。"
     }
 
@@ -223,15 +223,15 @@ try {
     if (-not $Load -and -not $Start) {
         Write-Host "镜像尚未加载。后续在 Ubuntu 执行：" -ForegroundColor Yellow
         Write-Host "  cd $AppDir"
-        Write-Host "  for service in $($modules -join ' '); do docker load -i images/service-\$service.tar; done"
+        Write-Host ('  for service in {0}; do docker load -i images/$service.tar; done' -f ($modules -join ' '))
         Write-Host "  cp .env.example .env && chmod 600 .env"
-        Write-Host "  for module in $($modules -join ' '); do cp config/\$module/application-vm.yaml.template config/\$module/application-vm.yaml; done"
+        Write-Host ('  for module in {0}; do cp config/$module/application.yaml.template config/$module/application.yaml; done' -f ($modules -join ' '))
         Write-Host "  docker compose up -d"
         Write-Host "  也可以执行 ./scripts/unix/manage.sh 使用交互菜单"
     }
     elseif ($missingRuntimeConfigs.Count -gt 0) {
-        Write-Host "提醒：以下服务还没有 application-vm.yaml 运行配置：$($missingRuntimeConfigs -join ', ')" -ForegroundColor Yellow
-        Write-Host "启动前请先从 application-vm.yaml.template 复制生成。"
+        Write-Host "提醒：以下服务还没有 application.yaml 运行配置：$($missingRuntimeConfigs -join ', ')" -ForegroundColor Yellow
+        Write-Host "启动前请先从 application.yaml.template 复制生成。"
     }
     if ($Tag -ne "1.0.0") {
         Write-Host "提醒：当前构建 tag 是 $Tag，请确保远程 .env 中 APP_TAG=$Tag。" -ForegroundColor Yellow

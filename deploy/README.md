@@ -38,10 +38,10 @@ deploy/
   docker-compose.yml                         # Ubuntu 上运行的 Compose 文件
   .env.example                               # 环境变量模板，不含真实密钥
   .gitignore                                 # 排除真实 .env、运行配置和日志
-  config/provider/application-vm.yaml.template
-  config/consumer/application-vm.yaml.template
-  config/gateway/application-vm.yaml.template
-  config/mail/application-vm.yaml.template
+  config/provider/application.yaml.template
+  config/consumer/application.yaml.template
+  config/gateway/application.yaml.template
+  config/mail/application.yaml.template
 
   scripts/windows/deploy.ps1                 # Windows 侧构建、传输、加载、启动脚本
   scripts/unix/manage.sh                     # Ubuntu/macOS 侧交互式应用维护脚本
@@ -53,7 +53,7 @@ service-gateway/target/jib-image.tar         # gateway 镜像 tar
 service-mail/target/jib-image.tar            # mail 镜像 tar
 ```
 
-镜像 tar 是构建产物，不应该提交 Git。真实 `.env`、服务器上的 `application-vm.yaml` 运行配置和日志也只保存在部署机，不提交 Git。
+镜像 tar 是构建产物，不应该提交 Git。真实 `.env`、服务器上的 `application.yaml` 运行配置和日志也只保存在部署机，不提交 Git。
 
 ## 3. 在 Windows 上打包镜像
 
@@ -313,7 +313,7 @@ zjc@192.168.100.128
 `/home/zjc/app/scripts/unix/manage.sh`，作为部署机上的文档和启停维护入口。
 
 配置只上传 `.template` 模板，不会上传或覆盖远程的
-`config/<module>/application-vm.yaml`。首次部署需要在 Ubuntu 手动从模板复制生成运行配置；后续在服务器上修改的运行配置会保留。
+`config/<module>/application.yaml`。首次部署需要在 Ubuntu 手动从模板复制生成运行配置；后续在服务器上修改的运行配置会保留。
 
 注意：脚本不会创建或覆盖远程 `.env`，避免把真实密钥弄丢。`.env` 需要第一次手动创建。
 
@@ -361,7 +361,7 @@ ssh $Remote "chmod 700 $AppDir/scripts/unix/manage.sh"
 
 foreach ($module in @("provider", "consumer", "gateway", "mail")) {
     ssh $Remote "mkdir -p $AppDir/config/$module"
-    scp "deploy\config\$module\application-vm.yaml.template" "$($Remote):$AppDir/config/$module/application-vm.yaml.template"
+    scp "deploy\config\$module\application.yaml.template" "$($Remote):$AppDir/config/$module/application.yaml.template"
 }
 
 foreach ($module in @("provider", "consumer", "gateway", "mail")) {
@@ -388,24 +388,24 @@ vi .env
 
 ```text
 APP_TAG=1.0.0
-SPRING_PROFILE=dev,vm
+SPRING_PROFILE=dev
 JASYPT_ENCRYPTOR_PASSWORD=真实主密钥
 ```
 
 `APP_TAG` 必须和镜像构建时的 `-Ddocker.tag` 一致。
 
-`SPRING_PROFILE=dev,vm` 表示：
+`SPRING_PROFILE=dev` 表示：
 
 - `dev` 读取镜像内置的开发环境基线配置。
-- `vm` 读取 `/app/config/application-vm.yaml`，覆盖虚拟机环境中的基础设施地址。
+- `/app/config/application.yaml` 是外置配置，只覆盖基础设施地址等需要差异化的属性。
 
 如果以后要以生产基线运行，可以改成：
 
 ```text
-SPRING_PROFILE=prod,vm
+SPRING_PROFILE=prod
 ```
 
-此时仍然可以通过 `vm` 外置配置覆盖生产环境里的具体地址。
+此时同一个外置 `application.yaml` 仍然会生效。切换前必须确认其中的地址和 Mailhog 等开发配置适合生产环境，否则会出现生产误连测试资源的问题。
 
 `JASYPT_ENCRYPTOR_PASSWORD` 只写在部署机的 `.env` 中，不要提交 Git，也不要输出到日志、终端截图或聊天记录里。
 
@@ -417,21 +417,41 @@ SPRING_PROFILE=prod,vm
 cd /home/zjc/app
 
 for module in provider consumer gateway mail; do
-  cp "config/$module/application-vm.yaml.template" \
-     "config/$module/application-vm.yaml"
+  [ -f "config/$module/application.yaml" ] ||
+    cp "config/$module/application.yaml.template" \
+       "config/$module/application.yaml"
 done
 ```
 
 按当前环境检查和修改这些文件：
 
 ```text
-config/provider/application-vm.yaml
-config/consumer/application-vm.yaml
-config/gateway/application-vm.yaml
-config/mail/application-vm.yaml
+config/provider/application.yaml
+config/consumer/application.yaml
+config/gateway/application.yaml
+config/mail/application.yaml
 ```
 
 后续部署脚本只更新 `.template`，不会覆盖这些运行配置。若模板更新了，需要你自己对比并决定是否把差异合入运行配置。
+
+如果部署机还在使用旧版本的 `application-vm.yaml`，迁移方式是：
+
+```bash
+cd /home/zjc/app
+
+for module in provider consumer gateway mail; do
+  [ -f "config/$module/application.yaml" ] ||
+    { [ -f "config/$module/application-vm.yaml" ] &&
+        cp "config/$module/application-vm.yaml" "config/$module/application.yaml"; } ||
+    cp "config/$module/application.yaml.template" "config/$module/application.yaml"
+done
+
+vi .env
+# 将 SPRING_PROFILE 改为 dev
+docker compose up -d
+```
+
+确认服务运行正常后，可以删除旧的 `application-vm.yaml`。
 
 ### 6.3 加载镜像
 
@@ -478,7 +498,7 @@ docker compose logs -f
 /home/zjc/app/logs/gateway
 ```
 
-`SPRING_PROFILE=dev,vm` 时，日志会同时输出到控制台和文件，所以 `docker compose logs` 方便排查。`SPRING_PROFILE=prod,vm` 时，Logback 只保留异步文件日志，业务日志要以宿主机挂载目录为准。
+`SPRING_PROFILE=dev` 时，日志会同时输出到控制台和文件，所以 `docker compose logs` 方便排查。`SPRING_PROFILE=prod` 时，Logback 只保留异步文件日志，业务日志要以宿主机挂载目录为准。
 
 验证网关：
 
@@ -554,7 +574,7 @@ bash deploy/scripts/unix/manage.sh --app-dir /path/to/app
 
 常见维护差异：
 
-- `restart`：适合 `config/<module>/application-vm.yaml` 修改，容器保留，应用重新读取配置。
+- `restart`：适合 `config/<module>/application.yaml` 修改，容器保留，应用重新读取配置。
 - `apply`：适合 `.env`、`APP_TAG`、`docker-compose.yml` 修改，对应 `docker compose up -d`，需要时会创建或重建容器。
 - `down`：停止并删除全部容器和网络，但保留镜像、`.env`、外置配置和应用日志。
 - `load`：只把 `images/*.tar` 加载进 Docker；更新镜像 tag 后还要执行 `apply`。
@@ -578,9 +598,11 @@ volumes:
   - ./config/provider:/app/config:ro
 ```
 
-因此 `/app/config/application-vm.yaml` 会作为外置配置加载。`SPRING_PROFILE=dev,vm` 时，`application-vm.yaml` 用于覆盖内置 `dev` 配置中的基础设施地址。
+因此 `/app/config/application.yaml` 会作为外置配置加载。Spring Boot 的配置顺序是：镜像内 `application.yaml`、镜像内 `application-dev.yaml`、外置目录下的 `application.yaml`。后加载的配置按属性覆盖前值，所以外置 `application.yaml` 可以覆盖镜像内 dev 基线中的基础设施地址；未写在其中的属性继续使用镜像内置值。
 
-仓库中的 `application-vm.yaml.template` 只是初始模板，Spring Boot 不会加载 `.template` 文件。
+仓库中的 `application.yaml.template` 只是初始模板，Spring Boot 不会加载 `.template` 文件。
+
+注意：`application.yaml` 不是 profile 专属文件。无论 `SPRING_PROFILE` 是 `dev` 还是 `prod`，它都会参与覆盖。切换生产前必须检查其中是否还有 Mailhog、开发 IP、开发端口等不适合生产的配置。
 
 `:ro` 表示容器内进程不能修改这个目录，但宿主机上的 Ubuntu 用户仍然可以编辑文件。
 
@@ -589,7 +611,7 @@ volumes:
 运行配置的实际维护位置在部署机：
 
 ```text
-/home/zjc/app/config/<module>/application-vm.yaml
+/home/zjc/app/config/<module>/application.yaml
 ```
 
 修改后重启对应服务：
@@ -602,17 +624,17 @@ docker compose restart service-provider
 如果要把新的默认值沉淀到仓库，修改模板：
 
 ```text
-deploy/config/<module>/application-vm.yaml.template
+deploy/config/<module>/application.yaml.template
 ```
 
-后续部署只会更新模板，不会自动改变服务器上的运行配置。你需要手动对比差异，并把需要的内容合入 `application-vm.yaml` 后重启服务。
+后续部署只会更新模板，不会自动改变服务器上的运行配置。你需要手动对比差异，并把需要的内容合入 `application.yaml` 后重启服务。
 
 对比模板和当前运行配置：
 
 ```bash
 diff -u \
-  /home/zjc/app/config/provider/application-vm.yaml.template \
-  /home/zjc/app/config/provider/application-vm.yaml
+  /home/zjc/app/config/provider/application.yaml.template \
+  /home/zjc/app/config/provider/application.yaml
 ```
 
 ### 7.3 只写差异，不要复制全量配置
@@ -633,11 +655,11 @@ spring:
       port: 6379
 ```
 
-没有写在 `application-vm.yaml` 里的配置，继续使用镜像内置配置。这样镜像内的业务配置和外置的环境地址职责清晰，也更容易确认差异。
+没有写在 `application.yaml` 里的配置，继续使用镜像内置配置。这样镜像内的业务配置和外置的环境地址职责清晰，也更容易确认差异。
 
 ### 7.4 迁移基础设施
 
-如果 MySQL、Redis、Nacos、Zipkin 从 192.168.100.128 迁到其他机器，只需要修改服务器上相关 `application-vm.yaml` 的地址，然后重启服务，不需要重新构建镜像，也不需要重新传输配置。
+如果 MySQL、Redis、Nacos、Zipkin 从 192.168.100.128 迁到其他机器，只需要修改服务器上相关 `application.yaml` 的地址，然后重启服务，不需要重新构建镜像，也不需要重新传输配置。
 
 示例：
 
@@ -666,7 +688,7 @@ spring:
 ```bash
 docker run --rm \
   --network zjc-spring-cloud_zjc-net \
-  -e SPRING_PROFILES_ACTIVE=dev,vm \
+  -e SPRING_PROFILES_ACTIVE=dev \
   -e JASYPT_ENCRYPTOR_PASSWORD="$JASYPT_ENCRYPTOR_PASSWORD" \
   -v /home/zjc/app/config/provider:/app/config:ro \
   zjc/service-provider:1.0.0
@@ -695,6 +717,15 @@ docker run --rm \
 
 ## 8. 版本更新与回滚
 
+版本升级的固定顺序是：
+
+```text
+构建新 tag -> 传输并 docker load -> 修改 APP_TAG -> docker compose up -d -> 验证 -> 稳定后清理旧镜像
+```
+
+不要只执行 `restart`。`restart` 只是重启旧容器，不会因为 `.env` 里的 `APP_TAG`
+变化而自动换镜像；镜像版本变化要执行 `docker compose up -d` 让 Compose 按需重建容器。
+
 ### 8.1 发布新版本
 
 Windows：
@@ -703,6 +734,9 @@ Windows：
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
 .\deploy\scripts\windows\deploy.ps1 -Tag "1.0.1" -Load
 ```
+
+上面两步会生成、上传并加载 `zjc/service-*:1.0.1` 镜像。脚本不会修改远程 `.env`，
+也不会自动重建容器，所以接下来必须在 Ubuntu 上切换 `APP_TAG`。
 
 Ubuntu：
 
@@ -722,9 +756,27 @@ APP_TAG=1.0.1
 ```bash
 docker compose up -d
 docker compose ps
+docker compose images
 ```
 
+同一个 Compose 项目内，`docker compose up -d` 会自动重建镜像配置变化的容器。
+发布新版本前不需要先执行 `docker compose stop` 或 `docker compose down`。
+
 如果只是新增模块或修改 Compose，也要执行 `docker compose up -d`，让 Compose 按新定义创建容器。
+
+发布后至少检查：
+
+```bash
+docker compose ps
+docker compose images
+docker compose logs --tail=200 service-provider
+curl http://192.168.100.128/api/v1/provider/user/1
+curl http://192.168.100.128/api/v1/consumer/user/1
+```
+
+`docker compose images` 里看到的 tag 才是当前容器实际使用的镜像版本。不要用同名 tag
+覆盖不同内容的镜像；本地镜像 tag 一旦加载后，Compose 主要根据名称和 tag 判断是否需要
+重建，发布不同代码时应使用新的版本 tag。
 
 ### 8.2 回滚
 
@@ -749,6 +801,17 @@ docker compose up -d
 
 ### 8.3 清理旧镜像
 
+清理前先确认三件事：
+
+```bash
+grep APP_TAG /home/zjc/app/.env
+docker compose images
+docker ps -a --format '{{.ID}}  {{.Names}}  {{.Image}}' | grep ':1.0.0' || true
+```
+
+确认当前容器已经运行新版本、没有旧容器还引用旧 tag，并且新版本已经稳定运行一段时间，
+再删除旧镜像。旧镜像是回滚依据，删除后就不能直接通过改 `APP_TAG` 回滚。
+
 查看镜像：
 
 ```bash
@@ -758,7 +821,11 @@ docker images "zjc/service-*"
 确认不再需要后删除指定镜像：
 
 ```bash
-docker rmi zjc/service-provider:1.0.0
+docker rmi \
+  zjc/service-provider:1.0.0 \
+  zjc/service-consumer:1.0.0 \
+  zjc/service-gateway:1.0.0 \
+  zjc/service-mail:1.0.0
 ```
 
 清理悬空镜像：
@@ -768,6 +835,22 @@ docker image prune
 ```
 
 不要在没有确认版本和回滚需求前使用 `docker system prune -a`，它会删除所有未被容器使用的镜像。
+
+这里的“旧镜像”指 Docker daemon 中的 `zjc/service-*:旧tag`，用 `docker rmi` 清理。
+它和传输用的 tar 包是两类文件：
+
+```text
+/home/zjc/app/images/service-provider.tar
+Windows 本地 service-provider/target/jib-image.tar
+```
+
+tar 文件名是固定的，发布新版本时会覆盖同名旧 tar，通常不会自动积累多个历史版本。
+删除 tar 只影响以后重新 `docker load` 或重新传输，不影响当前已经运行的容器。如果要释放
+传输目录空间，可以确认不需要后再删除：
+
+```bash
+rm /home/zjc/app/images/service-provider.tar
+```
 
 ## 9. 一个镜像起多个服务实例
 
@@ -931,7 +1014,7 @@ spring:
 创建：
 
 ```text
-deploy/config/ai/application-vm.yaml.template
+deploy/config/ai/application.yaml.template
 ```
 
 示例：
@@ -965,7 +1048,7 @@ Ubuntu：
 
 ```bash
 cd /home/zjc/app
-cp config/ai/application-vm.yaml.template config/ai/application-vm.yaml
+cp config/ai/application.yaml.template config/ai/application.yaml
 docker compose up -d
 docker compose logs -f service-ai
 ```
@@ -1035,7 +1118,7 @@ Windows 构建 tag = 部署机已加载 tag = .env APP_TAG
 
 ### 11.4 修改配置后没有重启
 
-Spring Boot 配置在启动时读取。修改 `application-vm.yaml` 后必须重启对应服务：
+Spring Boot 配置在启动时读取。修改 `application.yaml` 后必须重启对应服务：
 
 ```bash
 docker compose restart service-provider
@@ -1053,8 +1136,8 @@ docker compose up -d
 
 ```text
 1. 文件是否挂载到了 /app/config
-2. SPRING_PROFILES_ACTIVE 是否包含 vm
-3. 文件名是否是 application-vm.yaml
+2. SPRING_PROFILES_ACTIVE 是否是预期的 dev 或 prod
+3. 文件名是否是 application.yaml
 ```
 
 进入容器检查：
@@ -1263,7 +1346,13 @@ docker compose up -d
 
 ### 12.2 发布新版本
 
-完整发布流程在 Windows 上执行：
+完整说明见第 8 章。这里给出日常操作摘要，流程必须是：
+
+```text
+构建新 tag -> 传输并 docker load -> 修改 APP_TAG -> docker compose up -d -> 验证 -> 稳定后清理旧镜像
+```
+
+Windows 构建、传输并加载：
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
@@ -1288,7 +1377,11 @@ APP_TAG=1.0.1
 ```bash
 docker compose up -d
 docker compose ps
+docker compose images
 ```
+
+`docker compose up -d` 会按需重建容器，不需要先停止或删除旧容器。只执行 `restart`
+不会切换镜像版本。
 
 发布后检查：
 
@@ -1311,7 +1404,7 @@ docker compose up -d
 外置运行配置维护在部署机：
 
 ```text
-/home/zjc/app/config/<module>/application-vm.yaml
+/home/zjc/app/config/<module>/application.yaml
 ```
 
 修改运行配置后重启：
@@ -1339,7 +1432,7 @@ docker compose up -d
 仓库中的模板只作为首次部署和新增服务的默认值：
 
 ```text
-deploy/config/<module>/application-vm.yaml.template
+deploy/config/<module>/application.yaml.template
 ```
 
 部署脚本会更新模板，但不会覆盖运行配置。模板和运行配置的差异需要人工确认。
@@ -1507,10 +1600,22 @@ du -sh /home/zjc/app/images/*
 docker images "zjc/service-*"
 ```
 
-删除确认不再需要的旧镜像：
+先确认当前版本正确：
 
 ```bash
-docker rmi zjc/service-provider:1.0.0
+grep APP_TAG /home/zjc/app/.env
+docker compose images
+docker ps -a --format '{{.ID}}  {{.Names}}  {{.Image}}' | grep ':1.0.0' || true
+```
+
+确认新版本稳定，并且没有旧容器引用 `1.0.0` 后，再删除旧 tag 镜像：
+
+```bash
+docker rmi \
+  zjc/service-provider:1.0.0 \
+  zjc/service-consumer:1.0.0 \
+  zjc/service-gateway:1.0.0 \
+  zjc/service-mail:1.0.0
 ```
 
 清理悬空镜像：
@@ -1525,6 +1630,9 @@ docker image prune
 ls -lh /home/zjc/app/images
 rm /home/zjc/app/images/service-provider.tar
 ```
+
+`images/*.tar` 是传输和加载用的文件，不是 Docker daemon 里的镜像。远程 tar 固定命名，
+新版本会覆盖旧文件；删除 tar 不影响当前运行容器，只影响以后没有镜像时的重新加载和回滚。
 
 不要盲目执行：
 

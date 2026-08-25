@@ -1,4 +1,4 @@
-# consumer 的虚拟机覆盖配置：无数据库和 Redis，只需服务发现与链路追踪
+# consumer 的 Docker 外置配置：无数据库和 Redis，只需服务发现与链路追踪
 spring:
   cloud:
     nacos:

@@ -9,7 +9,7 @@ networks:
 # 公共运行参数：镜像外必须注入的只有 profile 与 Jasypt 主密钥
 x-common-environment: &common-environment
   TZ: Asia/Shanghai
-  # dev 读取镜像内置基线配置；vm 读取 /app/config/application-vm.yaml 覆盖基础设施地址
+  # dev 读取镜像内置基线；外置 /app/config/application.yaml 覆盖基础设施地址
   SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE}
   # 解密配置中的 ENC(...)；真实值只保存在部署机 .env
   JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD}

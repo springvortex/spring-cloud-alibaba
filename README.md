@@ -290,7 +290,7 @@ Spring Boot Fat JAR 打包配置由父 `pom.xml` 统一管理，业务服务自�
 - 每个可运行服务独立构建一个镜像。
 - `gateway` 是唯一发布到宿主机 `80` 端口的服务。
 - `provider`、`consumer`、`mail` 只留在 Docker 内部网络，通过 Nacos 服务发现访问。
-- 基础设施地址通过部署机 `config/<module>/application-vm.yaml` 外置覆盖；仓库只维护对应的 `.template` 模板，部署时不会覆盖服务器上的运行配置。
+- 基础设施地址通过部署机 `config/<module>/application.yaml` 外置覆盖；仓库只维护对应的 `.template` 模板，部署时不会覆盖服务器上的运行配置。
 - Jasypt 主密钥通过部署机 `.env` 注入，不提交 Git。
 
 Windows 侧构建、传输并远程加载镜像：
@@ -309,12 +309,13 @@ chmod 600 .env
 vi .env
 ```
 
-再从配置模板生成各服务实际读取的 `application-vm.yaml`：
+再从配置模板生成各服务实际读取的 `application.yaml`：
 
 ```bash
 for module in provider consumer gateway mail; do
-  cp "config/$module/application-vm.yaml.template" \
-     "config/$module/application-vm.yaml"
+  [ -f "config/$module/application.yaml" ] ||
+    cp "config/$module/application.yaml.template" \
+       "config/$module/application.yaml"
 done
 ```
 

@@ -1,4 +1,4 @@
-# mail 的虚拟机覆盖配置：数据库、SMTP、Nacos、Zipkin 均指向 192.168.100.128
+# mail 的 Docker 外置配置：数据库、SMTP、Nacos、Zipkin 均指向 192.168.100.128
 spring:
   cloud:
     nacos:

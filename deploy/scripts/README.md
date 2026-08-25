@@ -104,7 +104,7 @@ Windows 脚本会同步：
 ```text
 deploy/docker-compose.yml
 deploy/.env.example
-deploy/config/<module>/application-vm.yaml.template
+deploy/config/<module>/application.yaml.template
 deploy/README.md
 deploy/scripts/README.md
 deploy/scripts/unix/manage.sh
@@ -116,7 +116,7 @@ service-*/target/jib-image.tar
 ```text
 /home/zjc/app/docker-compose.yml
 /home/zjc/app/.env.example
-/home/zjc/app/config/<module>/application-vm.yaml.template
+/home/zjc/app/config/<module>/application.yaml.template
 /home/zjc/app/README.md
 /home/zjc/app/scripts/README.md
 /home/zjc/app/scripts/unix/manage.sh
@@ -127,7 +127,7 @@ service-*/target/jib-image.tar
 以后新增 `service-ai` 时，只要 Compose 中有 `zjc/service-ai:${APP_TAG}`，并且存在：
 
 ```text
-deploy/config/ai/application-vm.yaml.template
+deploy/config/ai/application.yaml.template
 service-ai/target/jib-image.tar
 ```
 
@@ -142,20 +142,21 @@ service-ai/target/jib-image.tar
 新版本会覆盖同名的旧 tar。Docker daemon 中的旧 tag 镜像是否保留，取决于是否执行过 `docker rmi`。
 
 配置模板也会被覆盖更新，但远程实际运行的
-`config/<module>/application-vm.yaml` 不会被覆盖。该文件首次需要在 Ubuntu 手动执行：
+`config/<module>/application.yaml` 不会被覆盖。该文件首次需要在 Ubuntu 手动执行：
 
 ```bash
 cd /home/zjc/app
 for module in provider consumer gateway mail; do
-  cp "config/$module/application-vm.yaml.template" \
-     "config/$module/application-vm.yaml"
+  [ -f "config/$module/application.yaml" ] ||
+    cp "config/$module/application.yaml.template" \
+       "config/$module/application.yaml"
 done
 ```
 
 ### 1.6 Windows 脚本不会做的事
 
 - 不创建、不读取明文、不覆盖远程 `.env`，避免误删 Jasypt 主密钥。
-- 不创建、不覆盖远程 `config/<module>/application-vm.yaml` 运行配置。
+- 不创建、不覆盖远程 `config/<module>/application.yaml` 运行配置。
 - 不自动修改 `.env` 中的 `APP_TAG`。
 - 不做健康检查和自动回滚。
 - 不清理远程旧镜像、旧 tar、历史日志。
@@ -294,7 +295,7 @@ ZJC_APP_DIR=/home/zjc/app ./scripts/unix/manage.sh status
 | 场景 | 推荐命令 |
 | --- | --- |
 | 临时停止服务，稍后继续启动 | `stop`，之后 `start` |
-| 修改 `config/<module>/application-vm.yaml` | `config-restart <service>` |
+| 修改 `config/<module>/application.yaml` | `config-restart <service>` |
 | 修改 `.env`、`APP_TAG`、`docker-compose.yml` | `apply all` |
 | 加载新的 `images/*.tar` | `load`，然后 `apply all` |
 | provider 临时扩两个实例 | `scale service-provider 2` |
@@ -330,6 +331,12 @@ Docker daemon 中的镜像
 
 ## 3. 发布新版本
 
+升级顺序固定为：
+
+```text
+-Build -Load 新 tag -> 修改 APP_TAG -> apply all -> 验证 -> 稳定后 docker rmi 旧 tag
+```
+
 ### 3.1 构建、传输并加载
 
 Windows：
@@ -358,6 +365,9 @@ APP_TAG=1.0.1
 ./scripts/unix/manage.sh status
 ```
 
+`apply all` 对应 `docker compose up -d`，会按需重建容器。不要只执行 `restart`，
+`restart` 不会切换 `.env` 里的 `APP_TAG`。
+
 ### 3.2 验证
 
 ```bash
@@ -367,12 +377,28 @@ curl http://192.168.100.128/api/v1/provider/user/1
 curl http://192.168.100.128/api/v1/consumer/user/1
 ```
 
-确认新版本稳定后，再考虑清理旧镜像：
+确认新版本稳定后，再清理旧 tag 镜像。清理前检查：
+
+```bash
+grep APP_TAG .env
+docker compose images
+docker ps -a --format '{{.ID}}  {{.Names}}  {{.Image}}' | grep ':1.0.0' || true
+```
+
+没有旧容器引用旧 tag 时再删除：
 
 ```bash
 docker images "zjc/service-*"
-docker rmi zjc/service-provider:1.0.0
+docker rmi \
+  zjc/service-provider:1.0.0 \
+  zjc/service-consumer:1.0.0 \
+  zjc/service-gateway:1.0.0 \
+  zjc/service-mail:1.0.0
 ```
+
+注意区分两类文件：`docker rmi` 清理 Docker daemon 里的旧 tag 镜像；
+`/home/zjc/app/images/service-*.tar` 是传输包，文件名固定，新版本会覆盖旧 tar，
+删除 tar 不影响当前运行容器。
 
 ## 4. 常见问题
 
@@ -436,8 +462,8 @@ mvn -v
 
 ## 5. 安全和版本注意事项
 
-- `.env` 和服务器上的 `application-vm.yaml` 运行配置只保存在部署机，不提交 Git。
+- `.env` 和服务器上的 `application.yaml` 运行配置只保存在部署机，不提交 Git。
 - 不要把 Jasypt 主密钥写入脚本、README 或终端截图。
-- Windows 脚本只覆盖配置模板；服务器上的 `application-vm.yaml` 属于运行配置，不会被脚本覆盖。模板默认值和运行配置的差异需要人工同步。
+- Windows 脚本只覆盖配置模板；服务器上的 `application.yaml` 属于运行配置，不会被脚本覆盖。模板默认值和运行配置的差异需要人工同步。
 - 新镜像 tag 发布后，旧镜像是回滚依据；确认稳定后再删除。
 - 不要把 `/home/zjc/app/logs`、`.env`、运行配置或镜像 tar 加入 Git。

@@ -1,4 +1,4 @@
-# gateway 的虚拟机覆盖配置：路由、限流、CORS 继续使用镜像内置配置
+# gateway 的 Docker 外置配置：路由、限流、CORS 继续使用镜像内置配置
 spring:
   cloud:
     nacos:

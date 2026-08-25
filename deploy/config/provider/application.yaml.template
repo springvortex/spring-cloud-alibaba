@@ -1,4 +1,4 @@
-# provider 的虚拟机覆盖配置：只写与镜像内置 dev 配置不同的基础设施地址
+# provider 的 Docker 外置配置：只写与镜像内置 dev 配置不同的基础设施地址
 spring:
   cloud:
     nacos:
