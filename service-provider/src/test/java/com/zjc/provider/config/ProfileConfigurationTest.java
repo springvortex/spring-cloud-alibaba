@@ -106,6 +106,18 @@ class ProfileConfigurationTest {
         assertThat(path(common, "zjc.distributed-lock.mysql.retry-interval")).isEqualTo("100ms");
     }
 
+    @Test
+    @DisplayName("服务启用优雅停机")
+    void serviceEnablesGracefulShutdown() {
+        Map<String, Object> application = loadResource("application.yaml");
+        Map<String, Object> shutdown = loadResource("config/application-shutdown.yaml");
+
+        assertThat(path(application, "spring.profiles.include")).asList().contains("shutdown");
+        assertThat(path(shutdown, "server.shutdown")).isEqualTo("graceful");
+        assertThat(path(shutdown, "spring.lifecycle.timeout-per-shutdown-phase"))
+                .isEqualTo("30s");
+    }
+
     private Map<String, Object> loadProfile(String name) {
         return loadResource(name);
     }

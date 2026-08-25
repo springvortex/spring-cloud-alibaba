@@ -11,3 +11,4 @@ spring:
       - sentinel
       - nacos
       - cors
+      - shutdown

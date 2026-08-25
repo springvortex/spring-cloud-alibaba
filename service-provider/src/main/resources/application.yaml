@@ -13,3 +13,4 @@ spring:
       - nacos
       - redis
       - lock
+      - shutdown
