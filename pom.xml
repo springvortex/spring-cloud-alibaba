@@ -225,6 +225,8 @@
                         <container>
                             <!-- 启动类和端口由各可运行模块在 docker-tar Profile 中提供 -->
                             <mainClass>${docker.main-class}</mainClass>
+                            <!-- 使用真实构建时间，避免 Docker 显示 1970-01-01 -->
+                            <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
                             <!-- Logback 使用相对路径 logs/...，工作目录固定后日志落在 /app/logs/... -->
                             <workingDirectory>/app</workingDirectory>
                             <jvmFlags>
