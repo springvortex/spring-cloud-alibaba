@@ -25,7 +25,7 @@ services:
       - zjc-net
     volumes:
       # 外置配置优先级高于镜像内置 YAML；:ro 防止容器修改部署配置
-      - ./external-config/provider:/app/config:ro
+      - ./config/provider:/app/config:ro
       # Logback 工作目录为 /app，宿主机直接查看 logs/provider
       - ./logs/provider:/app/logs/service-provider
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
       - zjc-net
     volumes:
       # consumer 不连数据库，只覆盖 Nacos 与 Zipkin 地址
-      - ./external-config/consumer:/app/config:ro
+      - ./config/consumer:/app/config:ro
       # 避免容器重建后业务日志丢失
       - ./logs/consumer:/app/logs/service-consumer
     restart: unless-stopped
@@ -58,7 +58,7 @@ services:
       - zjc-net
     volumes:
       # mail 需要 MySQL、SMTP、Nacos、Zipkin 的虚拟机地址
-      - ./external-config/mail:/app/config:ro
+      - ./config/mail:/app/config:ro
       # mail 优雅停机等待 60s，日志目录单独隔离
       - ./logs/mail:/app/logs/service-mail
     restart: unless-stopped
@@ -75,7 +75,7 @@ services:
       - zjc-net
     volumes:
       # 网关外置配置只覆盖 Nacos 与 Zipkin，路由和 CORS 继续使用镜像内置配置
-      - ./external-config/gateway:/app/config:ro
+      - ./config/gateway:/app/config:ro
       # 网关访问日志与错误日志落在宿主机 logs/gateway
       - ./logs/gateway:/app/logs/service-gateway
     restart: unless-stopped

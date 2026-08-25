@@ -38,10 +38,10 @@ deploy/
   docker-compose.yml                         # Ubuntu 上运行的 Compose 文件
   .env.example                               # 环境变量模板，不含真实密钥
   .gitignore                                 # 排除真实 .env 和日志
-  external-config/provider/application-vm.yaml
-  external-config/consumer/application-vm.yaml
-  external-config/gateway/application-vm.yaml
-  external-config/mail/application-vm.yaml
+  config/provider/application-vm.yaml
+  config/consumer/application-vm.yaml
+  config/gateway/application-vm.yaml
+  config/mail/application-vm.yaml
 
 scripts/
   deploy-vm.ps1                              # Windows 侧构建、传输、加载、启动脚本
@@ -131,7 +131,7 @@ mvn -Pdocker-tar "-Ddocker.base-image=eclipse-temurin:21-jre" "-Ddocker.tag=1.0.
 
 镜像不包含：
 
-- `deploy/external-config` 下的外置配置
+- `deploy/config` 下的外置配置
 - 真实 `.env`
 - 部署机上的日志
 
@@ -244,7 +244,7 @@ ssh $Remote "mkdir -p $AppDir/images"
 
 scp deploy\docker-compose.yml "$($Remote):$AppDir/docker-compose.yml"
 scp deploy\.env.example "$($Remote):$AppDir/.env.example"
-scp -r deploy\external-config "$($Remote):$AppDir/"
+scp -r deploy\config "$($Remote):$AppDir/"
 
 foreach ($module in @("provider", "consumer", "gateway", "mail")) {
     scp "service-$module\target\jib-image.tar" "$($Remote):$AppDir/images/service-$module.tar"
@@ -354,13 +354,18 @@ sudo ufw allow 80/tcp
 ### 6.4 停止和重启
 
 ```bash
+docker compose start
+docker compose stop
 docker compose restart service-provider
 docker compose restart
-
 docker compose down
 ```
 
-`stop_grace_period` 已比应用优雅停机等待时间多留了 10 秒。`docker compose down` 会先发 `SIGTERM`，等待应用处理完请求和注册信息，再强制停止。
+`stop` 只停止容器，容器定义还保留，后续用 `start` 拉起。`down` 会停止并删除容器、删除 Compose 创建的网络，但不会删除镜像、`.env`、外置配置和日志。`up -d` 会按当前 Compose 文件和 `.env` 创建或重建容器。
+
+`stop_grace_period` 已比应用优雅停机等待时间多留了 10 秒。停止或删除容器时，Docker 会先发 `SIGTERM`，等待应用处理完请求和注册信息，再强制停止。
+
+更完整的启停、更新、配置变更、扩缩容和清理流程见第 12 章《日常维护手册》。
 
 ## 7. 外置配置
 
@@ -376,7 +381,7 @@ Compose 又把不同服务的外置目录挂载到容器的 `/app/config`：
 
 ```yaml
 volumes:
-  - ./external-config/provider:/app/config:ro
+  - ./config/provider:/app/config:ro
 ```
 
 因此 `/app/config/application-vm.yaml` 会作为外置配置加载。`SPRING_PROFILE=dev,vm` 时，`application-vm.yaml` 用于覆盖内置 `dev` 配置中的基础设施地址。
@@ -388,7 +393,7 @@ volumes:
 推荐流程是修改仓库中的文件：
 
 ```text
-deploy/external-config/<module>/application-vm.yaml
+deploy/config/<module>/application-vm.yaml
 ```
 
 然后重新传输并重启对应服务：
@@ -405,7 +410,7 @@ docker compose restart service-provider
 如果只在 Ubuntu 上临时修改，可以直接编辑：
 
 ```bash
-vi /home/zjc/zjc-app/external-config/provider/application-vm.yaml
+vi /home/zjc/zjc-app/config/provider/application-vm.yaml
 docker compose restart service-provider
 ```
 
@@ -464,7 +469,7 @@ docker run --rm \
   --network zjc-spring-cloud_zjc-net \
   -e SPRING_PROFILES_ACTIVE=dev,vm \
   -e JASYPT_ENCRYPTOR_PASSWORD="$JASYPT_ENCRYPTOR_PASSWORD" \
-  -v /home/zjc/zjc-app/external-config/provider:/app/config:ro \
+  -v /home/zjc/zjc-app/config/provider:/app/config:ro \
   zjc/service-provider:1.0.0
 ```
 
@@ -714,7 +719,7 @@ spring:
     networks:
       - zjc-net
     volumes:
-      - ./external-config/ai:/app/config:ro
+      - ./config/ai:/app/config:ro
       - ./logs/ai:/app/logs/service-ai
     restart: unless-stopped
     stop_grace_period: 40s
@@ -727,7 +732,7 @@ spring:
 创建：
 
 ```text
-deploy/external-config/ai/application-vm.yaml
+deploy/config/ai/application-vm.yaml
 ```
 
 示例：
@@ -953,11 +958,437 @@ du -sh /home/zjc/zjc-app/logs/*
 
 部署脚本使用 `scp -r` 覆盖同名文件，但不会删除远程已经不存在于本地仓库的旧文件。如果删除了某个模块或某个外置配置文件，需要手动清理远程对应文件。
 
+当前本地目录已经命名为 `deploy/config`。如果部署机以前部署过旧版本并存在 `/home/zjc/zjc-app/external-config`，新版本不会再使用它。确认 `config` 目录和服务运行正常后，可以手动清理旧目录：
+
+```bash
+ls -la /home/zjc/zjc-app/config
+rm -rf /home/zjc/zjc-app/external-config
+```
+
+注意：已有容器仍保留着创建时的旧挂载路径。传输新 Compose 后需要在 Ubuntu 执行 `docker compose up -d` 重建容器，新的 `./config/...` 挂载才会生效。
+
 ### 11.14 不要把基础设施做成镜像的一部分
 
 镜像应该保持环境无关。基础设施地址、密钥、外部资源地址放入 `.env` 或外置配置，不要硬编码进业务镜像。
 
-## 12. 日常运维命令速查
+## 12. 日常维护手册
+
+以下命令默认都在 Ubuntu 部署机执行：
+
+```bash
+cd /home/zjc/zjc-app
+```
+
+### 12.1 启动、停止和重启
+
+启动全部服务：
+
+```bash
+docker compose up -d
+```
+
+启动已经存在但处于停止状态的容器：
+
+```bash
+docker compose start
+```
+
+停止全部服务：
+
+```bash
+docker compose stop
+```
+
+停止后再次启动：
+
+```bash
+docker compose stop
+docker compose start
+```
+
+重启全部服务：
+
+```bash
+docker compose restart
+```
+
+只重启一个服务：
+
+```bash
+docker compose restart service-provider
+docker compose restart service-gateway
+```
+
+只停止一个服务：
+
+```bash
+docker compose stop service-provider
+```
+
+如果之前执行过 `--scale service-provider=2`，按服务名停止或重启时会作用于该服务的所有实例。
+
+停止并删除容器：
+
+```bash
+docker compose down
+```
+
+清理不属于当前 Compose 文件的孤儿容器：
+
+```bash
+docker compose down --remove-orphans
+```
+
+几个命令的区别：
+
+| 命令 | 容器是否删除 | 适用场景 |
+| --- | --- | --- |
+| `docker compose start` | 否 | 启动已停止的容器 |
+| `docker compose stop` | 否 | 临时停机、日常维护 |
+| `docker compose restart` | 否 | 修改外置 YAML 后让应用重新读取配置 |
+| `docker compose up -d` | 按需创建或重建 | 镜像版本、`.env`、Compose 文件变化后 |
+| `docker compose down` | 是 | 清理容器和网络，但保留镜像、配置、日志 |
+
+注意：`.env` 中的变量是在容器创建时注入的。修改 `.env` 后执行 `docker compose restart` 不一定重建容器，正确做法是：
+
+```bash
+docker compose up -d
+```
+
+### 12.2 发布新版本
+
+完整发布流程在 Windows 上执行：
+
+```powershell
+mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
+.\scripts\deploy-vm.ps1 -Tag "1.0.1" -Load
+```
+
+然后在 Ubuntu 上修改 `.env`：
+
+```bash
+cd /home/zjc/zjc-app
+vi .env
+```
+
+确认：
+
+```text
+APP_TAG=1.0.1
+```
+
+重建并启动容器：
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+发布后检查：
+
+```bash
+docker compose ps
+docker compose logs --tail=200 service-provider
+curl http://192.168.100.128/api/v1/provider/user/1
+curl http://192.168.100.128/api/v1/consumer/user/1
+```
+
+回滚只需要把 `.env` 中的 `APP_TAG` 改回旧版本，并确认旧镜像仍在部署机上：
+
+```bash
+docker images "zjc/service-*"
+docker compose up -d
+```
+
+### 12.3 修改配置
+
+外置配置的长期维护入口在仓库中：
+
+```text
+deploy/config/<module>/application-vm.yaml
+```
+
+推荐流程：
+
+```powershell
+# Windows：传输新的外置配置
+.\scripts\deploy-vm.ps1
+```
+
+```bash
+# Ubuntu：重启对应服务
+cd /home/zjc/zjc-app
+docker compose restart service-provider
+```
+
+只修改 `.env` 时的流程：
+
+```bash
+cd /home/zjc/zjc-app
+vi .env
+docker compose up -d
+```
+
+只修改 `docker-compose.yml` 时的流程：
+
+```bash
+cd /home/zjc/zjc-app
+docker compose up -d
+```
+
+如果只是在 Ubuntu 上临时改外置 YAML，可以直接编辑并重启：
+
+```bash
+vi /home/zjc/zjc-app/config/provider/application-vm.yaml
+docker compose restart service-provider
+```
+
+但要记住：下次执行部署脚本时，仓库中的同名文件会覆盖远程临时修改。长期配置必须提交回仓库。
+
+### 12.4 扩容和缩容
+
+provider 扩到两个实例：
+
+```bash
+docker compose up -d --scale service-provider=2
+docker compose ps
+```
+
+provider 缩回一个实例：
+
+```bash
+docker compose up -d --scale service-provider=1
+```
+
+扩容后确认：
+
+```bash
+docker compose ps
+docker compose logs -f service-provider
+```
+
+多请求几次网关，观察请求是否分散到不同 provider 实例：
+
+```bash
+curl http://192.168.100.128/api/v1/provider/user/1
+```
+
+不要直接扩容 gateway：
+
+```bash
+docker compose up -d --scale service-gateway=2
+```
+
+当前 gateway 固定映射宿主机 80 端口，两个实例会争抢同一个宿主机端口。gateway 多实例需要先去掉直接 `ports` 映射，再增加 Nginx 或其他负载均衡入口。
+
+### 12.5 日志维护
+
+容器 stdout/stderr 日志：
+
+```bash
+docker compose logs -f
+docker compose logs -f service-provider
+docker compose logs --tail=200 service-gateway
+```
+
+单个容器日志：
+
+```bash
+docker ps
+docker logs -f zjc-spring-cloud-service-provider-1
+```
+
+应用文件日志：
+
+```text
+/home/zjc/zjc-app/logs/provider/service-provider/info/service-provider-info-YYYY-MM-DD.N.log
+/home/zjc/zjc-app/logs/consumer/service-consumer/info/service-consumer-info-YYYY-MM-DD.N.log
+/home/zjc/zjc-app/logs/gateway/service-gateway/info/service-gateway-info-YYYY-MM-DD.N.log
+/home/zjc/zjc-app/logs/mail/service-mail/info/service-mail-info-YYYY-MM-DD.N.log
+```
+
+debug、warn、error 分别在对应级别目录下：
+
+```text
+logs/provider/service-provider/debug/
+logs/provider/service-provider/info/
+logs/provider/service-provider/warn/
+logs/provider/service-provider/error/
+```
+
+查看当前实际日志文件：
+
+```bash
+find /home/zjc/zjc-app/logs -type f -name "*.log" -ls
+```
+
+应用文件日志由 Logback 控制：
+
+```text
+单文件 1MB
+按日期和大小滚动
+保留 180 天
+每级别总量 2GB
+```
+
+Docker 的 json-file 日志当前没有在 Compose 中配置轮转上限。如果长期运行，建议给每个服务增加：
+
+```yaml
+logging:
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+```
+
+### 12.6 日常巡检
+
+检查容器状态：
+
+```bash
+docker compose ps
+```
+
+重点看：
+
+```text
+State 是否 Up
+Status 是否 healthy 或无异常退出信息
+gateway 是否映射 80:80
+provider 副本数是否符合预期
+```
+
+检查资源：
+
+```bash
+docker stats
+df -h
+docker system df
+```
+
+检查业务入口：
+
+```bash
+curl http://192.168.100.128/api/v1/provider/user/1
+curl http://192.168.100.128/api/v1/consumer/user/1
+```
+
+检查 Compose 渲染结果：
+
+```bash
+docker compose config
+```
+
+检查容器环境变量：
+
+```bash
+docker compose exec service-provider env | sort
+```
+
+检查外置配置是否挂载：
+
+```bash
+docker compose exec service-provider ls -l /app/config
+```
+
+### 12.7 清理磁盘
+
+先检查空间：
+
+```bash
+df -h
+docker system df
+du -sh /home/zjc/zjc-app/logs/*
+du -sh /home/zjc/zjc-app/images/*
+```
+
+查看业务镜像：
+
+```bash
+docker images "zjc/service-*"
+```
+
+删除确认不再需要的旧镜像：
+
+```bash
+docker rmi zjc/service-provider:1.0.0
+```
+
+清理悬空镜像：
+
+```bash
+docker image prune
+```
+
+清理不再需要的镜像 tar：
+
+```bash
+ls -lh /home/zjc/zjc-app/images
+rm /home/zjc/zjc-app/images/service-provider.tar
+```
+
+不要盲目执行：
+
+```bash
+docker system prune -a
+```
+
+它会删除所有未被容器使用的镜像，可能把回滚版本一起删掉。
+
+### 12.8 备份和保护范围
+
+当前部署目录中必须备份或保护的内容：
+
+```text
+/home/zjc/zjc-app/.env
+/home/zjc/zjc-app/docker-compose.yml
+/home/zjc/zjc-app/config/
+/home/zjc/zjc-app/images/
+/home/zjc/zjc-app/logs/
+```
+
+其中：
+
+- `.env` 包含 Jasypt 主密钥，不能提交 Git，也不能随意截图或输出。
+- `docker-compose.yml` 和 `config` 的源头在 Git 仓库中，优先维护仓库版本。
+- `images` 可以按版本保留，用于快速回滚。
+- `logs` 按审计和排障要求归档。
+
+MySQL、Redis、Nacos、Zipkin、Mailhog 当前不在这个 Compose 内，它们的数据备份需要在对应基础设施侧单独做。不要以为备份了业务容器就等于备份了数据库和 Nacos 数据。
+
+### 12.9 维护前后的检查清单
+
+维护前：
+
+```bash
+docker compose ps
+docker images "zjc/service-*"
+df -h
+```
+
+确认：
+
+- 当前运行版本和 `.env` 的 `APP_TAG`。
+- 旧镜像是否还在，能否回滚。
+- 磁盘空间是否足够。
+- 本次维护涉及哪些服务。
+
+维护后：
+
+```bash
+docker compose ps
+docker compose logs --tail=200 service-provider
+curl http://192.168.100.128/api/v1/provider/user/1
+```
+
+确认：
+
+- 容器没有重启循环。
+- Nacos 上实例状态正常。
+- 网关接口可用。
+- 错误日志没有新增异常。
+
+### 12.10 常用命令速查
 
 ```bash
 cd /home/zjc/zjc-app
@@ -965,22 +1396,29 @@ cd /home/zjc/zjc-app
 # 状态
 docker compose ps
 
+# 启动、停止、重启
+docker compose up -d
+docker compose start
+docker compose stop
+docker compose restart service-provider
+docker compose down
+
 # 日志
 docker compose logs -f service-gateway
 docker compose logs --tail=200 service-provider
 
-# 重启
-docker compose restart service-provider
-docker compose restart
+# 扩缩容
+docker compose up -d --scale service-provider=2
+docker compose up -d --scale service-provider=1
+
+# 进入容器
+docker compose exec service-provider sh
 
 # 查看环境变量
 docker compose exec service-provider env | sort
 
 # 查看外置配置
 docker compose exec service-provider ls -l /app/config
-
-# 查看容器内端口监听
-docker compose exec service-provider sh
 
 # 镜像
 docker images "zjc/service-*"

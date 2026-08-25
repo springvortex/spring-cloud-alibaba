@@ -101,7 +101,7 @@ try {
         "deploy\.env.example"
     )
     foreach ($module in $modules) {
-        $requiredFiles += "deploy\external-config\$module\application-vm.yaml"
+        $requiredFiles += "deploy\config\$module\application-vm.yaml"
         $requiredFiles += "service-$module\target\jib-image.tar"
     }
 
@@ -128,9 +128,9 @@ try {
         throw "传输 .env.example 失败"
     }
 
-    & scp -r "deploy\external-config" "$($Remote):$AppDir/"
+    & scp -r "deploy\config" "$($Remote):$AppDir/"
     if ($LASTEXITCODE -ne 0) {
-        throw "传输 external-config 失败"
+        throw "传输 config 失败"
     }
 
     Write-Host "==> 传输 $($modules.Count) 个镜像 tar" -ForegroundColor Cyan
