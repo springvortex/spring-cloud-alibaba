@@ -16,19 +16,19 @@
 
 .EXAMPLE
     # 只传输已有镜像 tar 和部署文件
-    .\scripts\deploy-vm.ps1
+    .\scripts\deploy.ps1
 
 .EXAMPLE
     # 先重新构建，再传输
-    .\scripts\deploy-vm.ps1 -Build
+    .\scripts\deploy.ps1 -Build
 
 .EXAMPLE
     # 构建、传输、远程加载并启动
-    .\scripts\deploy-vm.ps1 -Build -Start
+    .\scripts\deploy.ps1 -Build -Start
 
 .EXAMPLE
     # 指定远程用户、主机、目录和镜像 tag
-    .\scripts\deploy-vm.ps1 -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/zjc-app" -Tag "1.0.0"
+    .\scripts\deploy.ps1 -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/zjc-app" -Tag "1.0.0"
 #>
 [CmdletBinding()]
 param(
@@ -108,7 +108,7 @@ try {
     $missingFiles = @($requiredFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
     if ($missingFiles.Count -gt 0) {
         $missingList = ($missingFiles -join [Environment]::NewLine)
-        throw "以下文件不存在，请先执行 .\scripts\deploy-vm.ps1 -Build 或检查部署目录：$([Environment]::NewLine)$missingList"
+        throw "以下文件不存在，请先执行 .\scripts\deploy.ps1 -Build 或检查部署目录：$([Environment]::NewLine)$missingList"
     }
 
     Write-Host "==> 准备远程目录：${Remote}:$AppDir" -ForegroundColor Cyan

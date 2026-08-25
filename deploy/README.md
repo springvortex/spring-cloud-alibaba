@@ -44,7 +44,7 @@ deploy/
   config/mail/application-vm.yaml
 
 scripts/
-  deploy-vm.ps1                              # Windows 侧构建、传输、加载、启动脚本
+  deploy.ps1                                 # Windows 侧构建、传输、加载、启动脚本
 
 service-provider/target/jib-image.tar        # provider 镜像 tar
 service-consumer/target/jib-image.tar        # consumer 镜像 tar
@@ -202,7 +202,7 @@ x86_64
 在 Windows 仓库根目录执行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy-vm.ps1 -Build
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -Build
 ```
 
 默认目标是：
@@ -216,16 +216,16 @@ zjc@192.168.100.128
 
 ```powershell
 # 只传输已经存在的镜像 tar，不重新构建
-.\scripts\deploy-vm.ps1
+.\scripts\deploy.ps1
 
 # 构建、传输，然后远程 docker load
-.\scripts\deploy-vm.ps1 -Build -Load
+.\scripts\deploy.ps1 -Build -Load
 
 # 构建、传输、远程 docker load，并启动 docker compose
-.\scripts\deploy-vm.ps1 -Build -Start
+.\scripts\deploy.ps1 -Build -Start
 
 # 自定义远程地址、目录和镜像 tag
-.\scripts\deploy-vm.ps1 -Build -Start -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/zjc-app" -Tag "1.0.1"
+.\scripts\deploy.ps1 -Build -Start -Remote "zjc@192.168.100.128" -AppDir "/home/zjc/zjc-app" -Tag "1.0.1"
 ```
 
 脚本会自动从 `deploy/docker-compose.yml` 解析 `zjc/service-*` 镜像定义。以后新增模块后，只要 Compose 里出现了新的 `zjc/service-ai:${APP_TAG}`，脚本就会自动检查并传输 `service-ai\target\jib-image.tar`，不需要修改脚本。
@@ -399,7 +399,7 @@ deploy/config/<module>/application-vm.yaml
 然后重新传输并重启对应服务：
 
 ```powershell
-.\scripts\deploy-vm.ps1
+.\scripts\deploy.ps1
 ```
 
 ```bash
@@ -502,7 +502,7 @@ Windows：
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy-vm.ps1 -Tag "1.0.1" -Load
+.\scripts\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 Ubuntu：
@@ -759,7 +759,7 @@ management:
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy-vm.ps1 -Tag "1.0.1" -Load
+.\scripts\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 Ubuntu：
@@ -897,7 +897,7 @@ docker compose exec service-provider sh
 如果提示 PowerShell 脚本不能执行，使用：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy-vm.ps1 -Build
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -Build
 ```
 
 这只是对当前进程放开限制，不会修改系统全局执行策略。
@@ -1061,7 +1061,7 @@ docker compose up -d
 
 ```powershell
 mvn -Pdocker-tar "-Ddocker.tag=1.0.1" -DskipTests clean package
-.\scripts\deploy-vm.ps1 -Tag "1.0.1" -Load
+.\scripts\deploy.ps1 -Tag "1.0.1" -Load
 ```
 
 然后在 Ubuntu 上修改 `.env`：
@@ -1112,7 +1112,7 @@ deploy/config/<module>/application-vm.yaml
 
 ```powershell
 # Windows：传输新的外置配置
-.\scripts\deploy-vm.ps1
+.\scripts\deploy.ps1
 ```
 
 ```bash
