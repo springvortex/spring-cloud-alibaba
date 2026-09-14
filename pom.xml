@@ -55,7 +55,7 @@
         <bouncycastle.version>1.85.2</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.54</swagger.version>
-        <springdoc.version>3.1.0</springdoc.version>
+        <springdoc.version>3.1.1</springdoc.version>
         <jasypt-spring-boot.version>4.0.4</jasypt-spring-boot.version>
         <jasypt.version>1.9.3</jasypt.version>
         <!-- Redisson：延迟队列、可重入锁、看门狗、分布式限流 -->
