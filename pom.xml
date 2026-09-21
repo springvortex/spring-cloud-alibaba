@@ -52,7 +52,7 @@
         <log4j2.version>2.25.5</log4j2.version>
         <!-- 其他依赖 -->
         <hutool.version>5.8.47</hutool.version>
-        <bouncycastle.version>1.85.2</bouncycastle.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
         <mybatis.plus.version>3.5.17</mybatis.plus.version>
         <swagger.version>2.2.54</swagger.version>
         <springdoc.version>3.1.0</springdoc.version>
