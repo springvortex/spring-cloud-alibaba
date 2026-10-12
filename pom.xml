@@ -59,7 +59,7 @@
         <jasypt-spring-boot.version>4.0.4</jasypt-spring-boot.version>
         <jasypt.version>1.9.3</jasypt.version>
         <!-- Redisson：延迟队列、可重入锁、看门狗、分布式限流 -->
-        <redisson.version>4.7.0</redisson.version>
+        <redisson.version>4.8.0</redisson.version>
         <!-- JaCoCo 版本（支持 Java 21 字节码） -->
         <jacoco.version>0.8.15</jacoco.version>
 
